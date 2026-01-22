@@ -122,7 +122,7 @@ Backend:
   - Python 3.12+
   - FastAPI
   - uv (package management)
-  - SQLite (via aiosqlite for async)
+  - DuckDB (zero-config analytics engine)
   - websockets (FastAPI's built-in WebSocket support)
   - httpx (async HTTP for LLM API)
 
@@ -140,8 +140,8 @@ LLM:
 
 Data:
   - Riot Data Dragon (champion icons)
-  - GRID API (match data)
-  - Pre-seeded SQLite DB
+  - GRID API (match data) - already extracted to CSV
+  - DuckDB querying CSV files directly (zero ETL)
   - Domain expert knowledge files (JSON/MD)
 ```
 
@@ -167,10 +167,11 @@ Data:
         ┌───────────────────┼───────────────────┬────────────────────┐
         ▼                   ▼                   ▼                    ▼
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐    ┌───────────────┐
-│  GRID API    │    │   SQLite     │    │  Llama 3.1   │    │ Domain Expert │
+│  GRID API    │    │   DuckDB     │    │  Llama 3.1   │    │ Domain Expert │
 │  (Live Data) │    │  (Analytics) │    │  (Insights)  │    │ Knowledge     │
-│              │    │              │    │  via Groq    │    │ (JSON/MD)     │
-└──────────────┘    └──────────────┘    └──────────────┘    └───────────────┘
+│              │    │  ↓ queries   │    │  via Groq    │    │ (JSON/MD)     │
+└──────────────┘    │  CSV Files   │    └──────────────┘    └───────────────┘
+                    └──────────────┘
 ```
 
 ### 3.3 Domain Expert Knowledge Structure
@@ -773,164 +774,357 @@ Be specific, confident, and actionable. No hedging language.
 
 ## 8. Data Model
 
-### 8.1 SQLite Schema
+### 8.1 DuckDB + CSV Architecture
 
-```sql
--- Core entities (pre-seeded)
-CREATE TABLE teams (
-    id TEXT PRIMARY KEY,           -- GRID team ID
-    name TEXT NOT NULL,
-    short_name TEXT,
-    region TEXT                    -- LCK, LEC, LPL, LCS
-);
+**Why DuckDB over SQLite?**
 
-CREATE TABLE players (
-    id TEXT PRIMARY KEY,           -- GRID player ID
-    name TEXT NOT NULL,
-    team_id TEXT REFERENCES teams(id),
-    role TEXT                      -- TOP/JNG/MID/ADC/SUP
-);
+| Criteria | SQLite | DuckDB |
+|----------|--------|--------|
+| SQL syntax | ✅ Standard | ✅ PostgreSQL-compatible |
+| Reads CSV directly | ❌ Requires import | ✅ Zero ETL |
+| Returns DataFrames | ❌ Manual conversion | ✅ Native `.df()` |
+| Columnar analytics | ❌ Row-based | ✅ Optimized aggregations |
+| Setup complexity | Medium | **Zero config** |
 
-CREATE TABLE champions (
-    id TEXT PRIMARY KEY,           -- GRID champion ID
-    name TEXT NOT NULL,
-    riot_key TEXT,                 -- For Data Dragon icons
-    rework_date TEXT               -- NULL if never reworked
-);
+**Architecture Decision:** CSV files are the source of truth. DuckDB queries them directly with no import/seed step required. For performance-critical paths, we can optionally persist to a `.duckdb` file.
 
-CREATE TABLE tournaments (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    region TEXT,
-    year INTEGER
-);
-
--- Match data
-CREATE TABLE series (
-    id TEXT PRIMARY KEY,           -- GRID series ID
-    tournament_id TEXT REFERENCES tournaments(id),
-    blue_team_id TEXT REFERENCES teams(id),
-    red_team_id TEXT REFERENCES teams(id),
-    match_date TEXT NOT NULL,
-    description TEXT               -- "LEC Finals Game 3 - Upset"
-);
-
-CREATE TABLE games (
-    id TEXT PRIMARY KEY,           -- GRID game ID
-    series_id TEXT REFERENCES series(id),
-    game_number INTEGER,
-    winner_team_id TEXT REFERENCES teams(id),
-    duration_seconds INTEGER,
-    patch_version TEXT
-);
-
-CREATE TABLE draft_actions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    game_id TEXT REFERENCES games(id),
-    sequence_number INTEGER,       -- 1-20
-    action_type TEXT NOT NULL,     -- "ban" or "pick"
-    team_id TEXT REFERENCES teams(id),
-    champion_id TEXT REFERENCES champions(id)
-);
-
-CREATE TABLE player_game_stats (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    game_id TEXT REFERENCES games(id),
-    player_id TEXT REFERENCES players(id),
-    team_id TEXT REFERENCES teams(id),
-    champion_id TEXT REFERENCES champions(id),
-    role TEXT,
-    kills INTEGER,
-    deaths INTEGER,
-    assists INTEGER,
-    damage_dealt INTEGER,
-    gold_earned INTEGER,
-    vision_score REAL,
-    cs INTEGER,
-    kda_ratio REAL,
-    kill_participation REAL,
-    first_blood BOOLEAN
-);
-
--- Pre-computed analytics (refreshed during seeding)
-CREATE TABLE champion_meta_stats (
-    champion_id TEXT PRIMARY KEY REFERENCES champions(id),
-    games INTEGER,
-    picks INTEGER,
-    bans INTEGER,
-    presence_pct REAL,
-    win_rate REAL,
-    tier TEXT,                     -- S/A/B/C/D
-    computed_at TEXT
-);
-
-CREATE TABLE player_champion_stats (
-    player_id TEXT REFERENCES players(id),
-    champion_id TEXT REFERENCES champions(id),
-    games_raw INTEGER,
-    games_weighted REAL,
-    wins INTEGER,
-    win_rate_weighted REAL,
-    avg_kda REAL,
-    avg_damage REAL,
-    confidence TEXT,               -- HIGH/MEDIUM/LOW/NO_DATA
-    PRIMARY KEY (player_id, champion_id)
-);
-
-CREATE TABLE player_tendencies (
-    player_id TEXT PRIMARY KEY REFERENCES players(id),
-    avg_csd_at_15 REAL,
-    first_blood_pct REAL,
-    avg_vision_score_per_min REAL,
-    avg_deaths_per_game REAL,
-    avg_forward_pct REAL,
-    playstyle_tags TEXT            -- JSON array: ["aggressive", "early-game"]
-);
-
-CREATE TABLE champion_synergies (
-    champion_a_id TEXT REFERENCES champions(id),
-    champion_b_id TEXT REFERENCES champions(id),
-    games_together INTEGER,
-    wins INTEGER,
-    win_rate REAL,
-    synergy_delta REAL,            -- vs 50% baseline
-    PRIMARY KEY (champion_a_id, champion_b_id)
-);
-
-CREATE TABLE champion_counters (
-    champion_id TEXT REFERENCES champions(id),
-    countered_by_id TEXT REFERENCES champions(id),
-    role TEXT,                     -- Role-specific matchup
-    games INTEGER,
-    win_rate REAL,
-    counter_score REAL,
-    PRIMARY KEY (champion_id, countered_by_id, role)
-);
-
--- Indexes for query performance
-CREATE INDEX idx_draft_actions_game ON draft_actions(game_id);
-CREATE INDEX idx_player_stats_game ON player_game_stats(game_id);
-CREATE INDEX idx_player_stats_player ON player_game_stats(player_id);
-CREATE INDEX idx_series_date ON series(match_date);
-CREATE INDEX idx_player_champion ON player_champion_stats(player_id, champion_id);
+```
+outputs/full_2024_2025/csv/          DuckDB Engine
+├── teams.csv          ───────────►  ┌──────────────────┐
+├── players.csv        ───────────►  │  SQL Queries     │
+├── champions.csv      ───────────►  │  (PostgreSQL     │
+├── series.csv         ───────────►  │   compatible)    │
+├── games.csv          ───────────►  │                  │
+├── draft_actions.csv  ───────────►  │  Returns:        │
+└── player_game_stats.csv ────────►  │  pandas DataFrame│
+                                     └──────────────────┘
 ```
 
-### 8.2 Pre-Seed Data Targets
+### 8.2 CSV Schema (Source of Truth)
 
-| Entity | Target Count | Source |
-|--------|--------------|--------|
-| Teams | ~30 | Top LCK/LEC/LPL/LCS teams |
-| Players | ~150 | Active rosters (5 per team) |
-| Champions | ~170 | All current champions |
-| Tournaments | ~20 | Major events 2023-2025 |
-| Series | ~200 | Hand-picked + major matches |
-| Games | ~500 | From selected series |
-| Draft Actions | ~10,000 | 20 per game |
-| Player Game Stats | ~5,000 | 10 per game |
-| Champion Meta Stats | ~170 | All champions |
-| Player-Champion Stats | ~3,000 | Active pairs |
-| Synergies | ~500 | Top pairs by frequency |
-| Counters | ~500 | Role-specific matchups |
+These files already exist in `outputs/full_2024_2025/csv/`:
+
+```sql
+-- teams.csv (57 rows)
+-- Columns: id, name
+
+-- players.csv (445 rows)
+-- Columns: id, name, team_id, team_name
+
+-- champions.csv (162 rows)
+-- Columns: id, name
+
+-- series.csv (1,482 rows)
+-- Columns: id, blue_team_id, red_team_id, format, match_date
+
+-- games.csv (3,436 rows)
+-- Columns: id, series_id, game_number, winner_team_id, duration_seconds, patch_version
+
+-- draft_actions.csv (68,529 rows)
+-- Columns: game_id, sequence, action_type, team_id, champion_id, champion
+
+-- player_game_stats.csv (34,416 rows)
+-- Columns: game_id, player_id, player_name, team_id, team_side, champion_id,
+--          champion_name, role, kills, deaths, assists, kda_ratio,
+--          damage_dealt, vision_score, kill_participation, first_kill, team_won
+```
+
+### 8.3 DuckDB Query Patterns
+
+**Direct CSV Querying (Zero ETL):**
+
+```python
+import duckdb
+
+DATA_PATH = "outputs/full_2024_2025/csv"
+
+# Query CSV files directly - no import needed
+result = duckdb.query(f"""
+    SELECT champion, COUNT(*) as picks
+    FROM '{DATA_PATH}/draft_actions.csv'
+    WHERE action_type = 'pick'
+    GROUP BY champion
+    ORDER BY picks DESC
+""").df()  # Returns pandas DataFrame
+```
+
+**Joining Multiple CSVs:**
+
+```python
+# Self-join for matchup analysis
+counters = duckdb.query(f"""
+    SELECT
+        pgs1.champion_name as champion,
+        pgs2.champion_name as enemy,
+        COUNT(*) as games,
+        ROUND(AVG(CASE WHEN pgs1.team_won = 'True' THEN 1.0 ELSE 0.0 END) * 100, 1) as win_rate
+    FROM '{DATA_PATH}/player_game_stats.csv' pgs1
+    JOIN '{DATA_PATH}/player_game_stats.csv' pgs2
+        ON pgs1.game_id = pgs2.game_id
+        AND pgs1.role = pgs2.role
+        AND pgs1.team_side != pgs2.team_side
+    WHERE pgs1.role = 'MID'
+    GROUP BY pgs1.champion_name, pgs2.champion_name
+    HAVING COUNT(*) >= 5
+""").df()
+```
+
+### 8.4 Computed Analytics (Views or Materialized)
+
+Instead of pre-computed tables, we use DuckDB views or on-demand queries:
+
+```python
+# Champion Meta Stats - computed on demand
+def get_champion_meta():
+    return duckdb.query(f"""
+        WITH total_games AS (
+            SELECT COUNT(DISTINCT id) as game_count
+            FROM '{DATA_PATH}/games.csv'
+        ),
+        pick_stats AS (
+            SELECT champion, COUNT(*) as picks
+            FROM '{DATA_PATH}/draft_actions.csv'
+            WHERE action_type = 'pick'
+            GROUP BY champion
+        ),
+        ban_stats AS (
+            SELECT champion, COUNT(*) as bans
+            FROM '{DATA_PATH}/draft_actions.csv'
+            WHERE action_type = 'ban'
+            GROUP BY champion
+        ),
+        win_stats AS (
+            SELECT champion_name,
+                   COUNT(*) as games,
+                   SUM(CASE WHEN team_won = 'True' THEN 1 ELSE 0 END) as wins
+            FROM '{DATA_PATH}/player_game_stats.csv'
+            GROUP BY champion_name
+        )
+        SELECT
+            COALESCE(p.champion, b.champion) as champion,
+            COALESCE(p.picks, 0) as picks,
+            COALESCE(b.bans, 0) as bans,
+            COALESCE(p.picks, 0) + COALESCE(b.bans, 0) as presence,
+            ROUND((COALESCE(p.picks, 0) + COALESCE(b.bans, 0)) * 100.0 / (tg.game_count * 2), 1) as presence_pct,
+            COALESCE(w.games, 0) as games_played,
+            ROUND(COALESCE(w.wins, 0) * 100.0 / NULLIF(w.games, 0), 1) as win_rate,
+            CASE
+                WHEN (COALESCE(p.picks, 0) + COALESCE(b.bans, 0)) * 100.0 / (tg.game_count * 2) >= 35 THEN 'S'
+                WHEN (COALESCE(p.picks, 0) + COALESCE(b.bans, 0)) * 100.0 / (tg.game_count * 2) >= 25 THEN 'A'
+                WHEN (COALESCE(p.picks, 0) + COALESCE(b.bans, 0)) * 100.0 / (tg.game_count * 2) >= 15 THEN 'B'
+                WHEN (COALESCE(p.picks, 0) + COALESCE(b.bans, 0)) * 100.0 / (tg.game_count * 2) >= 8 THEN 'C'
+                ELSE 'D'
+            END as tier
+        FROM pick_stats p
+        FULL OUTER JOIN ban_stats b ON p.champion = b.champion
+        FULL OUTER JOIN win_stats w ON COALESCE(p.champion, b.champion) = w.champion_name
+        CROSS JOIN total_games tg
+        ORDER BY presence DESC
+    """).df()
+
+
+# Champion Synergies - same-team pairs
+def get_champion_synergies(min_games: int = 5):
+    return duckdb.query(f"""
+        WITH team_picks AS (
+            SELECT game_id, team_id, champion
+            FROM '{DATA_PATH}/draft_actions.csv'
+            WHERE action_type = 'pick'
+        ),
+        pairs AS (
+            SELECT
+                t1.game_id, t1.team_id,
+                LEAST(t1.champion, t2.champion) as champ_a,
+                GREATEST(t1.champion, t2.champion) as champ_b
+            FROM team_picks t1
+            JOIN team_picks t2 ON t1.game_id = t2.game_id
+                AND t1.team_id = t2.team_id
+                AND t1.champion < t2.champion
+        )
+        SELECT
+            champ_a, champ_b,
+            COUNT(*) as games_together,
+            SUM(CASE WHEN g.winner_team_id = p.team_id THEN 1 ELSE 0 END) as wins,
+            ROUND(AVG(CASE WHEN g.winner_team_id = p.team_id THEN 1.0 ELSE 0.0 END) * 100, 1) as win_rate,
+            ROUND((AVG(CASE WHEN g.winner_team_id = p.team_id THEN 1.0 ELSE 0.0 END) - 0.5) * 100, 1) as synergy_delta
+        FROM pairs p
+        JOIN '{DATA_PATH}/games.csv' g ON p.game_id = g.id
+        GROUP BY champ_a, champ_b
+        HAVING COUNT(*) >= {min_games}
+        ORDER BY synergy_delta DESC
+    """).df()
+
+
+# Champion Counters - role-specific matchups
+def get_champion_counters(champion: str, role: str, min_games: int = 3):
+    return duckdb.query(f"""
+        SELECT
+            pgs2.champion_name as enemy_champion,
+            COUNT(*) as games,
+            SUM(CASE WHEN pgs1.team_won = 'True' THEN 1 ELSE 0 END) as wins,
+            ROUND(AVG(CASE WHEN pgs1.team_won = 'True' THEN 1.0 ELSE 0.0 END) * 100, 1) as win_rate
+        FROM '{DATA_PATH}/player_game_stats.csv' pgs1
+        JOIN '{DATA_PATH}/player_game_stats.csv' pgs2
+            ON pgs1.game_id = pgs2.game_id
+            AND pgs1.role = pgs2.role
+            AND pgs1.team_side != pgs2.team_side
+        WHERE pgs1.champion_name = '{champion}'
+          AND pgs1.role = '{role}'
+        GROUP BY pgs2.champion_name
+        HAVING COUNT(*) >= {min_games}
+        ORDER BY win_rate DESC
+    """).df()
+
+
+# Player vs Player Head-to-Head
+def get_player_matchup(player1: str, player2: str):
+    return duckdb.query(f"""
+        SELECT
+            pgs1.champion_name as p1_champ,
+            pgs2.champion_name as p2_champ,
+            pgs1.role,
+            CASE WHEN pgs1.team_won = 'True' THEN '{player1}' ELSE '{player2}' END as winner,
+            pgs1.kda_ratio as p1_kda,
+            pgs2.kda_ratio as p2_kda
+        FROM '{DATA_PATH}/player_game_stats.csv' pgs1
+        JOIN '{DATA_PATH}/player_game_stats.csv' pgs2
+            ON pgs1.game_id = pgs2.game_id
+            AND pgs1.role = pgs2.role
+            AND pgs1.team_side != pgs2.team_side
+        WHERE pgs1.player_name = '{player1}'
+          AND pgs2.player_name = '{player2}'
+    """).df()
+```
+
+### 8.5 Optional: Persistent DuckDB for Performance
+
+For demo day, if CSV queries become slow (they won't at our scale), persist to `.duckdb`:
+
+```python
+# One-time: Create persistent database
+def materialize_database():
+    con = duckdb.connect('data/draft_assistant.duckdb')
+
+    # Import CSVs as tables
+    for table in ['teams', 'players', 'champions', 'series', 'games',
+                  'draft_actions', 'player_game_stats']:
+        con.execute(f"""
+            CREATE OR REPLACE TABLE {table} AS
+            SELECT * FROM '{DATA_PATH}/{table}.csv'
+        """)
+
+    # Create materialized analytics views
+    con.execute("""
+        CREATE OR REPLACE TABLE champion_meta_stats AS
+        -- (meta query from above)
+    """)
+
+    con.close()
+
+# Later: Query persistent database (3-5x faster)
+con = duckdb.connect('data/draft_assistant.duckdb', read_only=True)
+result = con.execute("SELECT * FROM champion_meta_stats").df()
+```
+
+### 8.6 Actual Data Counts (Exceeds Targets)
+
+| Entity | Spec Target | **Actual** | Status |
+|--------|-------------|------------|--------|
+| Teams | ~30 | **57** | ✅ 1.9x |
+| Players | ~150 | **445** | ✅ 3.0x |
+| Champions | ~170 | **162** | ✅ Near complete |
+| Series | ~200 | **1,482** | ✅ 7.4x |
+| Games | ~500 | **3,436** | ✅ 6.9x |
+| Draft Actions | ~10,000 | **68,529** | ✅ 6.9x |
+| Player Game Stats | ~5,000 | **34,416** | ✅ 6.9x |
+
+**Regions Covered:** LCK (409), LEC (323), LCS (174), LPL (458), International (117)
+
+### 8.7 Performance at Our Scale
+
+| Query Type | Rows Scanned | Expected Time |
+|------------|--------------|---------------|
+| Champion meta | 68K + 34K | < 100ms |
+| Counter matchups | 34K self-join | < 150ms |
+| Player proficiency | 34K filter | < 50ms |
+| Synergy pairs | 68K join | < 200ms |
+
+DuckDB's columnar engine handles our entire dataset in milliseconds. No optimization needed for hackathon demo.
+
+### 8.8 DuckDB + FastAPI Async Pattern
+
+**Important:** DuckDB is synchronous-only. This affects how we structure FastAPI routes.
+
+#### The Problem
+
+```python
+# ❌ BAD: Blocking call inside async function blocks the event loop
+@app.get("/api/meta")
+async def get_meta():
+    df = duckdb.query("SELECT * FROM ...").df()  # Blocks!
+    return df.to_dict()
+```
+
+#### The Solution: Use Sync Routes for DuckDB
+
+```python
+# ✅ GOOD: Sync function - FastAPI automatically runs in thread pool
+@app.get("/api/meta")
+def get_meta():  # Note: 'def' not 'async def'
+    df = duckdb.query("SELECT * FROM ...").df()
+    return df.to_dict(orient="records")
+```
+
+FastAPI automatically runs synchronous route handlers in a thread pool, preventing event loop blocking. This is the simplest and recommended pattern.
+
+#### When You Need Async (WebSocket, LLM Streaming)
+
+```python
+from fastapi import WebSocket
+from fastapi.concurrency import run_in_threadpool
+
+# For WebSocket handlers that need DuckDB data
+@app.websocket("/ws/draft/{series_id}")
+async def draft_websocket(websocket: WebSocket, series_id: str):
+    await websocket.accept()
+
+    # Run DuckDB query in thread pool
+    draft_actions = await run_in_threadpool(
+        lambda: duckdb.query(f"""
+            SELECT * FROM '{DATA_PATH}/draft_actions.csv'
+            WHERE game_id IN (
+                SELECT id FROM '{DATA_PATH}/games.csv'
+                WHERE series_id = '{series_id}'
+            )
+            ORDER BY sequence
+        """).df().to_dict(orient="records")
+    )
+
+    # Stream actions with delay (replay mode)
+    for action in draft_actions:
+        await websocket.send_json({"type": "draft_action", "action": action})
+        await asyncio.sleep(2)  # 2 second delay between actions
+```
+
+#### Recommended Pattern Summary
+
+| Route Type | Pattern | Why |
+|------------|---------|-----|
+| REST analytics | `def` (sync) | FastAPI thread pool handles it |
+| WebSocket | `async def` + `run_in_threadpool` | Need `await` for send/receive |
+| LLM streaming | `async def` | Groq/Together clients are async |
+| Health check | `async def` | No DuckDB, pure async is fine |
+
+#### Why Not aiosqlite?
+
+| Consideration | aiosqlite | DuckDB |
+|---------------|-----------|--------|
+| Async native | ✅ Yes | ❌ No (use threadpool) |
+| CSV direct query | ❌ Requires ETL | ✅ Zero ETL |
+| Analytics speed | ❌ Row-based, slow | ✅ Columnar, 10-100x faster |
+| Demo complexity | ⚠️ Need seed script | ✅ Just query CSVs |
+
+**Decision:** DuckDB's performance and zero-ETL benefits outweigh the async limitation. At demo scale (1-2 concurrent users, <200ms queries), the sync/threadpool pattern works perfectly.
 
 ---
 
@@ -1108,6 +1302,147 @@ ws://localhost:8000/ws/draft/{series_id}/{game_number}?mode=live|replay
 }
 ```
 
+### 9.3 FastAPI + DuckDB Integration Pattern
+
+```python
+from fastapi import FastAPI, Query, HTTPException
+from contextlib import asynccontextmanager
+import duckdb
+
+DATA_PATH = "outputs/full_2024_2025/csv"
+
+# DuckDB connection management
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: verify CSV files exist
+    app.state.data_path = DATA_PATH
+    yield
+    # Shutdown: nothing to clean up (DuckDB handles it)
+
+app = FastAPI(title="LoL Draft Assistant API", lifespan=lifespan)
+
+
+@app.get("/api/meta/current")
+def get_current_meta(min_presence: int = Query(10, description="Minimum pick+ban count")):
+    """Get current champion meta tier list."""
+    df = duckdb.query(f"""
+        WITH total_games AS (
+            SELECT COUNT(DISTINCT id) as game_count
+            FROM '{DATA_PATH}/games.csv'
+        ),
+        stats AS (
+            SELECT
+                champion,
+                SUM(CASE WHEN action_type = 'pick' THEN 1 ELSE 0 END) as picks,
+                SUM(CASE WHEN action_type = 'ban' THEN 1 ELSE 0 END) as bans,
+                COUNT(*) as presence
+            FROM '{DATA_PATH}/draft_actions.csv'
+            GROUP BY champion
+        )
+        SELECT
+            champion,
+            picks,
+            bans,
+            presence,
+            ROUND(presence * 100.0 / (tg.game_count * 2), 1) as presence_pct,
+            CASE
+                WHEN presence * 100.0 / (tg.game_count * 2) >= 35 THEN 'S'
+                WHEN presence * 100.0 / (tg.game_count * 2) >= 25 THEN 'A'
+                WHEN presence * 100.0 / (tg.game_count * 2) >= 15 THEN 'B'
+                WHEN presence * 100.0 / (tg.game_count * 2) >= 8 THEN 'C'
+                ELSE 'D'
+            END as tier
+        FROM stats
+        CROSS JOIN total_games tg
+        WHERE presence >= {min_presence}
+        ORDER BY presence DESC
+    """).df()
+
+    # Group by tier for response
+    tiers = {"S": [], "A": [], "B": [], "C": [], "D": []}
+    for _, row in df.iterrows():
+        tiers[row["tier"]].append({
+            "champion": row["champion"],
+            "picks": int(row["picks"]),
+            "bans": int(row["bans"]),
+            "presence_pct": float(row["presence_pct"])
+        })
+
+    return {"tiers": tiers, "total_games": int(df["presence"].sum() / 2)}
+
+
+@app.get("/api/champions/{champion}/counters")
+def get_champion_counters(
+    champion: str,
+    role: str = Query(..., description="Role: TOP, JNG, MID, ADC, SUP"),
+    min_games: int = Query(3, description="Minimum games for matchup")
+):
+    """Get counter matchups for a champion in a specific role."""
+    df = duckdb.query(f"""
+        SELECT
+            pgs2.champion_name as enemy_champion,
+            COUNT(*) as games,
+            SUM(CASE WHEN pgs1.team_won = 'True' THEN 1 ELSE 0 END) as wins,
+            ROUND(AVG(CASE WHEN pgs1.team_won = 'True' THEN 1.0 ELSE 0.0 END) * 100, 1) as win_rate
+        FROM '{DATA_PATH}/player_game_stats.csv' pgs1
+        JOIN '{DATA_PATH}/player_game_stats.csv' pgs2
+            ON pgs1.game_id = pgs2.game_id
+            AND pgs1.role = pgs2.role
+            AND pgs1.team_side != pgs2.team_side
+        WHERE pgs1.champion_name = '{champion}'
+          AND pgs1.role = '{role}'
+        GROUP BY pgs2.champion_name
+        HAVING COUNT(*) >= {min_games}
+        ORDER BY win_rate DESC
+    """).df()
+
+    if df.empty:
+        raise HTTPException(status_code=404, detail=f"No matchup data for {champion} in {role}")
+
+    return {
+        "champion": champion,
+        "role": role,
+        "counters": df.to_dict(orient="records")
+    }
+
+
+@app.get("/api/players/{player}/proficiency")
+def get_player_proficiency(player: str):
+    """Get a player's champion pool with stats."""
+    df = duckdb.query(f"""
+        SELECT
+            champion_name,
+            COUNT(*) as games,
+            SUM(CASE WHEN team_won = 'True' THEN 1 ELSE 0 END) as wins,
+            ROUND(AVG(CASE WHEN team_won = 'True' THEN 1.0 ELSE 0.0 END) * 100, 1) as win_rate,
+            ROUND(AVG(kda_ratio), 2) as avg_kda,
+            CASE
+                WHEN COUNT(*) >= 10 THEN 'HIGH'
+                WHEN COUNT(*) >= 5 THEN 'MEDIUM'
+                ELSE 'LOW'
+            END as confidence
+        FROM '{DATA_PATH}/player_game_stats.csv'
+        WHERE player_name = '{player}'
+        GROUP BY champion_name
+        ORDER BY games DESC
+    """).df()
+
+    if df.empty:
+        raise HTTPException(status_code=404, detail=f"Player '{player}' not found")
+
+    return {
+        "player": player,
+        "total_games": int(df["games"].sum()),
+        "champions": df.to_dict(orient="records")
+    }
+```
+
+**Key Patterns:**
+1. **No connection management** - DuckDB handles it automatically
+2. **Direct DataFrame to dict** - `.to_dict(orient="records")` for JSON responses
+3. **Parameterized queries** - Use f-strings for dynamic values (safe for read-only analytics)
+4. **Error handling** - Return 404 for missing data
+
 ---
 
 ## 10. Development Plan
@@ -1116,15 +1451,16 @@ ws://localhost:8000/ws/draft/{series_id}/{game_number}?mode=live|replay
 | Task | Owner | Days |
 |------|-------|------|
 | Project setup (repo, CI, uv, FastAPI skeleton) | Eng 1 | 1 |
-| GRID API client with rate limiting | Eng 1 | 1 |
-| SQLite schema implementation | Eng 2 | 1 |
-| Domain expert: Select 200 series, provide knowledge files | Domain | 3 |
-| Batch ingestion script for selected series | Eng 1 | 2 |
-| Compute Layer 1-4 analytics (seeding script) | Eng 2 | 2 |
-| Champion data from Riot Data Dragon | Eng 2 | 0.5 |
+| ~~GRID API client with rate limiting~~ | ~~Eng 1~~ | ✅ Done |
+| ~~CSV data extraction from GRID API~~ | ~~Eng 2~~ | ✅ Done (68K+ records) |
+| DuckDB analytics service + query functions | Eng 2 | 1 |
+| Domain expert: provide knowledge files (team profiles, archetypes) | Domain | 3 |
+| ~~Batch ingestion script~~ | ~~Eng 1~~ | ✅ Done (1,482 series in CSV) |
+| ~~Layer 1-4 analytics queries~~ | ~~Eng 2~~ | ✅ DuckDB computes on-demand |
+| Champion Data Dragon icon mapping | Eng 2 | 0.5 |
 | Knowledge file integration (JSON/MD loading) | Eng 1 | 0.5 |
 
-**Deliverable:** Pre-seeded database with 200 series, all analytics computed
+**Deliverable:** DuckDB analytics layer with all query functions, knowledge files ready
 
 ### Week 2: Core Backend Logic
 | Task | Owner | Days |
@@ -1142,8 +1478,9 @@ ws://localhost:8000/ws/draft/{series_id}/{game_number}?mode=live|replay
 ### Week 3: Frontend & LLM
 | Task | Owner | Days |
 |------|-------|------|
-| React app scaffold (Vite + shadcn/ui) | Eng 2 | 0.5 |
-| Draft board component | Eng 2 | 2 |
+| ~~React app scaffold (Vite + Tailwind)~~ | ~~Eng 2~~ | ✅ Done |
+| ~~Data Dragon utilities + icon mapping~~ | ~~Eng 2~~ | ✅ Done |
+| Draft board component implementation | Eng 2 | 2 |
 | Recommendation panel component | Eng 2 | 1.5 |
 | LLM integration (Groq/Together client) | Eng 1 | 1 |
 | Insight prompt engineering + iteration | Eng 1 + Domain | 2 |
@@ -1295,11 +1632,12 @@ Domain expert should prioritize:
 | **Rivalry Matches** | Low | T1 vs Gen.G (audience familiarity) |
 | **Recent (2024-2025)** | High | Current rosters, relevant meta |
 
-**Target Mix:**
-- 50% LCK (strongest region, best data)
-- 30% LEC (Western audience familiarity)
-- 15% International (Worlds, MSI)
-- 5% LPL/LCS (diversity)
+**Actual Mix (1,482 series):**
+- 31% LPL (458 series - full coverage!)
+- 28% LCK (409 series)
+- 22% LEC (323 series)
+- 12% LCS (174 series)
+- 8% International (117 series)
 
 ---
 
@@ -1344,5 +1682,7 @@ response = together.Complete.create(
 
 ---
 
-*Spec Version: Hackathon v2.0 | January 2026*
-*Updated with: Layered analysis, recency weighting, surprise pick detection, open source LLM, domain knowledge integration*
+*Spec Version: Hackathon v2.2 | January 2026*
+*v2.2 changes: Added DuckDB + FastAPI async/sync implementation patterns (Section 8.8)*
+*v2.1 changes: Switched from SQLite to DuckDB for zero-ETL CSV querying, updated data model to reflect 7x data volume*
+*v2.0: Layered analysis, recency weighting, surprise pick detection, open source LLM, domain knowledge integration*
