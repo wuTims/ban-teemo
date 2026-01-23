@@ -442,6 +442,9 @@ ORDER BY games DESC;
 | Hans Sama | Noah | ADC | 28 | **19** | 9 | Hans Sama dominates |
 | Aiming | Gumayusi | ADC | 27 | 6 | **21** | Gumayusi dominates |
 
+**UPDATE**
+- Add gold and KDA to any winrate based calcs
+
 ### 5.2 Player-Specific Champion Matchups
 
 ```sql
@@ -488,6 +491,9 @@ ORDER BY games DESC;
 | Gumayusi | Senna | Tristana | 5 | **100%** | 11.87 |
 | Chovy | Corki | Azir | 4 | **100%** | 10.88 |
 
+**UPDATE**
+- Add gold and KDA to any winrate based calcs
+
 ### 5.3 Player's Worst Matchups (by Enemy Champion)
 
 ```sql
@@ -525,6 +531,9 @@ ORDER BY wr ASC;  -- Worst matchups first
 | vs Taliyah | 8 | 50% | 5.46 | Even |
 | vs Corki | 9 | 56% | 4.50 | Slight edge |
 | vs Azir | 15 | **87%** | 7.56 | Dominates |
+
+**UPDATE**
+- Add gold and KDA to any winrate based calcs
 
 ---
 
