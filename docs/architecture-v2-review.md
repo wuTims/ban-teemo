@@ -186,6 +186,15 @@ ORDER BY total_appearances DESC;
 - Neeko: 57.0%
 - Yunara: 56.3%
 
+**UPDATE**
+- Add in KDAs of champions + Win Rate
+- Need to see how the champions are doing when they're picked
+- Determine the value of the champion pick more accurately
+- Just because other teams are picking often & winning doesn't necessarily mean it's good pick for current
+
+**Weighting**
+- Potentially add some weight for player champion preference vs. meta pick
+
 ### 4.2 Layer 2: Player Tendencies ✅ MOSTLY SUPPORTED
 
 **Available metrics:**
@@ -307,6 +316,11 @@ ORDER BY synergy_delta DESC;
 | Galio + Poppy | 15 | 80.0% | +30.0% |
 | Nami + Taliyah | 19 | 78.9% | +28.9% |
 | Nidalee + Yone | 31 | 74.2% | +24.2% |
+
+**UPDATE**
+- Can be skewed because meta has shifted or they don't work together in the meta
+- Grade by patch potentially
+- Set baseline of 2-3 patches where the synergy has to be in the top 5-10 for it to actual have signal
 
 #### 4.4.2 Counter Detection (Opponent Matchups) ✅ NEW
 
