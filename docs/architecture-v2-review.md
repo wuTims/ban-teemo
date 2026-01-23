@@ -615,6 +615,11 @@ ORDER BY region, split;
 | LCS | Summer 2025 | 23 |
 | International | Various | 117 |
 
+**UPDATE**
+- Consider adding weighting for different stages of the season (e.g. playoffs/finals > regular)
+- Need to check low series counts
+- Pull from static table
+
 ### 6.3 Recommended Tournament Mapping Table
 
 ```sql
@@ -689,6 +694,10 @@ ORDER BY win_rate DESC;
 | Hanwha Life Esports | 72 | 68.1% |
 | Team BDS | 47 | 66.0% |
 
+**UPDATE**
+- Take into account game count
+- Making it further in the playoffs should weight higher for team performance
+- Add objective scores for 
 ---
 
 ## 8. Gap Analysis: Spec vs Reality (UPDATED)
