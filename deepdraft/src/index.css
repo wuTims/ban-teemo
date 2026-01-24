@@ -1,14 +1,71 @@
 @import "tailwindcss";
 
-/* Custom theme variables */
+/* LoL Hextech Theme - from style guide */
 @theme {
-  --color-blue-team: #3b82f6;
-  --color-red-team: #ef4444;
-  --color-ban: #6b7280;
-  --color-pick: #10b981;
+  /* Backgrounds */
+  --color-lol-darkest: #010A13;
+  --color-lol-dark: #0A1428;
+  --color-lol-medium: #0A323C;
+  --color-lol-light: #1E2328;
+  --color-lol-hover: #1E3A5F;
+
+  /* Hextech Magic (Primary) */
+  --color-magic-bright: #0AC8B9;
+  --color-magic: #0397AB;
+  --color-magic-dim: #005A82;
+
+  /* Gold System (Secondary) */
+  --color-gold-bright: #F0E6D2;
+  --color-gold: #C8AA6E;
+  --color-gold-dim: #785A28;
+  --color-gold-dark: #463714;
+
+  /* Team Colors */
+  --color-blue-team: #0AC8B9;
+  --color-blue-team-bg: #0A323C;
+  --color-red-team: #E84057;
+  --color-red-team-bg: #3C0A0A;
+
+  /* Semantic */
+  --color-success: #1EAD58;
+  --color-warning: #F0B232;
+  --color-danger: #E84057;
+
+  /* Text */
+  --color-text-primary: #F0E6D2;
+  --color-text-secondary: #A09B8C;
+  --color-text-tertiary: #5B5A56;
+}
+
+/* Animations */
+@keyframes magic-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(10, 200, 185, 0.4);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(10, 200, 185, 0.7);
+    transform: scale(1.02);
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-in-left {
+  from { transform: translateX(-20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
 }
 
 /* Base styles */
 body {
-  @apply min-h-screen bg-gray-900 text-gray-100;
+  @apply min-h-screen bg-lol-darkest text-text-primary;
+  font-family: Inter, system-ui, sans-serif;
 }
