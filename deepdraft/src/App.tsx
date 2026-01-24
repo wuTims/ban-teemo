@@ -1,31 +1,72 @@
+// deepdraft/src/App.tsx
 import { DraftBoard } from "./components/DraftBoard";
 import { RecommendationPanel } from "./components/RecommendationPanel";
-import { InsightPanel } from "./components/InsightPanel";
+import { ReplayControls } from "./components/ReplayControls";
+import { useReplaySession } from "./hooks";
 
-function App() {
+export default function App() {
+  const {
+    status,
+    blueTeam,
+    redTeam,
+    draftState,
+    recommendations,
+    patch,
+    error,
+    startReplay,
+    stopReplay,
+  } = useReplaySession();
+
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100">
-      <header className="border-b border-gray-800 px-6 py-4">
-        <h1 className="text-2xl font-bold">DeepDraft</h1>
-        <p className="text-gray-400 text-sm">LoL Draft Assistant</p>
+    <div className="min-h-screen bg-lol-darkest">
+      {/* Header */}
+      <header className="h-16 bg-lol-dark border-b border-gold-dim/30 flex items-center px-6">
+        <div className="flex items-center gap-4">
+          <h1 className="text-xl font-bold uppercase tracking-wide text-gold-bright">
+            DeepDraft
+          </h1>
+          <span className="text-sm text-text-tertiary">
+            LoL Draft Assistant
+          </span>
+        </div>
+
+        <div className="ml-auto flex items-center gap-4">
+          {patch && (
+            <span className="text-xs text-text-tertiary">
+              Patch {patch}
+            </span>
+          )}
+          {status === "playing" && (
+            <span className="text-xs text-magic animate-pulse">
+              ● Live
+            </span>
+          )}
+        </div>
       </header>
 
-      <main className="container mx-auto p-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main draft board */}
-          <div className="lg:col-span-2">
-            <DraftBoard />
-          </div>
+      {/* Main Content */}
+      <main className="p-6 space-y-6">
+        {/* Replay Controls */}
+        <ReplayControls
+          status={status}
+          onStart={startReplay}
+          onStop={stopReplay}
+          error={error}
+        />
 
-          {/* Side panels */}
-          <div className="space-y-6">
-            <RecommendationPanel />
-            <InsightPanel />
-          </div>
-        </div>
+        {/* Draft Board */}
+        <DraftBoard
+          blueTeam={blueTeam}
+          redTeam={redTeam}
+          draftState={draftState}
+        />
+
+        {/* Recommendations Panel */}
+        <RecommendationPanel
+          recommendations={recommendations}
+          nextAction={draftState?.next_action ?? null}
+        />
       </main>
     </div>
   );
 }
-
-export default App;
