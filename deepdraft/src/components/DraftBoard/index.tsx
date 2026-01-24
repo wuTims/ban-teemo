@@ -1,54 +1,87 @@
-/**
- * DraftBoard - Main draft visualization component.
- * Shows the 10-slot draft grid with bans and picks.
- */
+// deepdraft/src/components/DraftBoard/index.tsx
+import { TeamPanel, BanTrack, PhaseIndicator } from "../draft";
+import type { TeamContext, DraftState, Team, ActionType } from "../../types";
 
-import { getChampionIconUrl } from "../../utils";
+interface DraftBoardProps {
+  blueTeam: TeamContext | null;
+  redTeam: TeamContext | null;
+  draftState: DraftState | null;
+}
 
-// Sample champions to demonstrate icon loading
-const SAMPLE_CHAMPIONS = [
-  "Jinx",
-  "K'Sante",
-  "Wukong",      // Tests MonkeyKing mapping
-  "Lee Sin",     // Tests space removal
-  "Kai'Sa",      // Tests apostrophe
-  "Aurelion Sol",
-  "Bel'Veth",
-  "Cho'Gath",
-  "Nunu & Willump",
-  "Dr. Mundo",
-];
+// Calculate which pick slot is active (0-4 index)
+function getCurrentPickIndex(
+  picks: string[],
+  nextTeam: Team | null,
+  nextAction: ActionType | null,
+  side: Team
+): number | undefined {
+  if (nextAction !== "pick" || nextTeam !== side) return undefined;
+  return picks.length; // Next empty slot
+}
 
-export function DraftBoard() {
+export function DraftBoard({ blueTeam, redTeam, draftState }: DraftBoardProps) {
+  const phase = draftState?.phase ?? "BAN_PHASE_1";
+  const nextTeam = draftState?.next_team ?? null;
+  const nextAction = draftState?.next_action ?? null;
+  const blueBans = draftState?.blue_bans ?? [];
+  const redBans = draftState?.red_bans ?? [];
+  const bluePicks = draftState?.blue_picks ?? [];
+  const redPicks = draftState?.red_picks ?? [];
+
   return (
-    <div className="bg-gray-800 rounded-lg p-6">
-      <h2 className="text-xl font-semibold mb-4">Draft Board</h2>
-
-      {/* Demo: Champion icons from Data Dragon CDN */}
-      <div className="mb-6">
-        <p className="text-gray-400 text-sm mb-3">
-          Champion icons (via Riot Data Dragon CDN):
-        </p>
-        <div className="grid grid-cols-5 gap-3">
-          {SAMPLE_CHAMPIONS.map((name) => (
-            <div key={name} className="flex flex-col items-center">
-              <img
-                src={getChampionIconUrl(name)}
-                alt={name}
-                className="w-16 h-16 rounded border-2 border-gray-700 hover:border-blue-500 transition-colors"
-                loading="lazy"
-              />
-              <span className="text-xs text-gray-400 mt-1 text-center truncate w-full">
-                {name}
-              </span>
-            </div>
-          ))}
-        </div>
+    <div className="bg-lol-dark rounded-lg p-6">
+      {/* Phase Indicator - Top Center */}
+      <div className="flex justify-center mb-6">
+        <PhaseIndicator
+          currentPhase={phase}
+          nextTeam={nextTeam}
+          nextAction={nextAction}
+        />
       </div>
 
-      {/* TODO: Implement full draft grid */}
-      <div className="border-t border-gray-700 pt-4">
-        <p className="text-gray-500 text-sm">Full draft UI coming soon...</p>
+      {/* Main Draft Grid */}
+      <div className="grid grid-cols-[1fr_auto_1fr] gap-6 items-start">
+        {/* Blue Team Panel - Left */}
+        <TeamPanel
+          team={blueTeam}
+          picks={bluePicks}
+          side="blue"
+          isActive={nextTeam === "blue" && nextAction === "pick"}
+          currentPickIndex={getCurrentPickIndex(bluePicks, nextTeam, nextAction, "blue")}
+        />
+
+        {/* Center: Ban Track */}
+        <div className="flex flex-col items-center pt-8">
+          <BanTrack
+            blueBans={blueBans}
+            redBans={redBans}
+            currentBanTeam={nextAction === "ban" ? nextTeam : null}
+            currentBanIndex={
+              nextAction === "ban" && nextTeam
+                ? (nextTeam === "blue" ? blueBans.length : redBans.length)
+                : undefined
+            }
+          />
+
+          {/* Action Counter */}
+          <div className="mt-6 text-center">
+            <div className="text-3xl font-bold text-gold-bright">
+              {draftState?.action_count ?? 0}
+            </div>
+            <div className="text-xs text-text-tertiary uppercase">
+              / 20 actions
+            </div>
+          </div>
+        </div>
+
+        {/* Red Team Panel - Right */}
+        <TeamPanel
+          team={redTeam}
+          picks={redPicks}
+          side="red"
+          isActive={nextTeam === "red" && nextAction === "pick"}
+          currentPickIndex={getCurrentPickIndex(redPicks, nextTeam, nextAction, "red")}
+        />
       </div>
     </div>
   );
