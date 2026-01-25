@@ -1,6 +1,7 @@
 // deepdraft/src/components/ReplayControls/index.tsx
 import { useState, useEffect } from "react";
-import type { SeriesInfo, GameInfo } from "../../types";
+import type { SeriesInfo, GameInfo, GamePreview } from "../../types";
+import { getTeamLogoUrl, getTeamInitials } from "../../utils/teamLogos";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -11,6 +12,29 @@ interface ReplayControlsProps {
   onStart: (seriesId: string, gameNumber: number, speed?: number) => void;
   onStop: () => void;
   error: string | null;
+}
+
+function TeamLogo({ teamId, teamName, size = "sm" }: { teamId: string; teamName: string; size?: "sm" | "md" }) {
+  const logoUrl = getTeamLogoUrl(teamId);
+  const sizeClass = size === "sm" ? "w-6 h-6" : "w-10 h-10";
+
+  if (logoUrl) {
+    return (
+      <img
+        src={logoUrl}
+        alt={`${teamName} logo`}
+        className={`${sizeClass} rounded bg-lol-dark object-contain`}
+      />
+    );
+  }
+
+  return (
+    <div className={`${sizeClass} rounded bg-lol-dark flex items-center justify-center`}>
+      <span className="font-bold text-xs text-gold-dim">
+        {getTeamInitials(teamName)}
+      </span>
+    </div>
+  );
 }
 
 export function ReplayControls({
@@ -24,6 +48,11 @@ export function ReplayControls({
   const [selectedSeries, setSelectedSeries] = useState<string>("");
   const [selectedGame, setSelectedGame] = useState<number>(1);
   const [speed, setSpeed] = useState<number>(1.0);
+  const [gamePreview, setGamePreview] = useState<GamePreview | null>(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+
+  // Get the currently selected series object
+  const currentSeries = seriesList.find(s => s.id === selectedSeries);
 
   // Fetch series list on mount
   useEffect(() => {
@@ -41,12 +70,12 @@ export function ReplayControls({
 
   // Fetch games when series changes
   useEffect(() => {
-    if (!selectedSeries) {
-      setGames([]);
-      return;
-    }
-
     async function fetchGames() {
+      if (!selectedSeries) {
+        setGames([]);
+        setGamePreview(null);
+        return;
+      }
       try {
         const res = await fetch(`${API_BASE}/api/series/${selectedSeries}/games`);
         const data = await res.json();
@@ -54,23 +83,52 @@ export function ReplayControls({
         setSelectedGame(1);
       } catch (err) {
         console.error("Failed to fetch games:", err);
+        setGames([]);
       }
     }
     fetchGames();
   }, [selectedSeries]);
+
+  // Fetch game preview when series or game changes
+  useEffect(() => {
+    async function fetchPreview() {
+      if (!selectedSeries || !selectedGame) {
+        setGamePreview(null);
+        return;
+      }
+      setLoadingPreview(true);
+      try {
+        const res = await fetch(`${API_BASE}/api/game/preview/${selectedSeries}/${selectedGame}`);
+        if (res.ok) {
+          const data = await res.json();
+          setGamePreview(data);
+        } else {
+          setGamePreview(null);
+        }
+      } catch (err) {
+        console.error("Failed to fetch game preview:", err);
+        setGamePreview(null);
+      } finally {
+        setLoadingPreview(false);
+      }
+    }
+    fetchPreview();
+  }, [selectedSeries, selectedGame]);
 
   const handleStart = () => {
     if (!selectedSeries) return;
     onStart(selectedSeries, selectedGame, speed);
   };
 
-  const isPlaying = status === "playing" || status === "connecting";
+  const isConnecting = status === "connecting";
+  const isPlaying = status === "playing" || isConnecting;
 
   return (
-    <div className="bg-lol-dark rounded-lg p-4">
+    <div className="bg-lol-dark rounded-lg p-4 space-y-4">
+      {/* Controls Row */}
       <div className="flex flex-wrap items-center gap-4">
         {/* Series Selector */}
-        <div className="flex-1 min-w-[200px]">
+        <div className="flex-1 min-w-[280px]">
           <label className="block text-xs text-text-tertiary uppercase mb-1">
             Series
           </label>
@@ -152,7 +210,7 @@ export function ReplayControls({
                 hover:bg-red-team/80 transition-colors
               "
             >
-              Stop
+              {isConnecting ? "Connecting..." : "Stop"}
             </button>
           ) : (
             <button
@@ -166,7 +224,7 @@ export function ReplayControls({
                 shadow-[0_0_15px_rgba(10,200,185,0.3)]
               "
             >
-              {status === "connecting" ? "Connecting..." : "Start Replay"}
+              Start Replay
             </button>
           )}
         </div>
@@ -184,6 +242,78 @@ export function ReplayControls({
           </span>
         )}
       </div>
+
+      {/* Game Preview Panel - Shows when a game is selected but not playing */}
+      {!isPlaying && currentSeries && (
+        <div className="border-t border-gold-dim/30 pt-4">
+          {loadingPreview ? (
+            <div className="text-center text-text-tertiary text-sm py-4">
+              Loading game info...
+            </div>
+          ) : gamePreview ? (
+            <div className="flex items-center justify-between gap-8">
+              {/* Blue Team */}
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-3">
+                  <TeamLogo teamId={gamePreview.blue_team.id} teamName={gamePreview.blue_team.name} size="md" />
+                  <div>
+                    <h3 className="font-semibold text-blue-team">{gamePreview.blue_team.name}</h3>
+                    <span className="text-xs text-text-tertiary uppercase">Blue Side</span>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  {gamePreview.blue_team.players.map(p => (
+                    <div key={p.id} className="flex items-center gap-2 text-sm">
+                      <span className="w-8 text-xs text-text-tertiary">{p.role}</span>
+                      <span className="text-gold-bright">{p.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* VS Divider */}
+              <div className="flex flex-col items-center gap-2">
+                <span className="text-2xl font-bold text-gold-dim">VS</span>
+                {gamePreview.patch && (
+                  <span className="text-xs text-text-tertiary">Patch {gamePreview.patch}</span>
+                )}
+              </div>
+
+              {/* Red Team */}
+              <div className="flex-1 text-right">
+                <div className="flex items-center justify-end gap-3 mb-3">
+                  <div>
+                    <h3 className="font-semibold text-red-team">{gamePreview.red_team.name}</h3>
+                    <span className="text-xs text-text-tertiary uppercase">Red Side</span>
+                  </div>
+                  <TeamLogo teamId={gamePreview.red_team.id} teamName={gamePreview.red_team.name} size="md" />
+                </div>
+                <div className="space-y-1">
+                  {gamePreview.red_team.players.map(p => (
+                    <div key={p.id} className="flex items-center justify-end gap-2 text-sm">
+                      <span className="text-gold-bright">{p.name}</span>
+                      <span className="w-8 text-xs text-text-tertiary text-right">{p.role}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* Fallback: Show series info with team logos when preview not available */
+            <div className="flex items-center justify-center gap-6">
+              <div className="flex items-center gap-2">
+                <TeamLogo teamId={currentSeries.blue_team_id} teamName={currentSeries.blue_team_name} size="md" />
+                <span className="font-semibold text-blue-team">{currentSeries.blue_team_name}</span>
+              </div>
+              <span className="text-xl font-bold text-gold-dim">VS</span>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-red-team">{currentSeries.red_team_name}</span>
+                <TeamLogo teamId={currentSeries.red_team_id} teamName={currentSeries.red_team_name} size="md" />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 // deepdraft/src/App.tsx
+import { ActionLog } from "./components/ActionLog";
 import { DraftBoard } from "./components/DraftBoard";
 import { RecommendationPanel } from "./components/RecommendationPanel";
 import { ReplayControls } from "./components/ReplayControls";
@@ -11,6 +12,7 @@ export default function App() {
     redTeam,
     draftState,
     recommendations,
+    actionHistory,
     patch,
     error,
     startReplay,
@@ -54,12 +56,24 @@ export default function App() {
           error={error}
         />
 
-        {/* Draft Board */}
-        <DraftBoard
-          blueTeam={blueTeam}
-          redTeam={redTeam}
-          draftState={draftState}
-        />
+        {/* Draft Board + Action Log */}
+        <div className="flex flex-row gap-6">
+          <div className="flex-1">
+            <DraftBoard
+              blueTeam={blueTeam}
+              redTeam={redTeam}
+              draftState={draftState}
+            />
+          </div>
+
+          {status !== "idle" && (
+            <ActionLog
+              actions={actionHistory}
+              blueTeam={blueTeam}
+              redTeam={redTeam}
+            />
+          )}
+        </div>
 
         {/* Recommendations Panel */}
         <RecommendationPanel

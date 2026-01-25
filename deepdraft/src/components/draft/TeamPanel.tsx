@@ -1,6 +1,7 @@
 // deepdraft/src/components/draft/TeamPanel.tsx
 import { ChampionPortrait } from "../shared";
 import type { TeamContext, Team } from "../../types";
+import { getTeamLogoUrl, getTeamInitials } from "../../utils/teamLogos";
 
 interface TeamPanelProps {
   team: TeamContext | null;
@@ -11,6 +12,32 @@ interface TeamPanelProps {
 }
 
 const ROLE_ORDER = ["TOP", "JNG", "MID", "ADC", "SUP"] as const;
+
+function TeamLogo({ team, borderClass, textClass }: {
+  team: TeamContext | null;
+  borderClass: string;
+  textClass: string;
+}) {
+  const logoUrl = team?.id ? getTeamLogoUrl(team.id) : null;
+
+  if (logoUrl) {
+    return (
+      <img
+        src={logoUrl}
+        alt={`${team?.name} logo`}
+        className={`w-10 h-10 rounded bg-lol-dark border ${borderClass} object-contain`}
+      />
+    );
+  }
+
+  return (
+    <div className={`w-10 h-10 rounded bg-lol-dark flex items-center justify-center border ${borderClass}`}>
+      <span className={`font-bold text-sm ${textClass}`}>
+        {team?.name ? getTeamInitials(team.name) : "??"}
+      </span>
+    </div>
+  );
+}
 
 export function TeamPanel({
   team,
@@ -42,15 +69,7 @@ export function TeamPanel({
     `}>
       {/* Team Header */}
       <div className="flex items-center gap-3 mb-4">
-        <div className={`
-          w-10 h-10 rounded bg-lol-dark
-          flex items-center justify-center
-          border ${sideColors.border}
-        `}>
-          <span className={`font-bold text-sm ${sideColors.text}`}>
-            {team?.name?.substring(0, 2).toUpperCase() || "??"}
-          </span>
-        </div>
+        <TeamLogo team={team} borderClass={sideColors.border} textClass={sideColors.text} />
         <div>
           <h2 className={`font-semibold uppercase tracking-wide ${sideColors.text}`}>
             {team?.name || "Unknown Team"}
@@ -61,10 +80,9 @@ export function TeamPanel({
         </div>
       </div>
 
-      {/* Player Slots */}
+      {/* Pick Slots (role display temporarily disabled pending data refetch) */}
       <div className="space-y-3">
         {ROLE_ORDER.map((role, index) => {
-          const player = team?.players.find(p => p.role === role);
           const pick = picks[index] || null;
           const isPicking = currentPickIndex === index;
 
@@ -77,14 +95,9 @@ export function TeamPanel({
                 transition-colors duration-200
               `}
             >
-              {/* Role badge */}
-              <span className="w-10 text-xs font-medium uppercase text-text-tertiary">
-                {role}
-              </span>
-
-              {/* Player name */}
-              <span className="flex-1 text-sm text-gold-bright truncate">
-                {player?.name || "—"}
+              {/* Pick slot number */}
+              <span className="w-10 text-xs font-medium text-text-tertiary">
+                Pick {index + 1}
               </span>
 
               {/* Champion portrait */}
@@ -94,6 +107,13 @@ export function TeamPanel({
                 team={side}
                 size="sm"
               />
+
+              {/* Champion name if picked */}
+              {pick && (
+                <span className="flex-1 text-sm text-gold-bright truncate">
+                  {pick}
+                </span>
+              )}
             </div>
           );
         })}

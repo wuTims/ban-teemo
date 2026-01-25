@@ -104,7 +104,9 @@ export interface SeriesInfo {
   id: string;
   match_date: string;
   format: string;
+  blue_team_id: string;
   blue_team_name: string;
+  red_team_id: string;
   red_team_name: string;
 }
 
@@ -113,6 +115,28 @@ export interface GameInfo {
   game_number: number;
   patch_version: string | null;
   winner_team_id: string | null;
+}
+
+export interface PlayerPreview {
+  id: string;
+  name: string;
+  role: string;
+}
+
+export interface TeamPreview {
+  id: string;
+  name: string;
+  side: Team;
+  players: PlayerPreview[];
+}
+
+export interface GamePreview {
+  game_id: string;
+  series_id: string;
+  game_number: number;
+  patch: string | null;
+  blue_team: TeamPreview;
+  red_team: TeamPreview;
 }
 
 export interface StartReplayRequest {

@@ -18,6 +18,7 @@ interface ReplaySessionState {
   draftState: DraftState | null;
   recommendations: Recommendations | null;
   lastAction: DraftAction | null;
+  actionHistory: DraftAction[];
   totalActions: number;
   patch: string | null;
   error: string | null;
@@ -35,6 +36,7 @@ export function useReplaySession() {
     draftState: null,
     recommendations: null,
     lastAction: null,
+    actionHistory: [],
     totalActions: 0,
     patch: null,
     error: null,
@@ -68,7 +70,7 @@ export function useReplaySession() {
       }
 
       const data = await response.json();
-      const { session_id, websocket_url } = data;
+      const { websocket_url } = data;
 
       // Connect WebSocket
       const ws = new WebSocket(`${WS_BASE}${websocket_url}`);
@@ -96,6 +98,7 @@ export function useReplaySession() {
               draftState: msg.draft_state,
               recommendations: msg.recommendations,
               lastAction: msg.action,
+              actionHistory: [...prev.actionHistory, msg.action],
             }));
             break;
 
@@ -143,6 +146,7 @@ export function useReplaySession() {
       draftState: null,
       recommendations: null,
       lastAction: null,
+      actionHistory: [],
       totalActions: 0,
       patch: null,
       error: null,

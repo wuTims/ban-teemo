@@ -15,78 +15,51 @@ export function BanTrack({
   currentBanTeam,
   currentBanIndex,
 }: BanTrackProps) {
-  // Pro draft ban order: B-R-B-R-B-R (phase 1), R-B-R-B (phase 2)
-  // We display as two rows: phase 1 (6 bans) | phase 2 (4 bans)
+  // Display bans grouped by team (simpler, works regardless of ban order)
+  // Each team has up to 5 bans (3 in phase 1, 2 in phase 2)
 
-  const phase1Order: Array<{ team: Team; index: number }> = [
-    { team: "blue", index: 0 },
-    { team: "red", index: 0 },
-    { team: "blue", index: 1 },
-    { team: "red", index: 1 },
-    { team: "blue", index: 2 },
-    { team: "red", index: 2 },
-  ];
-
-  const phase2Order: Array<{ team: Team; index: number }> = [
-    { team: "red", index: 3 },
-    { team: "blue", index: 3 },
-    { team: "red", index: 4 },
-    { team: "blue", index: 4 },
-  ];
-
-  const getBan = (team: Team, index: number): string | null => {
+  const renderBanSlot = (team: Team, index: number) => {
     const bans = team === "blue" ? blueBans : redBans;
-    return bans[index] || null;
-  };
-
-  const isCurrentBan = (team: Team, index: number): boolean => {
-    return currentBanTeam === team && currentBanIndex === index;
-  };
-
-  const renderBanSlot = (team: Team, index: number, key: string) => {
-    const ban = getBan(team, index);
-    const isCurrent = isCurrentBan(team, index);
+    const ban = bans[index] || null;
+    const isCurrent = currentBanTeam === team && currentBanIndex === index;
 
     return (
-      <div
-        key={key}
-        className={`
-          relative
-          ${team === "blue" ? "border-blue-team/30" : "border-red-team/30"}
-        `}
-      >
-        <ChampionPortrait
-          championName={ban}
-          state={ban ? "banned" : isCurrent ? "picking" : "empty"}
-          team={team}
-          size="sm"
-        />
-        {/* Team indicator dot */}
-        <div className={`
-          absolute -bottom-1 left-1/2 -translate-x-1/2
-          w-2 h-2 rounded-full
-          ${team === "blue" ? "bg-blue-team" : "bg-red-team"}
-        `} />
+      <ChampionPortrait
+        key={`${team}-${index}`}
+        championName={ban}
+        state={ban ? "banned" : isCurrent ? "picking" : "empty"}
+        team={team}
+        size="sm"
+      />
+    );
+  };
+
+  const renderTeamBans = (team: Team, label: string) => {
+    const colorClass = team === "blue" ? "text-blue-team" : "text-red-team";
+    return (
+      <div className="flex items-center gap-3">
+        <span className={`text-xs font-medium uppercase w-12 ${colorClass}`}>
+          {label}
+        </span>
+        <div className="flex items-center gap-2">
+          {/* Phase 1 bans (indices 0-2) */}
+          {[0, 1, 2].map((i) => renderBanSlot(team, i))}
+          {/* Divider */}
+          <div className="w-px h-8 bg-gold-dim/30 mx-1" />
+          {/* Phase 2 bans (indices 3-4) */}
+          {[3, 4].map((i) => renderBanSlot(team, i))}
+        </div>
       </div>
     );
   };
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      {/* Phase 1 Bans */}
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-text-tertiary uppercase mr-2">Phase 1</span>
-        {phase1Order.map((slot, i) => renderBanSlot(slot.team, slot.index, `p1-${i}`))}
-      </div>
-
-      {/* Divider */}
-      <div className="w-px h-4 bg-gold-dim" />
-
-      {/* Phase 2 Bans */}
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-text-tertiary uppercase mr-2">Phase 2</span>
-        {phase2Order.map((slot, i) => renderBanSlot(slot.team, slot.index, `p2-${i}`))}
-      </div>
+    <div className="flex flex-col items-center gap-3">
+      <span className="text-xs text-text-tertiary uppercase tracking-wider">
+        Bans
+      </span>
+      {renderTeamBans("blue", "Blue")}
+      {renderTeamBans("red", "Red")}
     </div>
   );
 }

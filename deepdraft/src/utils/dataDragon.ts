@@ -288,4 +288,42 @@ export function getAllChampionNames(): string[] {
   return Object.keys(GRID_TO_RIOT_KEY);
 }
 
+/**
+ * Preload all champion icons into browser cache.
+ * This ensures icons appear instantly during draft actions.
+ *
+ * @param onProgress - Callback for progress updates
+ * @returns Promise that resolves when all icons are loaded or timeout is reached
+ */
+export async function preloadChampionIcons(
+  onProgress?: (loaded: number, total: number) => void
+): Promise<void> {
+  const championNames = getAllChampionNames();
+  const total = championNames.length;
+  let loaded = 0;
+
+  const loadPromises = championNames.map((name) => {
+    return new Promise<void>((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        loaded++;
+        onProgress?.(loaded, total);
+        resolve();
+      };
+      img.onerror = () => {
+        loaded++;
+        onProgress?.(loaded, total);
+        resolve(); // Don't fail on individual image errors
+      };
+      img.src = getChampionIconUrl(name);
+    });
+  });
+
+  // Race against timeout to prevent blocking forever
+  await Promise.race([
+    Promise.all(loadPromises),
+    new Promise((resolve) => setTimeout(resolve, 10000)),
+  ]);
+}
+
 export { DEFAULT_DDRAGON_VERSION, DDRAGON_CDN, GRID_TO_RIOT_KEY };

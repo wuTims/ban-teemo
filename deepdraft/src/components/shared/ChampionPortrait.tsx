@@ -61,7 +61,6 @@ export function ChampionPortrait({
         src={getChampionIconUrl(championName)}
         alt={championName}
         className="w-full h-full object-cover"
-        loading="lazy"
       />
       {state === "banned" && (
         <div className="absolute inset-0 flex items-center justify-center bg-lol-darkest/40">
