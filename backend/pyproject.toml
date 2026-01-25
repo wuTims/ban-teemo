@@ -5,7 +5,7 @@ description = "LoL Draft Assistant Backend - Real-time draft recommendations pow
 readme = "../README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "fastapi>=0.109.0",
+    "fastapi[standard]>=0.109.0",
     "uvicorn[standard]>=0.27.0",
     "aiosqlite>=0.19.0",
     "httpx>=0.26.0",
@@ -13,6 +13,9 @@ dependencies = [
     "pydantic>=2.5.0",
     "pydantic-settings>=2.1.0",
     "groq>=0.4.0",
+    "duckdb>=1.0.0",
+    "pandas>=2.0.0",
+    "leaguepedia-parser>=2.0.1",
 ]
 
 [project.optional-dependencies]
