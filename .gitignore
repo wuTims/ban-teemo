@@ -8,3 +8,24 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Environment variables
+.env
+
+# Data files (downloaded via GitHub release)
+outputs/
+*.tar.gz
+
+# Root data files (should live in knowledge/)
+/synergies.json
+/synergies.csv
+/knowledge_base.json
+/player_roles.json
+/patch_dates.json
+/rework_patch_mapping.json
+/LoLSeries_2024_2025.csv
+/LoLSeriesGames_2024_2025.csv
+
+# IDE
+.idea/
+*.swp
