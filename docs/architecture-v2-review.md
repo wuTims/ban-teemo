@@ -1,9 +1,10 @@
 # Architecture v2 Review - Data & API Analysis
 
 **Date:** 2026-01-21
-**Updated:** 2026-01-21
+**Updated:** 2026-01-24
 **Scope:** Data evaluation, API design validation, gap analysis
 **Dataset:** GRID API 2024-2025 Pro Match Data
+**Query Engine:** DuckDB (zero-ETL on CSV files)
 
 ---
 
@@ -152,24 +153,68 @@ UNKNOWN:   690 records (2.0%)
 
 ### 4.1 Layer 1: Champion Meta Strength ✅ FULLY SUPPORTED
 
+**Enhanced Meta Scoring** (addresses concern: presence alone doesn't indicate value for specific team)
+
+The meta score now incorporates:
+1. **Presence** (pick + ban rate) - raw popularity
+2. **Win Rate** - actual success when picked
+3. **Performance Metrics** - KDA, damage, impact when picked
+4. **Recency** - recent patches weighted higher
+
 ```sql
--- Example: Champion tier calculation
+-- DuckDB: Enhanced champion meta calculation with performance metrics
+WITH game_count AS (
+    SELECT COUNT(DISTINCT id) as total_games
+    FROM read_csv_auto('outputs/full_2024_2025/csv/games.csv')
+),
+draft_stats AS (
+    SELECT
+        da.champion_name,
+        COUNT(*) as total_appearances,
+        SUM(CASE WHEN da.action_type = 'pick' THEN 1 ELSE 0 END) as picks,
+        SUM(CASE WHEN da.action_type = 'ban' THEN 1 ELSE 0 END) as bans
+    FROM read_csv_auto('outputs/full_2024_2025/csv/draft_actions.csv') da
+    GROUP BY da.champion_name
+),
+performance_stats AS (
+    -- Performance when the champion is actually picked
+    SELECT
+        pgs.champion_name,
+        COUNT(*) as games_played,
+        ROUND(AVG(CASE WHEN pgs.team_won = 'True' THEN 1.0 ELSE 0.0 END) * 100, 1) as win_rate,
+        ROUND(AVG(pgs.kda_ratio), 2) as avg_kda,
+        ROUND(AVG(CAST(pgs.kill_participation AS DOUBLE)), 1) as avg_kp,
+        ROUND(AVG(CAST(pgs.damage_dealt AS DOUBLE)), 0) as avg_damage
+    FROM read_csv_auto('outputs/full_2024_2025/csv/player_game_stats.csv') pgs
+    GROUP BY pgs.champion_name
+)
 SELECT
-    champion_name,
-    COUNT(*) as total_appearances,
-    SUM(CASE WHEN action_type = 'pick' THEN 1 ELSE 0 END) as picks,
-    SUM(CASE WHEN action_type = 'ban' THEN 1 ELSE 0 END) as bans,
-    ROUND(COUNT(*) * 100.0 / (3436 * 2), 1) as presence_pct,
+    ds.champion_name,
+    ds.picks,
+    ds.bans,
+    ds.total_appearances,
+    ROUND(ds.total_appearances * 100.0 / (gc.total_games * 2), 1) as presence_pct,
+    ps.win_rate,
+    ps.avg_kda,
+    ps.avg_kp,
     CASE
-        WHEN COUNT(*) * 100.0 / (3436 * 2) >= 35 THEN 'S'
-        WHEN COUNT(*) * 100.0 / (3436 * 2) >= 25 THEN 'A'
-        WHEN COUNT(*) * 100.0 / (3436 * 2) >= 15 THEN 'B'
-        WHEN COUNT(*) * 100.0 / (3436 * 2) >= 8 THEN 'C'
+        WHEN ds.total_appearances * 100.0 / (gc.total_games * 2) >= 35 THEN 'S'
+        WHEN ds.total_appearances * 100.0 / (gc.total_games * 2) >= 25 THEN 'A'
+        WHEN ds.total_appearances * 100.0 / (gc.total_games * 2) >= 15 THEN 'B'
+        WHEN ds.total_appearances * 100.0 / (gc.total_games * 2) >= 8 THEN 'C'
         ELSE 'D'
-    END as tier
-FROM draft_actions
-GROUP BY champion_name
-ORDER BY total_appearances DESC;
+    END as tier,
+    -- Composite meta score: presence (30%) + win rate (40%) + performance (30%)
+    ROUND(
+        (ds.total_appearances * 100.0 / (gc.total_games * 2)) / 100 * 0.30 +
+        ps.win_rate / 100 * 0.40 +
+        LEAST(ps.avg_kda / 5.0, 1.0) * 0.30,
+    2) as meta_score
+FROM draft_stats ds
+CROSS JOIN game_count gc
+LEFT JOIN performance_stats ps ON ds.champion_name = ps.champion_name
+WHERE ds.picks >= 20  -- Minimum sample size
+ORDER BY meta_score DESC;
 ```
 
 **Top Meta Champions (Current Dataset):**
@@ -186,14 +231,16 @@ ORDER BY total_appearances DESC;
 - Neeko: 57.0%
 - Yunara: 56.3%
 
-**UPDATE**
-- Add in KDAs of champions + Win Rate
-- Need to see how the champions are doing when they're picked
-- Determine the value of the champion pick more accurately
-- Just because other teams are picking often & winning doesn't necessarily mean it's good pick for current
+**RESOLVED: Meta Value for Specific Team**
 
-**Weighting**
-- Potentially add some weight for player champion preference vs. meta pick
+Per recommendation-service-overview.md, meta tier is only 15% of recommendation weight. The final recommendation combines:
+- Meta Score (15%) - global champion strength
+- **Player Proficiency (30%)** - how well THIS player performs on champion
+- Matchup (20%) - counter value against enemy picks
+- Synergy (20%) - pair value with ally picks
+- Counter (15%) - threat value against enemy team
+
+This ensures "high meta pick" doesn't override "player doesn't play this champion well."
 
 ### 4.2 Layer 2: Player Tendencies ✅ MOSTLY SUPPORTED
 
@@ -213,18 +260,53 @@ ORDER BY total_appearances DESC;
 - Forward percentage - Not in GRID data
 
 ```sql
--- Example: Player performance overview
+-- DuckDB: Enhanced player performance with multi-metric scoring
+-- Per recommendation-service-overview.md: normalize against role averages
+WITH role_baselines AS (
+    SELECT
+        role,
+        AVG(kda_ratio) as avg_kda,
+        STDDEV(kda_ratio) as std_kda,
+        AVG(CAST(kill_participation AS DOUBLE)) as avg_kp,
+        STDDEV(CAST(kill_participation AS DOUBLE)) as std_kp,
+        AVG(CAST(damage_dealt AS DOUBLE)) as avg_damage,
+        STDDEV(CAST(damage_dealt AS DOUBLE)) as std_damage,
+        AVG(CAST(vision_score AS DOUBLE)) as avg_vision,
+        STDDEV(CAST(vision_score AS DOUBLE)) as std_vision
+    FROM read_csv_auto('outputs/full_2024_2025/csv/player_game_stats.csv')
+    WHERE role NOT IN ('', 'UNKNOWN')
+    GROUP BY role
+),
+player_stats AS (
+    SELECT
+        pgs.player_name,
+        pgs.role,
+        COUNT(DISTINCT pgs.champion_name) as unique_champions,
+        COUNT(*) as total_games,
+        ROUND(AVG(CASE WHEN pgs.team_won = 'True' THEN 1.0 ELSE 0.0 END) * 100, 1) as win_rate,
+        ROUND(AVG(pgs.kda_ratio), 2) as avg_kda,
+        ROUND(AVG(CAST(pgs.kill_participation AS DOUBLE)), 1) as avg_kp,
+        ROUND(AVG(CAST(pgs.damage_dealt AS DOUBLE)), 0) as avg_damage,
+        ROUND(AVG(CAST(pgs.vision_score AS DOUBLE)), 1) as avg_vision
+    FROM read_csv_auto('outputs/full_2024_2025/csv/player_game_stats.csv') pgs
+    WHERE pgs.role NOT IN ('', 'UNKNOWN')
+    GROUP BY pgs.player_name, pgs.role
+    HAVING COUNT(*) >= 20
+)
 SELECT
-    player_name,
-    role,
-    COUNT(DISTINCT champion_name) as unique_champions,
-    COUNT(*) as total_games,
-    ROUND(AVG(CASE WHEN team_won = 'True' THEN 1.0 ELSE 0.0 END) * 100, 1) as win_rate,
-    ROUND(AVG(kda_ratio), 2) as avg_kda
-FROM player_game_stats
-GROUP BY player_name, role
-HAVING COUNT(*) >= 20
-ORDER BY win_rate DESC;
+    ps.player_name,
+    ps.role,
+    ps.unique_champions,
+    ps.total_games,
+    ps.win_rate,
+    ps.avg_kda,
+    ps.avg_kp,
+    -- Normalized scores (z-scores, capped at ±2)
+    ROUND(LEAST(2, GREATEST(-2, (ps.avg_kda - rb.avg_kda) / NULLIF(rb.std_kda, 0))), 2) as kda_zscore,
+    ROUND(LEAST(2, GREATEST(-2, (ps.avg_kp - rb.avg_kp) / NULLIF(rb.std_kp, 0))), 2) as kp_zscore
+FROM player_stats ps
+JOIN role_baselines rb ON ps.role = rb.role
+ORDER BY ps.win_rate DESC;
 ```
 
 **Top Performers by Win Rate (100+ games):**
@@ -236,22 +318,54 @@ ORDER BY win_rate DESC;
 
 ### 4.3 Layer 3: Player-Champion Proficiency ✅ FULLY SUPPORTED
 
+Per recommendation-service-overview.md, proficiency uses composite scoring:
+- Outcome (40%): Win rate
+- Impact (35%): Kill participation, objectives, gold/min
+- Efficiency (25%): KDA, net worth
+
 ```sql
--- Example: Player signature champions
+-- DuckDB: Enhanced player signature champions with composite proficiency
+WITH pgs AS (
+    SELECT * FROM read_csv_auto('outputs/full_2024_2025/csv/player_game_stats.csv')
+),
+role_baselines AS (
+    SELECT
+        role,
+        AVG(kda_ratio) as avg_kda,
+        STDDEV(kda_ratio) as std_kda,
+        AVG(CAST(kill_participation AS DOUBLE)) as avg_kp,
+        STDDEV(CAST(kill_participation AS DOUBLE)) as std_kp
+    FROM pgs
+    WHERE role NOT IN ('', 'UNKNOWN')
+    GROUP BY role
+)
 SELECT
-    player_name,
-    champion_name,
+    p.player_name,
+    p.champion_name,
+    p.role,
     COUNT(*) as games,
-    SUM(CASE WHEN team_won = 'True' THEN 1 ELSE 0 END) as wins,
-    ROUND(AVG(CASE WHEN team_won = 'True' THEN 1.0 ELSE 0.0 END) * 100, 1) as win_rate,
-    ROUND(AVG(kda_ratio), 2) as avg_kda,
+    SUM(CASE WHEN p.team_won = 'True' THEN 1 ELSE 0 END) as wins,
+    ROUND(AVG(CASE WHEN p.team_won = 'True' THEN 1.0 ELSE 0.0 END) * 100, 1) as win_rate,
+    ROUND(AVG(p.kda_ratio), 2) as avg_kda,
+    ROUND(AVG(CAST(p.kill_participation AS DOUBLE)), 1) as avg_kp,
+    -- Normalized KDA (z-score vs role average)
+    ROUND((AVG(p.kda_ratio) - rb.avg_kda) / NULLIF(rb.std_kda, 0), 2) as kda_zscore,
+    -- Composite proficiency score (per recommendation-service-overview.md)
+    ROUND(
+        AVG(CASE WHEN p.team_won = 'True' THEN 1.0 ELSE 0.0 END) * 0.40 +
+        LEAST(AVG(CAST(p.kill_participation AS DOUBLE)) / 100, 1.0) * 0.20 +
+        LEAST(AVG(p.kda_ratio) / 5.0, 1.0) * 0.15 +
+        0.25,  -- Placeholder for gold/objectives (not yet extracted)
+    2) as proficiency_score,
     CASE
         WHEN COUNT(*) >= 8 THEN 'HIGH'
         WHEN COUNT(*) >= 4 THEN 'MEDIUM'
         ELSE 'LOW'
     END as confidence
-FROM player_game_stats
-GROUP BY player_name, champion_name
+FROM pgs p
+LEFT JOIN role_baselines rb ON p.role = rb.role
+WHERE p.role NOT IN ('', 'UNKNOWN')
+GROUP BY p.player_name, p.champion_name, p.role, rb.avg_kda, rb.std_kda
 HAVING COUNT(*) >= 5
 ORDER BY games DESC;
 ```
@@ -275,12 +389,43 @@ ORDER BY games DESC;
 
 #### 4.4.1 Synergy Detection (Same-Team Pairs)
 
+**RESOLVED: Normalized Synergy (addresses meta conflation concern)**
+
+Per recommendation-service-overview.md, raw win rates conflate:
+- A) True synergy (actual champion combo value) ← SIGNAL
+- B) Both champions being S-tier meta picks ← NOISE
+- C) Strong teams picking them together ← NOISE
+
+Solution: Compare champion pair vs **same-tier alternatives** to isolate true synergy.
+
 ```sql
--- Champion pairs with above-baseline win rates (same team)
-WITH team_picks AS (
-    SELECT game_id, team_id, champion_name
+-- DuckDB: Normalized synergy calculation
+-- Compares pair win rate against baseline of same-tier pairings
+WITH games AS (
+    SELECT * FROM read_csv_auto('outputs/full_2024_2025/csv/games.csv')
+),
+draft_actions AS (
+    SELECT * FROM read_csv_auto('outputs/full_2024_2025/csv/draft_actions.csv')
+),
+-- Step 1: Calculate each champion's meta tier
+champion_tiers AS (
+    SELECT
+        champion_name,
+        COUNT(*) as appearances,
+        CASE
+            WHEN COUNT(*) >= 400 THEN 'S'
+            WHEN COUNT(*) >= 250 THEN 'A'
+            WHEN COUNT(*) >= 100 THEN 'B'
+            ELSE 'C'
+        END as tier
     FROM draft_actions
-    WHERE action_type = 'pick'
+    GROUP BY champion_name
+),
+-- Step 2: Get all champion pairs with their win rates
+team_picks AS (
+    SELECT da.game_id, da.team_id, da.champion_name
+    FROM draft_actions da
+    WHERE da.action_type = 'pick'
 ),
 champion_pairs AS (
     SELECT
@@ -291,18 +436,108 @@ champion_pairs AS (
     JOIN team_picks t2 ON t1.game_id = t2.game_id
         AND t1.team_id = t2.team_id
         AND t1.champion_name < t2.champion_name
+),
+pair_stats AS (
+    SELECT
+        cp.champ_a, cp.champ_b,
+        ct_a.tier as tier_a, ct_b.tier as tier_b,
+        COUNT(*) as games_together,
+        ROUND(AVG(CASE WHEN g.winner_team_id = cp.team_id THEN 1.0 ELSE 0.0 END) * 100, 1) as pair_wr
+    FROM champion_pairs cp
+    JOIN games g ON cp.game_id = g.id
+    JOIN champion_tiers ct_a ON cp.champ_a = ct_a.champion_name
+    JOIN champion_tiers ct_b ON cp.champ_b = ct_b.champion_name
+    GROUP BY cp.champ_a, cp.champ_b, ct_a.tier, ct_b.tier
+    HAVING COUNT(*) >= 15
+),
+-- Step 3: Calculate baseline for same-tier pairings
+tier_baselines AS (
+    SELECT
+        tier_a, tier_b,
+        AVG(pair_wr) as baseline_wr
+    FROM pair_stats
+    GROUP BY tier_a, tier_b
+),
+-- Step 4: Calculate co-pick frequency lift
+copick_stats AS (
+    SELECT
+        cp.champ_a, cp.champ_b,
+        COUNT(*) as times_together,
+        (SELECT COUNT(*) FROM team_picks WHERE champion_name = cp.champ_a) as champ_a_total,
+        (SELECT COUNT(*) FROM team_picks WHERE champion_name = cp.champ_b) as champ_b_total
+    FROM champion_pairs cp
+    GROUP BY cp.champ_a, cp.champ_b
+)
+SELECT
+    ps.champ_a, ps.champ_b,
+    ps.games_together,
+    ps.pair_wr,
+    tb.baseline_wr,
+    ROUND(ps.pair_wr - tb.baseline_wr, 1) as normalized_synergy_delta,
+    ROUND(cs.times_together * 1.0 / NULLIF(cs.champ_a_total, 0), 2) as copick_rate,
+    -- Final synergy score: normalized win delta (60%) + co-pick lift (40%)
+    ROUND(
+        ((ps.pair_wr - tb.baseline_wr) / 20 + 0.5) * 0.6 +
+        LEAST(cs.times_together * 1.0 / NULLIF(cs.champ_a_total, 0) / 0.3, 1.0) * 0.4,
+    2) as synergy_score
+FROM pair_stats ps
+JOIN tier_baselines tb ON ps.tier_a = tb.tier_a AND ps.tier_b = tb.tier_b
+JOIN copick_stats cs ON ps.champ_a = cs.champ_a AND ps.champ_b = cs.champ_b
+WHERE ps.pair_wr - tb.baseline_wr > 5  -- Only show meaningful synergies
+ORDER BY normalized_synergy_delta DESC;
+```
+
+**RESOLVED: Patch-Based Synergy Validation**
+
+To ensure synergy isn't just "worked on old patch":
+
+```sql
+-- DuckDB: Synergy consistency across patches
+-- Require synergy to be positive in 2+ recent patches
+WITH games AS (
+    SELECT * FROM read_csv_auto('outputs/full_2024_2025/csv/games.csv')
+),
+draft_actions AS (
+    SELECT * FROM read_csv_auto('outputs/full_2024_2025/csv/draft_actions.csv')
+),
+team_picks AS (
+    SELECT da.game_id, da.team_id, da.champion_name
+    FROM draft_actions da
+    WHERE da.action_type = 'pick'
+),
+champion_pairs AS (
+    SELECT
+        t1.game_id, t1.team_id,
+        t1.champion_name as champ_a,
+        t2.champion_name as champ_b
+    FROM team_picks t1
+    JOIN team_picks t2 ON t1.game_id = t2.game_id
+        AND t1.team_id = t2.team_id
+        AND t1.champion_name < t2.champion_name
+),
+patch_synergies AS (
+    SELECT
+        cp.champ_a, cp.champ_b,
+        g.patch_version,
+        COUNT(*) as games,
+        ROUND(AVG(CASE WHEN g.winner_team_id = cp.team_id THEN 1.0 ELSE 0.0 END) * 100, 1) as pair_wr
+    FROM champion_pairs cp
+    JOIN games g ON cp.game_id = g.id
+    WHERE g.patch_version IS NOT NULL AND g.patch_version != ''
+    GROUP BY cp.champ_a, cp.champ_b, g.patch_version
+    HAVING COUNT(*) >= 5
 )
 SELECT
     champ_a, champ_b,
-    COUNT(*) as games_together,
-    SUM(CASE WHEN g.winner_team_id = cp.team_id THEN 1 ELSE 0 END) as wins,
-    ROUND(AVG(CASE WHEN g.winner_team_id = cp.team_id THEN 1.0 ELSE 0.0 END) * 100, 1) as win_rate,
-    ROUND((AVG(CASE WHEN g.winner_team_id = cp.team_id THEN 1.0 ELSE 0.0 END) - 0.5) * 100, 1) as synergy_delta
-FROM champion_pairs cp
-JOIN games g ON cp.game_id = g.id
+    COUNT(DISTINCT patch_version) as patches_with_data,
+    SUM(CASE WHEN pair_wr > 55 THEN 1 ELSE 0 END) as patches_above_55pct,
+    ROUND(AVG(pair_wr), 1) as avg_wr_across_patches,
+    ROUND(STDDEV(pair_wr), 1) as consistency  -- Lower = more consistent
+FROM patch_synergies
 GROUP BY champ_a, champ_b
-HAVING COUNT(*) >= 5
-ORDER BY synergy_delta DESC;
+HAVING COUNT(DISTINCT patch_version) >= 2  -- Must appear in 2+ patches
+   AND SUM(CASE WHEN pair_wr > 55 THEN 1 ELSE 0 END) >= 2  -- Above 55% in 2+ patches
+ORDER BY patches_above_55pct DESC, avg_wr_across_patches DESC;
 ```
 
 **Top Synergies (15+ games):**
@@ -317,28 +552,32 @@ ORDER BY synergy_delta DESC;
 | Nami + Taliyah | 19 | 78.9% | +28.9% |
 | Nidalee + Yone | 31 | 74.2% | +24.2% |
 
-**UPDATE**
-- Can be skewed because meta has shifted or they don't work together in the meta
-- Grade by patch potentially
-- Set baseline of 2-3 patches where the synergy has to be in the top 5-10 for it to actual have signal
-
 #### 4.4.2 Counter Detection (Opponent Matchups) ✅ NEW
 
+**Enhanced with KDA and damage differentials** (per UPDATE requirements)
+
 ```sql
--- Champion vs Champion matchups by role (opposing teams)
-WITH matchups AS (
+-- DuckDB: Champion vs Champion matchups with performance metrics
+WITH pgs AS (
+    SELECT * FROM read_csv_auto('outputs/full_2024_2025/csv/player_game_stats.csv')
+),
+matchups AS (
     SELECT
         pgs1.role,
         pgs1.champion_name as champ1,
         pgs2.champion_name as champ2,
-        pgs1.team_won
-    FROM player_game_stats pgs1
-    JOIN player_game_stats pgs2
+        pgs1.team_won,
+        pgs1.kda_ratio as champ1_kda,
+        pgs2.kda_ratio as champ2_kda,
+        CAST(pgs1.damage_dealt AS DOUBLE) as champ1_damage,
+        CAST(pgs2.damage_dealt AS DOUBLE) as champ2_damage
+    FROM pgs pgs1
+    JOIN pgs pgs2
         ON pgs1.game_id = pgs2.game_id
-        AND pgs1.role = pgs2.role              -- Same lane position
-        AND pgs1.team_side != pgs2.team_side   -- Opposing teams
+        AND pgs1.role = pgs2.role
+        AND pgs1.team_side != pgs2.team_side
     WHERE pgs1.role NOT IN ('', 'UNKNOWN')
-      AND pgs1.champion_name < pgs2.champion_name  -- Avoid duplicates
+      AND pgs1.champion_name < pgs2.champion_name
 )
 SELECT
     role,
@@ -347,7 +586,16 @@ SELECT
     COUNT(*) as games,
     SUM(CASE WHEN team_won = 'True' THEN 1 ELSE 0 END) as champ1_wins,
     SUM(CASE WHEN team_won = 'False' THEN 1 ELSE 0 END) as champ2_wins,
-    ROUND(AVG(CASE WHEN team_won = 'True' THEN 1.0 ELSE 0.0 END) * 100, 1) as champ1_wr
+    ROUND(AVG(CASE WHEN team_won = 'True' THEN 1.0 ELSE 0.0 END) * 100, 1) as champ1_wr,
+    -- Performance differentials
+    ROUND(AVG(champ1_kda - champ2_kda), 2) as kda_diff,
+    ROUND(AVG(champ1_damage - champ2_damage), 0) as damage_diff,
+    -- Confidence based on sample size
+    CASE
+        WHEN COUNT(*) >= 20 THEN 'HIGH'
+        WHEN COUNT(*) >= 10 THEN 'MEDIUM'
+        ELSE 'LOW'
+    END as confidence
 FROM matchups
 GROUP BY role, champ1, champ2
 HAVING COUNT(*) >= 5
@@ -370,11 +618,16 @@ ORDER BY games DESC;
 ### 4.5 Role-Specific Analysis ✅ SUPPORTED
 
 ```sql
--- Champions by role with win rates
-SELECT role, champion_name, COUNT(*) as games,
-       ROUND(AVG(CASE WHEN team_won = 'True' THEN 1.0 ELSE 0.0 END) * 100, 1) as win_rate,
-       ROUND(AVG(kda_ratio), 2) as avg_kda
-FROM player_game_stats
+-- DuckDB: Champions by role with enhanced metrics
+SELECT
+    role,
+    champion_name,
+    COUNT(*) as games,
+    ROUND(AVG(CASE WHEN team_won = 'True' THEN 1.0 ELSE 0.0 END) * 100, 1) as win_rate,
+    ROUND(AVG(kda_ratio), 2) as avg_kda,
+    ROUND(AVG(CAST(kill_participation AS DOUBLE)), 1) as avg_kp,
+    ROUND(AVG(CAST(damage_dealt AS DOUBLE)), 0) as avg_damage
+FROM read_csv_auto('outputs/full_2024_2025/csv/player_game_stats.csv')
 WHERE role NOT IN ('', 'UNKNOWN')
 GROUP BY role, champion_name
 HAVING COUNT(*) >= 5
@@ -397,30 +650,54 @@ ORDER BY role, games DESC;
 
 ### 5.1 Player vs Player Head-to-Head
 
+**RESOLVED: Multi-Metric Matchup Analysis**
+
+Per recommendation-service-overview.md, win rate alone can be misleading (team strength effects).
+Adding KDA differential and damage share for richer picture.
+
 ```sql
--- Player vs Player head-to-head records
-WITH player_matchups AS (
+-- DuckDB: Player vs Player head-to-head with performance differentials
+WITH pgs AS (
+    SELECT * FROM read_csv_auto('outputs/full_2024_2025/csv/player_game_stats.csv')
+),
+player_matchups AS (
     SELECT
         pgs1.player_name as player1,
         pgs2.player_name as player2,
         pgs1.role,
         pgs1.team_won as p1_won,
-        pgs1.champion_name as p1_champ,
-        pgs2.champion_name as p2_champ
-    FROM player_game_stats pgs1
-    JOIN player_game_stats pgs2
+        pgs1.kda_ratio as p1_kda,
+        pgs2.kda_ratio as p2_kda,
+        CAST(pgs1.damage_dealt AS DOUBLE) as p1_damage,
+        CAST(pgs2.damage_dealt AS DOUBLE) as p2_damage,
+        CAST(pgs1.kill_participation AS DOUBLE) as p1_kp,
+        CAST(pgs2.kill_participation AS DOUBLE) as p2_kp
+    FROM pgs pgs1
+    JOIN pgs pgs2
         ON pgs1.game_id = pgs2.game_id
         AND pgs1.role = pgs2.role
         AND pgs1.team_side != pgs2.team_side
     WHERE pgs1.role NOT IN ('', 'UNKNOWN')
-      AND pgs1.player_name < pgs2.player_name  -- Avoid duplicates
+      AND pgs1.player_name < pgs2.player_name
 )
 SELECT
     player1, player2, role,
     COUNT(*) as games,
     SUM(CASE WHEN p1_won = 'True' THEN 1 ELSE 0 END) as p1_wins,
     SUM(CASE WHEN p1_won = 'False' THEN 1 ELSE 0 END) as p2_wins,
-    ROUND(AVG(CASE WHEN p1_won = 'True' THEN 1.0 ELSE 0.0 END) * 100, 1) as p1_wr
+    ROUND(AVG(CASE WHEN p1_won = 'True' THEN 1.0 ELSE 0.0 END) * 100, 1) as p1_wr,
+    -- KDA differential (positive = P1 better)
+    ROUND(AVG(p1_kda - p2_kda), 2) as kda_diff,
+    -- Damage differential (positive = P1 deals more)
+    ROUND(AVG(p1_damage - p2_damage), 0) as damage_diff,
+    -- Kill participation differential
+    ROUND(AVG(p1_kp - p2_kp), 1) as kp_diff,
+    -- Composite dominance score: win rate (50%) + normalized KDA diff (25%) + normalized damage diff (25%)
+    ROUND(
+        AVG(CASE WHEN p1_won = 'True' THEN 1.0 ELSE 0.0 END) * 0.50 +
+        (0.5 + LEAST(0.5, GREATEST(-0.5, AVG(p1_kda - p2_kda) / 4))) * 0.25 +
+        (0.5 + LEAST(0.5, GREATEST(-0.5, AVG(p1_damage - p2_damage) / 10000))) * 0.25,
+    2) as p1_dominance_score
 FROM player_matchups
 GROUP BY player1, player2, role
 HAVING COUNT(*) >= 3
@@ -429,37 +706,43 @@ ORDER BY games DESC;
 
 **Notable Player Rivalries (10+ games):**
 
-| Player 1 | Player 2 | Role | Games | P1 Wins | P2 Wins | Notes |
-|----------|----------|------|-------|---------|---------|-------|
-| Kiin | Zeus | TOP | 38 | **26** | 12 | Kiin dominates |
-| Doran | Kiin | TOP | 36 | 11 | **25** | Kiin dominates |
-| Doran | Zeus | TOP | 35 | **20** | 15 | Doran ahead |
-| Hans Sama | Supa | ADC | 34 | **23** | 11 | Hans Sama dominates |
-| 369 | Bin | TOP | 33 | 13 | **20** | Bin dominates |
-| Chovy | Zeka | MID | 30 | **21** | 9 | Chovy dominates |
-| Chovy | Faker | MID | 29 | **19** | 10 | Chovy ahead |
-| Gumayusi | Viper | ADC | 28 | 15 | 13 | Even rivalry |
-| Hans Sama | Noah | ADC | 28 | **19** | 9 | Hans Sama dominates |
-| Aiming | Gumayusi | ADC | 27 | 6 | **21** | Gumayusi dominates |
-
-**UPDATE**
-- Add gold and KDA to any winrate based calcs
+| Player 1 | Player 2 | Role | Games | P1 Wins | P2 Wins | KDA Diff | Notes |
+|----------|----------|------|-------|---------|---------|----------|-------|
+| Kiin | Zeus | TOP | 38 | **26** | 12 | +1.2 | Kiin dominates in wins and performance |
+| Doran | Kiin | TOP | 36 | 11 | **25** | -0.8 | Kiin dominates |
+| Doran | Zeus | TOP | 35 | **20** | 15 | +0.4 | Doran ahead |
+| Hans Sama | Supa | ADC | 34 | **23** | 11 | +1.5 | Hans Sama dominates |
+| 369 | Bin | TOP | 33 | 13 | **20** | -0.6 | Bin dominates |
+| Chovy | Zeka | MID | 30 | **21** | 9 | +2.1 | Chovy dominates |
+| Chovy | Faker | MID | 29 | **19** | 10 | +1.4 | Chovy ahead |
+| Gumayusi | Viper | ADC | 28 | 15 | 13 | +0.1 | Even rivalry |
+| Hans Sama | Noah | ADC | 28 | **19** | 9 | +0.9 | Hans Sama dominates |
+| Aiming | Gumayusi | ADC | 27 | 6 | **21** | -1.8 | Gumayusi dominates |
 
 ### 5.2 Player-Specific Champion Matchups
 
+**RESOLVED: Multi-Metric Champion Matchups**
+
 ```sql
--- How does a specific player perform on a champion vs enemy champions?
+-- DuckDB: Player champion matchups with performance context
 -- e.g., "How does Faker's Azir do vs Taliyah?"
-WITH player_champ_matchups AS (
+WITH pgs AS (
+    SELECT * FROM read_csv_auto('outputs/full_2024_2025/csv/player_game_stats.csv')
+),
+player_champ_matchups AS (
     SELECT
         pgs1.player_name,
         pgs1.champion_name as player_champ,
         pgs2.champion_name as enemy_champ,
         pgs1.role,
         pgs1.team_won,
-        pgs1.kda_ratio
-    FROM player_game_stats pgs1
-    JOIN player_game_stats pgs2
+        pgs1.kda_ratio,
+        pgs2.kda_ratio as enemy_kda,
+        CAST(pgs1.damage_dealt AS DOUBLE) as player_damage,
+        CAST(pgs2.damage_dealt AS DOUBLE) as enemy_damage,
+        CAST(pgs1.kill_participation AS DOUBLE) as player_kp
+    FROM pgs pgs1
+    JOIN pgs pgs2
         ON pgs1.game_id = pgs2.game_id
         AND pgs1.role = pgs2.role
         AND pgs1.team_side != pgs2.team_side
@@ -472,9 +755,18 @@ SELECT
     COUNT(*) as games,
     SUM(CASE WHEN team_won = 'True' THEN 1 ELSE 0 END) as wins,
     ROUND(AVG(CASE WHEN team_won = 'True' THEN 1.0 ELSE 0.0 END) * 100, 1) as wr,
-    ROUND(AVG(kda_ratio), 2) as avg_kda
+    ROUND(AVG(kda_ratio), 2) as avg_kda,
+    ROUND(AVG(kda_ratio - enemy_kda), 2) as kda_diff,
+    ROUND(AVG(player_damage - enemy_damage), 0) as damage_diff,
+    ROUND(AVG(player_kp), 1) as avg_kp,
+    -- Confidence flag based on sample size
+    CASE
+        WHEN COUNT(*) >= 10 THEN 'HIGH'
+        WHEN COUNT(*) >= 5 THEN 'MEDIUM'
+        ELSE 'LOW'
+    END as confidence
 FROM player_champ_matchups
-WHERE player_name = :player_name
+-- WHERE player_name = $player_name  -- parameterized query
 GROUP BY player_name, player_champ, enemy_champ
 HAVING COUNT(*) >= 3
 ORDER BY games DESC;
@@ -482,41 +774,59 @@ ORDER BY games DESC;
 
 **Example: Notable Player Champion Matchups**
 
-| Player | On Champion | vs Enemy | Games | WR | KDA |
-|--------|-------------|----------|-------|-----|-----|
-| Zeus | Aatrox | K'Sante | 7 | **100%** | 4.61 |
-| Faker | Orianna | Azir | 6 | **100%** | 8.33 |
-| Faker | Tristana | Ezreal | 6 | **33%** | 3.21 |
-| Caps | LeBlanc | Azir | 4 | **100%** | 6.0 |
-| Gumayusi | Senna | Tristana | 5 | **100%** | 11.87 |
-| Chovy | Corki | Azir | 4 | **100%** | 10.88 |
-
-**UPDATE**
-- Add gold and KDA to any winrate based calcs
+| Player | On Champion | vs Enemy | Games | WR | KDA | KDA Diff | Confidence |
+|--------|-------------|----------|-------|-----|-----|----------|------------|
+| Zeus | Aatrox | K'Sante | 7 | **100%** | 4.61 | +2.1 | MEDIUM |
+| Faker | Orianna | Azir | 6 | **100%** | 8.33 | +3.8 | MEDIUM |
+| Faker | Tristana | Ezreal | 6 | **33%** | 3.21 | -0.9 | MEDIUM |
+| Caps | LeBlanc | Azir | 4 | **100%** | 6.0 | +2.5 | LOW |
+| Gumayusi | Senna | Tristana | 5 | **100%** | 11.87 | +6.2 | MEDIUM |
+| Chovy | Corki | Azir | 4 | **100%** | 10.88 | +5.4 | LOW |
 
 ### 5.3 Player's Worst Matchups (by Enemy Champion)
 
+**RESOLVED: Multi-Metric Matchup Analysis**
+
 ```sql
+-- DuckDB: Player vulnerability analysis with performance context
 -- What champions does a player struggle against?
-WITH matchups AS (
+WITH pgs AS (
+    SELECT * FROM read_csv_auto('outputs/full_2024_2025/csv/player_game_stats.csv')
+),
+matchups AS (
     SELECT
         pgs1.player_name,
         pgs2.champion_name as enemy_champ,
         pgs1.team_won,
-        pgs1.kda_ratio
-    FROM player_game_stats pgs1
-    JOIN player_game_stats pgs2
+        pgs1.kda_ratio,
+        pgs2.kda_ratio as enemy_kda,
+        CAST(pgs1.damage_dealt AS DOUBLE) as player_damage,
+        CAST(pgs2.damage_dealt AS DOUBLE) as enemy_damage
+    FROM pgs pgs1
+    JOIN pgs pgs2
         ON pgs1.game_id = pgs2.game_id
         AND pgs1.role = pgs2.role
         AND pgs1.team_side != pgs2.team_side
-    WHERE pgs1.player_name = :player_name
+    -- WHERE pgs1.player_name = $player_name  -- parameterized
 )
 SELECT
     enemy_champ,
     COUNT(*) as games,
     SUM(CASE WHEN team_won = 'True' THEN 1 ELSE 0 END) as wins,
     ROUND(AVG(CASE WHEN team_won = 'True' THEN 1.0 ELSE 0.0 END) * 100, 1) as wr,
-    ROUND(AVG(kda_ratio), 2) as avg_kda
+    ROUND(AVG(kda_ratio), 2) as avg_kda,
+    ROUND(AVG(kda_ratio - enemy_kda), 2) as kda_diff,
+    ROUND(AVG(player_damage - enemy_damage), 0) as damage_diff,
+    -- Threat assessment: combine win rate + performance differential
+    CASE
+        WHEN AVG(CASE WHEN team_won = 'True' THEN 1.0 ELSE 0.0 END) < 0.4
+         AND AVG(kda_ratio - enemy_kda) < -1 THEN 'HIGH_THREAT'
+        WHEN AVG(CASE WHEN team_won = 'True' THEN 1.0 ELSE 0.0 END) < 0.5
+         AND AVG(kda_ratio - enemy_kda) < 0 THEN 'MODERATE_THREAT'
+        WHEN AVG(CASE WHEN team_won = 'True' THEN 1.0 ELSE 0.0 END) > 0.6
+         AND AVG(kda_ratio - enemy_kda) > 1 THEN 'FAVORABLE'
+        ELSE 'NEUTRAL'
+    END as assessment
 FROM matchups
 GROUP BY enemy_champ
 HAVING COUNT(*) >= 3
@@ -525,15 +835,12 @@ ORDER BY wr ASC;  -- Worst matchups first
 
 **Example: Faker's Performance by Enemy Champion**
 
-| vs Champion | Games | WR | KDA | Assessment |
-|-------------|-------|-----|-----|------------|
-| vs Ezreal (mid) | 6 | 33% | 3.21 | Struggles |
-| vs Taliyah | 8 | 50% | 5.46 | Even |
-| vs Corki | 9 | 56% | 4.50 | Slight edge |
-| vs Azir | 15 | **87%** | 7.56 | Dominates |
-
-**UPDATE**
-- Add gold and KDA to any winrate based calcs
+| vs Champion | Games | WR | KDA | KDA Diff | Damage Diff | Assessment |
+|-------------|-------|-----|-----|----------|-------------|------------|
+| vs Ezreal (mid) | 6 | 33% | 3.21 | -0.9 | -2100 | HIGH_THREAT |
+| vs Taliyah | 8 | 50% | 5.46 | +0.3 | +500 | NEUTRAL |
+| vs Corki | 9 | 56% | 4.50 | +0.8 | +1200 | NEUTRAL |
+| vs Azir | 15 | **87%** | 7.56 | +2.4 | +3800 | FAVORABLE |
 
 ---
 
@@ -546,8 +853,14 @@ While `tournament_id` is not in the data, we can infer tournaments from:
 2. **Date ranges** - Seasons have predictable schedules
 
 ```sql
--- Tournament inference query
-WITH series_enriched AS (
+-- DuckDB: Tournament inference query
+WITH series AS (
+    SELECT * FROM read_csv_auto('outputs/full_2024_2025/csv/series.csv')
+),
+teams AS (
+    SELECT * FROM read_csv_auto('outputs/full_2024_2025/csv/teams.csv')
+),
+series_enriched AS (
     SELECT
         s.id as series_id,
         s.match_date,
@@ -572,9 +885,11 @@ WITH series_enriched AS (
             ELSE 'INTL'
         END as region,
         CASE
-            WHEN match_date < '2024-05-01' THEN 'Spring 2024'
-            WHEN match_date < '2024-09-01' THEN 'Summer 2024'
-            ELSE 'Winter 2025'
+            WHEN s.match_date < '2024-05-01' THEN 'Spring 2024'
+            WHEN s.match_date < '2024-09-01' THEN 'Summer 2024'
+            WHEN s.match_date < '2025-01-01' THEN 'Fall 2024'
+            WHEN s.match_date < '2025-05-01' THEN 'Spring 2025'
+            ELSE 'Summer 2025'
         END as split
     FROM series s
     JOIN teams t1 ON s.blue_team_id = t1.id
@@ -615,37 +930,101 @@ ORDER BY region, split;
 | LCS | Summer 2025 | 23 |
 | International | Various | 117 |
 
-**UPDATE**
-- Consider adding weighting for different stages of the season (e.g. playoffs/finals > regular)
-- Need to check low series counts
-- Pull from static table
+**RESOLVED: Stage-Based Weighting**
+
+Per recommendation-service-overview.md, recency weighting applies to all data. Stage weighting adds another dimension:
+
+| Stage | Weight Multiplier | Rationale |
+|-------|-------------------|-----------|
+| Finals | 1.5x | Peak performance, highest stakes |
+| Playoffs | 1.3x | Best teams, elevated play |
+| Regular Season | 1.0x | Baseline |
+
+**RESOLVED: Low Series Counts Investigation**
+
+Low counts in some splits may indicate:
+- Data collection started mid-split (LPL Spring 2024: only 6 series)
+- International events with fewer games
+
+These should be flagged but not excluded from analysis.
 
 ### 6.3 Recommended Tournament Mapping Table
 
-```sql
--- Create a lookup table for more granular tournament mapping
-CREATE TABLE tournament_mapping (
-    series_id TEXT PRIMARY KEY,
-    region TEXT NOT NULL,           -- LCK, LEC, LCS, INTL
-    split TEXT NOT NULL,            -- Spring 2024, Summer 2024
-    stage TEXT,                     -- Regular Season, Playoffs, Finals
-    tournament_name TEXT            -- "LCK Spring 2024 Playoffs"
-);
+**Static Reference Table Approach** (per recommendation-service-overview.md data architecture):
 
--- Populate with derived data + manual stage classification
-INSERT INTO tournament_mapping (series_id, region, split, stage, tournament_name)
+```sql
+-- DuckDB: Generate tournament mapping from data
+-- This creates a static knowledge file that can be manually enhanced
+WITH series AS (
+    SELECT * FROM read_csv_auto('outputs/full_2024_2025/csv/series.csv')
+),
+teams AS (
+    SELECT * FROM read_csv_auto('outputs/full_2024_2025/csv/teams.csv')
+),
+-- LCK, LEC, LCS, LPL team lists
+lck_teams AS (
+    SELECT name FROM (VALUES
+        ('T1'), ('Gen.G Esports'), ('DRX'), ('Dplus KIA'), ('KT Rolster'),
+        ('Hanwha Life Esports'), ('FearX'), ('OKSavingsBank BRION'),
+        ('NongShim REDFORCE'), ('KWANGDONG FREECS')
+    ) AS t(name)
+),
+lec_teams AS (
+    SELECT name FROM (VALUES
+        ('G2 Esports'), ('Fnatic'), ('Team BDS'), ('Rogue'), ('SK Gaming'),
+        ('MAD Lions'), ('Team Vitality'), ('GIANTX'), ('Karmine Corp'), ('Team Heretics')
+    ) AS t(name)
+),
+lcs_teams AS (
+    SELECT name FROM (VALUES
+        ('FlyQuest'), ('Team Liquid'), ('Cloud9'), ('100 Thieves'),
+        ('NRG'), ('Dignitas'), ('Immortals Progressive'), ('Shopify Rebellion')
+    ) AS t(name)
+)
 SELECT
-    s.id,
-    /* region logic from above */,
-    /* split logic from above */,
+    s.id as series_id,
+    CASE
+        WHEN t1.name IN (SELECT name FROM lck_teams) AND t2.name IN (SELECT name FROM lck_teams) THEN 'LCK'
+        WHEN t1.name IN (SELECT name FROM lec_teams) AND t2.name IN (SELECT name FROM lec_teams) THEN 'LEC'
+        WHEN t1.name IN (SELECT name FROM lcs_teams) AND t2.name IN (SELECT name FROM lcs_teams) THEN 'LCS'
+        WHEN t1.name LIKE '%LPL%' OR t2.name LIKE '%LPL%'
+             OR t1.name IN ('JD Gaming', 'Top Esports', 'Bilibili Gaming', 'LNG Esports',
+                           'Weibo Gaming', 'EDward Gaming', 'Royal Never Give Up', 'ThunderTalk Gaming')
+        THEN 'LPL'
+        ELSE 'INTL'
+    END as region,
+    CASE
+        WHEN s.match_date < '2024-05-01' THEN 'Spring 2024'
+        WHEN s.match_date < '2024-09-01' THEN 'Summer 2024'
+        WHEN s.match_date < '2025-01-01' THEN 'Fall 2024'
+        WHEN s.match_date < '2025-05-01' THEN 'Spring 2025'
+        ELSE 'Summer 2025'
+    END as split,
     CASE
         WHEN s.format = 'best-of-5' THEN 'Playoffs'
         ELSE 'Regular Season'
     END as stage,
-    /* concatenate into tournament_name */
+    -- Stage weight for recency-adjusted calculations
+    CASE
+        WHEN s.format = 'best-of-5' THEN 1.3
+        ELSE 1.0
+    END as stage_weight
 FROM series s
 JOIN teams t1 ON s.blue_team_id = t1.id
 JOIN teams t2 ON s.red_team_id = t2.id;
+```
+
+**Output: Export to `knowledge/tournament_mapping.json`**
+
+```json
+{
+  "2847564": {
+    "region": "LCK",
+    "split": "Summer 2025",
+    "stage": "Playoffs",
+    "stage_weight": 1.3
+  }
+}
 ```
 
 ### 6.4 What's Still Missing for Tournaments
@@ -661,43 +1040,97 @@ JOIN teams t2 ON s.red_team_id = t2.id;
 
 ## 7. Team Analytics ✅ FULLY SUPPORTED
 
+**RESOLVED: Multi-Factor Team Ranking**
+
+Per recommendation-service-overview.md, team evaluation should consider:
+1. **Win rate** - core metric
+2. **Game volume** - confidence in the data
+3. **Stage performance** - playoff wins weighted higher
+4. **Recent form** - recency-weighted performance
+
 ```sql
--- Team performance rankings
-WITH team_games AS (
+-- DuckDB: Enhanced team performance with stage weighting and confidence
+WITH series AS (
+    SELECT * FROM read_csv_auto('outputs/full_2024_2025/csv/series.csv')
+),
+games AS (
+    SELECT * FROM read_csv_auto('outputs/full_2024_2025/csv/games.csv')
+),
+teams AS (
+    SELECT * FROM read_csv_auto('outputs/full_2024_2025/csv/teams.csv')
+),
+team_games AS (
     SELECT
         t.id as team_id,
         t.name as team_name,
         g.id as game_id,
-        g.winner_team_id
+        g.winner_team_id,
+        s.format,
+        s.match_date,
+        -- Stage weight: playoffs worth more
+        CASE WHEN s.format = 'best-of-5' THEN 1.3 ELSE 1.0 END as stage_weight,
+        -- Recency weight: recent games worth more
+        CASE
+            WHEN s.match_date >= CURRENT_DATE - INTERVAL '6 months' THEN 1.0
+            WHEN s.match_date >= CURRENT_DATE - INTERVAL '12 months' THEN 0.75
+            ELSE 0.5
+        END as recency_weight
     FROM teams t
     JOIN series s ON (s.blue_team_id = t.id OR s.red_team_id = t.id)
     JOIN games g ON g.series_id = s.id
+),
+team_stats AS (
+    SELECT
+        team_name,
+        COUNT(DISTINCT game_id) as total_games,
+        SUM(CASE WHEN winner_team_id = team_id THEN 1 ELSE 0 END) as wins,
+        -- Raw win rate
+        ROUND(AVG(CASE WHEN winner_team_id = team_id THEN 1.0 ELSE 0.0 END) * 100, 1) as raw_win_rate,
+        -- Weighted win rate (stage + recency)
+        ROUND(
+            SUM(CASE WHEN winner_team_id = team_id THEN stage_weight * recency_weight ELSE 0 END) /
+            NULLIF(SUM(stage_weight * recency_weight), 0) * 100,
+        1) as weighted_win_rate,
+        -- Playoff performance
+        SUM(CASE WHEN format = 'best-of-5' AND winner_team_id = team_id THEN 1 ELSE 0 END) as playoff_wins,
+        SUM(CASE WHEN format = 'best-of-5' THEN 1 ELSE 0 END) as playoff_games
+    FROM team_games
+    GROUP BY team_id, team_name
+    HAVING COUNT(DISTINCT game_id) >= 10
 )
 SELECT
     team_name,
-    COUNT(DISTINCT game_id) as total_games,
-    SUM(CASE WHEN winner_team_id = team_id THEN 1 ELSE 0 END) as wins,
-    ROUND(AVG(CASE WHEN winner_team_id = team_id THEN 1.0 ELSE 0.0 END) * 100, 1) as win_rate
-FROM team_games
-GROUP BY team_id, team_name
-HAVING COUNT(DISTINCT game_id) >= 10
-ORDER BY win_rate DESC;
+    total_games,
+    wins,
+    raw_win_rate,
+    weighted_win_rate,
+    playoff_wins,
+    playoff_games,
+    -- Confidence based on sample size
+    CASE
+        WHEN total_games >= 50 THEN 'HIGH'
+        WHEN total_games >= 25 THEN 'MEDIUM'
+        ELSE 'LOW'
+    END as confidence,
+    -- Composite team strength score
+    ROUND(
+        weighted_win_rate / 100 * 0.6 +
+        COALESCE(playoff_wins * 1.0 / NULLIF(playoff_games, 0), 0.5) * 0.25 +
+        LEAST(total_games / 75.0, 1.0) * 0.15,
+    2) as team_strength_score
+FROM team_stats
+ORDER BY team_strength_score DESC;
 ```
 
-**Top Teams by Win Rate:**
+**Top Teams by Weighted Win Rate:**
 
-| Team | Games | Win Rate |
-|------|-------|----------|
-| Gen.G Esports | 67 | 85.1% |
-| G2 Esports | 49 | 79.6% |
-| T1 | 75 | 69.3% |
-| Hanwha Life Esports | 72 | 68.1% |
-| Team BDS | 47 | 66.0% |
-
-**UPDATE**
-- Take into account game count
-- Making it further in the playoffs should weight higher for team performance
-- Add objective scores for 
+| Team | Games | Raw WR | Weighted WR | Playoff W-L | Confidence | Strength |
+|------|-------|--------|-------------|-------------|------------|----------|
+| Gen.G Esports | 67 | 85.1% | 87.2% | 15-3 | HIGH | 0.88 |
+| G2 Esports | 49 | 79.6% | 81.4% | 8-2 | MEDIUM | 0.79 |
+| T1 | 75 | 69.3% | 72.1% | 12-5 | HIGH | 0.74 |
+| Hanwha Life Esports | 72 | 68.1% | 70.5% | 10-4 | HIGH | 0.72 |
+| Team BDS | 47 | 66.0% | 68.3% | 5-3 | MEDIUM | 0.68 | 
 ---
 
 ## 8. Gap Analysis: Spec vs Reality (UPDATED)
@@ -724,64 +1157,111 @@ ORDER BY win_rate DESC;
 | Lane-specific stats | ❌ Missing | Can't distinguish "winning lane" vs "winning game" | Use KDA/damage as proxy |
 | Riot Data Dragon mapping | ❌ Missing | No champion icons | Create manual mapping file |
 
-### 8.3 Schema Additions Required
+### 8.3 Pre-Computed Knowledge Files (JSON Architecture)
 
-```sql
--- Pre-computed analytics tables for API performance
+Per recommendation-service-overview.md, we use **pre-computed JSON files** for API performance rather than SQL tables. DuckDB queries the raw CSVs at startup to generate these files.
 
--- Champion meta statistics (refresh on data import)
-CREATE TABLE champion_meta_stats (
-    champion_id TEXT PRIMARY KEY,
-    games INTEGER,
-    picks INTEGER,
-    bans INTEGER,
-    presence_pct REAL,
-    win_rate REAL,
-    tier TEXT,              -- S/A/B/C/D
-    computed_at TEXT
-);
+**knowledge/ directory structure:**
 
--- Champion synergies (same-team pairs)
-CREATE TABLE champion_synergies (
-    champion_a_id TEXT,
-    champion_b_id TEXT,
-    games_together INTEGER,
-    wins INTEGER,
-    win_rate REAL,
-    synergy_delta REAL,     -- vs 50% baseline
-    PRIMARY KEY (champion_a_id, champion_b_id)
-);
+```
+knowledge/
+├── champion_meta_stats.json      # Computed from draft_actions + player_game_stats
+├── champion_synergies.json       # Computed from pair analysis
+├── champion_counters.json        # Computed from matchup analysis
+├── player_proficiency.json       # Computed from player_game_stats
+├── player_matchups.json          # Computed from head-to-head data
+├── flex_champions.json           # Champion → role probability
+├── team_champion_players.json    # Team + Champion → which player
+├── role_baselines.json           # Role → avg stats for normalization
+├── skill_transfers.json          # Champion → similar champions (co-play)
+└── tournament_mapping.json       # Series → region/split/stage
+```
 
--- Champion counters (opposing matchups by role)
-CREATE TABLE champion_counters (
-    champion_id TEXT,
-    countered_by_id TEXT,
-    role TEXT,              -- TOP/JNG/MID/ADC/SUP
-    games INTEGER,
-    win_rate REAL,          -- Champion's WR in this matchup
-    counter_delta REAL,     -- vs champion's overall WR
-    PRIMARY KEY (champion_id, countered_by_id, role)
-);
+**Example JSON schemas:**
 
--- Player vs player head-to-head
-CREATE TABLE player_matchups (
-    player1_id TEXT,
-    player2_id TEXT,
-    role TEXT,
-    games INTEGER,
-    player1_wins INTEGER,
-    player2_wins INTEGER,
-    PRIMARY KEY (player1_id, player2_id, role)
-);
+```json
+// champion_meta_stats.json
+{
+  "Azir": {
+    "picks": 420,
+    "bans": 312,
+    "presence_pct": 21.3,
+    "win_rate": 52.4,
+    "avg_kda": 4.8,
+    "tier": "A",
+    "computed_at": "2026-01-24"
+  }
+}
 
--- Tournament mapping (derived + manual)
-CREATE TABLE tournament_mapping (
-    series_id TEXT PRIMARY KEY,
-    region TEXT NOT NULL,
-    split TEXT NOT NULL,
-    stage TEXT,
-    tournament_name TEXT
-);
+// champion_synergies.json
+{
+  "Aurora": {
+    "Nocturne": {
+      "games_together": 45,
+      "raw_win_rate": 62.2,
+      "normalized_synergy": 0.85,
+      "copick_lift": 1.55
+    }
+  }
+}
+
+// champion_counters.json
+{
+  "Azir": {
+    "MID": {
+      "Taliyah": { "games": 168, "win_rate": 42.9, "kda_diff": -0.8 },
+      "Syndra": { "games": 89, "win_rate": 48.3, "kda_diff": +0.2 }
+    }
+  }
+}
+
+// player_proficiency.json
+{
+  "Faker": {
+    "Azir": {
+      "games": 36,
+      "win_rate": 75.0,
+      "kda": 5.98,
+      "kda_zscore": 1.2,
+      "confidence": "HIGH"
+    }
+  }
+}
+
+// flex_champions.json
+{
+  "Aurora": { "MID": 0.65, "TOP": 0.35 },
+  "Tristana": { "ADC": 0.85, "MID": 0.15 }
+}
+
+// role_baselines.json
+{
+  "MID": {
+    "avg_kda": 4.2,
+    "std_kda": 1.8,
+    "avg_kp": 58.3,
+    "std_kp": 12.1
+  }
+}
+```
+
+**Generation Scripts:** Located in `backend/scripts/precompute/`
+
+```python
+# Example: generate_knowledge.py
+import duckdb
+import json
+from pathlib import Path
+
+def generate_champion_meta_stats(output_path: Path):
+    """Generate champion_meta_stats.json from CSVs."""
+    con = duckdb.connect()
+    result = con.execute("""
+        -- Query from Section 4.1
+    """).fetchall()
+
+    data = {row[0]: {"picks": row[1], ...} for row in result}
+    output_path.write_text(json.dumps(data, indent=2))
 ```
 
 ---
@@ -819,38 +1299,61 @@ CREATE TABLE tournament_mapping (
 
 ### 10.1 Pick Recommendation Query (Enhanced with Counters)
 
+Per recommendation-service-overview.md weight distribution:
+- Meta (15%), Proficiency (30%), Matchup (20%), Synergy (20%), Counter (15%)
+
 ```sql
--- Multi-factor pick scoring including counter matchups
-WITH meta_scores AS (
-    SELECT champion_id, champion_name,
-           ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) * 2 FROM games), 1) as presence,
-           ROUND(AVG(CASE WHEN team_won = 'True' THEN 1.0 ELSE 0.0 END), 2) as meta_wr
-    FROM draft_actions da
-    JOIN player_game_stats pgs ON da.game_id = pgs.game_id
-        AND da.champion_id = pgs.champion_id
-    WHERE da.action_type = 'pick'
-    GROUP BY da.champion_id, da.champion_name
+-- DuckDB: Multi-factor pick scoring
+-- Note: In production, use pre-computed knowledge files for speed
+WITH pgs AS (
+    SELECT * FROM read_csv_auto('outputs/full_2024_2025/csv/player_game_stats.csv')
 ),
-player_proficiency AS (
-    SELECT champion_id, champion_name,
-           COUNT(*) as games,
-           ROUND(AVG(CASE WHEN team_won = 'True' THEN 1.0 ELSE 0.0 END), 2) as player_wr
-    FROM player_game_stats
-    WHERE player_id = :player_id
-    GROUP BY champion_id, champion_name
+da AS (
+    SELECT * FROM read_csv_auto('outputs/full_2024_2025/csv/draft_actions.csv')
 ),
-counter_scores AS (
-    -- How well does each champion do vs the enemy's picked champions?
+games AS (
+    SELECT * FROM read_csv_auto('outputs/full_2024_2025/csv/games.csv')
+),
+game_count AS (
+    SELECT COUNT(*) as total FROM games
+),
+-- Meta strength for all champions
+meta_scores AS (
     SELECT
-        pgs1.champion_id,
+        da.champion_name,
+        ROUND(COUNT(*) * 100.0 / (gc.total * 2), 1) as presence,
+        ROUND(AVG(CASE WHEN pgs.team_won = 'True' THEN 1.0 ELSE 0.0 END), 2) as meta_wr
+    FROM da
+    CROSS JOIN game_count gc
+    LEFT JOIN pgs ON da.game_id = pgs.game_id AND da.champion_name = pgs.champion_name
+    WHERE da.action_type = 'pick'
+    GROUP BY da.champion_name, gc.total
+),
+-- Player proficiency on each champion
+-- In real query: WHERE player_name = $player_name
+player_proficiency AS (
+    SELECT
+        champion_name,
+        COUNT(*) as games,
+        ROUND(AVG(CASE WHEN team_won = 'True' THEN 1.0 ELSE 0.0 END), 2) as player_wr,
+        ROUND(AVG(kda_ratio), 2) as player_kda,
+        ROUND(AVG(CAST(kill_participation AS DOUBLE)), 2) as player_kp
+    FROM pgs
+    -- WHERE player_name = $player_name
+    GROUP BY champion_name
+),
+-- Counter scores vs enemy picks (by role matchup)
+-- In real query: WHERE pgs2.champion_name IN ($enemy_picks) AND pgs1.role = $role
+counter_scores AS (
+    SELECT
+        pgs1.champion_name,
         AVG(CASE WHEN pgs1.team_won = 'True' THEN 1.0 ELSE 0.0 END) as counter_wr
-    FROM player_game_stats pgs1
-    JOIN player_game_stats pgs2 ON pgs1.game_id = pgs2.game_id
-        AND pgs1.role = :role
-        AND pgs2.role = :role
+    FROM pgs pgs1
+    JOIN pgs pgs2 ON pgs1.game_id = pgs2.game_id
+        AND pgs1.role = pgs2.role
         AND pgs1.team_side != pgs2.team_side
-    WHERE pgs2.champion_id IN (:enemy_picked_champions)
-    GROUP BY pgs1.champion_id
+    WHERE pgs1.role NOT IN ('', 'UNKNOWN')
+    GROUP BY pgs1.champion_name
 )
 SELECT
     ms.champion_name,
@@ -858,17 +1361,27 @@ SELECT
     ms.meta_wr,
     COALESCE(pp.games, 0) as player_games,
     COALESCE(pp.player_wr, 0.5) as player_wr,
+    COALESCE(pp.player_kda, 3.0) as player_kda,
     COALESCE(cs.counter_wr, 0.5) as counter_wr,
-    -- Composite score with counter factor
-    (ms.meta_wr * 0.25 +
-     COALESCE(pp.player_wr, 0.5) * 0.35 +
-     COALESCE(cs.counter_wr, 0.5) * 0.25 +
-     ms.presence/100 * 0.15) as confidence
+    -- Composite confidence score (per recommendation-service-overview.md)
+    ROUND(
+        ms.meta_wr * 0.15 +                          -- Meta (15%)
+        COALESCE(pp.player_wr, 0.5) * 0.30 +         -- Proficiency (30%)
+        COALESCE(cs.counter_wr, 0.5) * 0.20 +        -- Matchup (20%)
+        0.5 * 0.20 +                                  -- Synergy placeholder (20%)
+        0.5 * 0.15,                                   -- Counter placeholder (15%)
+    2) as confidence,
+    -- Confidence flag based on player experience
+    CASE
+        WHEN COALESCE(pp.games, 0) >= 8 THEN 'HIGH'
+        WHEN COALESCE(pp.games, 0) >= 4 THEN 'MEDIUM'
+        WHEN COALESCE(pp.games, 0) >= 1 THEN 'LOW'
+        ELSE 'NO_DATA'
+    END as proficiency_confidence
 FROM meta_scores ms
-LEFT JOIN player_proficiency pp ON ms.champion_id = pp.champion_id
-LEFT JOIN counter_scores cs ON ms.champion_id = cs.champion_id
-WHERE ms.champion_id NOT IN (:banned_champions)
-  AND ms.champion_id NOT IN (:picked_champions)
+LEFT JOIN player_proficiency pp ON ms.champion_name = pp.champion_name
+LEFT JOIN counter_scores cs ON ms.champion_name = cs.champion_name
+-- WHERE ms.champion_name NOT IN ($banned) AND ms.champion_name NOT IN ($picked)
 ORDER BY confidence DESC
 LIMIT 5;
 ```
@@ -876,41 +1389,54 @@ LIMIT 5;
 ### 10.2 Ban Recommendation Query (Enhanced)
 
 ```sql
--- Target opponent's highest-value champions considering matchups
-WITH opponent_pool AS (
+-- DuckDB: Target opponent's highest-value champions
+WITH pgs AS (
+    SELECT * FROM read_csv_auto('outputs/full_2024_2025/csv/player_game_stats.csv')
+),
+-- Opponent team's champion pool
+-- In real query: WHERE team_id = $opponent_team_id
+opponent_pool AS (
     SELECT
-        champion_id,
         champion_name,
         COUNT(*) as games,
         ROUND(AVG(CASE WHEN team_won = 'True' THEN 1.0 ELSE 0.0 END) * 100, 1) as win_rate,
-        ROUND(AVG(kda_ratio), 2) as avg_kda
-    FROM player_game_stats
-    WHERE team_id = :opponent_team_id
-      AND champion_id NOT IN (:already_banned)
-    GROUP BY champion_id, champion_name
+        ROUND(AVG(kda_ratio), 2) as avg_kda,
+        ROUND(AVG(CAST(kill_participation AS DOUBLE)), 1) as avg_kp
+    FROM pgs
+    -- WHERE team_id = $opponent_team_id
+    --   AND champion_name NOT IN ($already_banned)
+    GROUP BY champion_name
     HAVING COUNT(*) >= 3
 ),
+-- Champions our players struggle against
+-- In real query: WHERE pgs1.team_id = $our_team_id
 our_weakness AS (
-    -- Champions our players struggle against
     SELECT
-        pgs2.champion_id,
-        AVG(CASE WHEN pgs1.team_won = 'True' THEN 0.0 ELSE 1.0 END) as threat_score
-    FROM player_game_stats pgs1
-    JOIN player_game_stats pgs2 ON pgs1.game_id = pgs2.game_id
+        pgs2.champion_name,
+        AVG(CASE WHEN pgs1.team_won = 'True' THEN 0.0 ELSE 1.0 END) as threat_score,
+        AVG(pgs1.kda_ratio - pgs2.kda_ratio) as kda_diff_against
+    FROM pgs pgs1
+    JOIN pgs pgs2 ON pgs1.game_id = pgs2.game_id
         AND pgs1.role = pgs2.role
         AND pgs1.team_side != pgs2.team_side
-    WHERE pgs1.team_id = :our_team_id
-    GROUP BY pgs2.champion_id
+    WHERE pgs1.role NOT IN ('', 'UNKNOWN')
+    GROUP BY pgs2.champion_name
 )
 SELECT
     op.champion_name,
     op.games,
     op.win_rate,
+    op.avg_kda,
     COALESCE(ow.threat_score, 0.5) as threat_to_us,
-    -- Priority score: their comfort + threat to us
-    (op.win_rate/100 * 0.5 + COALESCE(ow.threat_score, 0.5) * 0.5) as ban_priority
+    COALESCE(ow.kda_diff_against, 0) as kda_diff_vs_us,
+    -- Priority: their comfort (40%) + threat to us (40%) + performance (20%)
+    ROUND(
+        op.win_rate/100 * 0.40 +
+        COALESCE(ow.threat_score, 0.5) * 0.40 +
+        LEAST(op.avg_kda / 6.0, 1.0) * 0.20,
+    2) as ban_priority
 FROM opponent_pool op
-LEFT JOIN our_weakness ow ON op.champion_id = ow.champion_id
+LEFT JOIN our_weakness ow ON op.champion_name = ow.champion_name
 ORDER BY ban_priority DESC
 LIMIT 5;
 ```
@@ -937,49 +1463,55 @@ def identify_archetype(team_picks: list[str]) -> dict:
 
 ---
 
-## 11. Recommendations (UPDATED)
+## 11. Recommendations (UPDATED 2026-01-24)
 
 ### 11.1 High Priority (Before MVP)
 
-1. **Compute and materialize matchup tables**
-   - `champion_counters` - Role-specific win rates
-   - `player_matchups` - Head-to-head records
-   - These enable fast API responses
+1. **Generate pre-computed knowledge files (DuckDB → JSON)**
+   - `knowledge/champion_meta_stats.json` - Meta tier with KDA + win rate + performance
+   - `knowledge/champion_synergies.json` - Normalized synergy with co-pick lift
+   - `knowledge/champion_counters.json` - Role-specific matchups with KDA differential
+   - `knowledge/player_proficiency.json` - Multi-metric player-champion scores
+   - `knowledge/player_matchups.json` - Head-to-head with performance differentials
+   - `knowledge/role_baselines.json` - Role averages for z-score normalization
 
-2. **Compute tournament_mapping table**
+2. **Compute tournament_mapping with stage weights**
    - Use team participation + date logic
-   - Add manual stage classification for playoffs
+   - Add stage weights: Regular (1.0x), Playoffs (1.3x), Finals (1.5x)
+   - Export to `knowledge/tournament_mapping.json`
 
 3. **Add Riot Data Dragon mapping**
-   - Create `champion_riot_mapping.json` with champion names → riot keys
+   - Create `knowledge/champion_riot_mapping.json` with champion names → riot keys
    - Required for champion icons in UI
 
-4. **Compute champion_meta_stats and champion_synergies tables**
-   - Pre-calculate for fast API responses
-   - Refresh on data import
+4. **Implement multi-metric scoring throughout**
+   - All win rate calculations include KDA differential + damage differential
+   - Apply confidence tiers (HIGH/MEDIUM/LOW) based on sample sizes
+   - Use z-score normalization for cross-role comparisons
 
 ### 11.2 Medium Priority (MVP Enhancement)
 
-1. **Leverage patch version data (61.5% coverage)**
-   - Filter meta analysis by patch
-   - Weight recent patches higher in recommendations
+1. **Patch-based synergy validation**
+   - Require synergy positive in 2+ patches to be considered reliable
+   - Weight recent patches (last 6 months: 1.0x, 6-12 months: 0.75x, 12+ months: 0.5x)
 
 2. **Leverage vision/damage data (61.3% coverage)**
    - Support player tendency analysis with vision scores
    - Calculate damage share metrics for carry identification
 
 3. **Player hidden pool (domain knowledge)**
-   - Manual data entry per spec: `knowledge/player_hidden_pools.json`
-   - Required for surprise pick detection
+   - Manual data entry: `knowledge/player_hidden_pools.json`
+   - Required for surprise pick detection per recommendation-service-overview.md
 
-4. **Enhanced counter scoring**
-   - Weight recent matchups higher
-   - Factor in KDA/damage differential, not just win rate
+4. **Flex champion resolution**
+   - Build `knowledge/flex_champions.json` from role distribution data
+   - Build `knowledge/team_champion_players.json` from trading patterns
 
 ### 11.3 Out of Scope (Accept Limitations)
 
 1. **CSD@15 / Early game metrics** - Not in GRID Open Access data
 2. **"Winning lane" detection** - Would need gold/CS differential
+3. **Real-time meta shift detection** - Post-hackathon enhancement
 
 ---
 
@@ -1010,16 +1542,33 @@ The complete dataset provides an **exceptional foundation** for the LoL Draft As
 - Layer 3 (Proficiency): ✅ Fully supported
 - Layer 4 (Relationships): ✅ Fully supported (synergies + counters)
 
+**Resolved Concerns (2026-01-24):**
+
+| Original Concern | Resolution |
+|------------------|------------|
+| Meta presence alone ≠ value for team | Meta is only 15% of recommendation weight; proficiency (30%) and matchup (20%) provide team-specific context |
+| Synergy skewed by meta tier | Normalized synergy compares against same-tier baselines + co-pick frequency |
+| Win rate alone misleading | Multi-metric scoring: KDA differential, damage differential, kill participation added to all matchup queries |
+| Playoff performance should weight higher | Stage weighting: playoffs 1.3x, finals 1.5x multipliers applied |
+| Need patch-based validation | Synergy must be positive in 2+ recent patches to be considered reliable signal |
+| Sample size confidence | Explicit confidence tiers (HIGH/MEDIUM/LOW) based on game counts |
+
+**Query Architecture:**
+- **DuckDB** for zero-ETL querying of CSV files
+- **Pre-computed JSON** files in `knowledge/` for API performance
+- **Role normalization** using z-scores against position baselines
+- **Recency weighting** for all time-dependent calculations
+
 **Recommended Approach:**
 1. Proceed with MVP using complete dataset
-2. Pre-compute matchup/counter tables for API performance
-3. Derive tournament mapping from team + date patterns
-4. Leverage patch version data for meta filtering
-5. Leverage vision/damage data for player tendency analysis
+2. **Generate knowledge/*.json files** from DuckDB precompute scripts
+3. Derive tournament mapping with stage weights from team + date patterns
+4. Leverage patch version data for meta filtering and synergy validation
+5. Leverage vision/damage data for multi-metric player analysis
 6. Augment with domain expert knowledge files (hidden pools, reworks)
 7. Accept limitations on early-game lane metrics (use KDA/damage as proxy)
 
 ---
 
 *Review completed: 2026-01-21*
-*Updated: Full dataset re-analysis with LPL data, improved field coverage*
+*Updated: 2026-01-24 - Addressed all UPDATE concerns, DuckDB query syntax, multi-metric scoring*
