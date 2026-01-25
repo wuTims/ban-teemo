@@ -47,19 +47,26 @@ import requests
 from datetime import datetime, timedelta
 from pathlib import Path
 from collections import defaultdict
-from typing import Optional, Dict, List, Tuple
+from typing import Optional, Dict, List, Tuple, Any
 
 # =============================================================================
 # Configuration (defaults - can be overridden via CLI or environment)
 # =============================================================================
 
 API_URL = "https://api-op.grid.gg/live-data-feed/series-state/graphql"
-RATE_LIMIT = 150  # requests per minute (Open Access limit is 180, using 150 for safety)
-DELAY = 60 / RATE_LIMIT + 0.05  # 0.45 seconds between requests
+RATE_LIMIT = None  # Deliberately disable client-side throttling to probe real limits
+DELAY = 0.0
 
 # Default paths (can be overridden via CLI)
 DEFAULT_OUTPUT_DIR = Path("./outputs")
-DEFAULT_INPUT_CSV = None  # No default - must provide via --input or --series
+DEFAULT_SERIES_CSV = Path("./LoLSeries_2024_2025.csv")
+DEFAULT_SERIES_GAMES_CSV = Path("./LoLSeriesGames_2024_2025.csv")
+if DEFAULT_SERIES_CSV.exists():
+    DEFAULT_INPUT_CSV = str(DEFAULT_SERIES_CSV)
+elif DEFAULT_SERIES_GAMES_CSV.exists():
+    DEFAULT_INPUT_CSV = str(DEFAULT_SERIES_GAMES_CSV)
+else:
+    DEFAULT_INPUT_CSV = None
 
 # Runtime config (set by CLI args or environment, then used to derive paths)
 API_KEY = os.environ.get("GRID_API_KEY", "")
@@ -70,6 +77,10 @@ CSV_DIR: Optional[Path] = None
 PROGRESS_FILE: Optional[Path] = None
 LOG_FILE: Optional[Path] = None
 RUN_CONFIG_FILE: Optional[Path] = None
+
+# Tournament context caches (loaded from LoLSeries_2024_2025.csv when available)
+TOURNAMENT_CONTEXT: Dict[str, Dict[str, str]] = {}
+TOURNAMENTS: Dict[str, Dict[str, str]] = {}
 
 # =============================================================================
 # GraphQL Queries
@@ -105,6 +116,10 @@ query SeriesState($seriesId: ID!) {
           id name participationStatus
           character { id name }
           kills deaths killAssistsGiven
+          ... on GamePlayerStateLol {
+            netWorth
+            objectives { id type }
+          }
         }
       }
     }
@@ -134,6 +149,10 @@ query SeriesState($seriesId: ID!) {
           id name participationStatus
           character { id name }
           kills deaths killAssistsGiven firstKill
+          ... on GamePlayerStateLol {
+            netWorth
+            objectives { id type }
+          }
         }
       }
     }
@@ -165,6 +184,8 @@ query SeriesState($seriesId: ID!) {
           character { id name }
           kills deaths killAssistsGiven firstKill
           ... on GamePlayerStateLol {
+            netWorth
+            objectives { id type }
             damageDealt
             experiencePoints
           }
@@ -199,6 +220,8 @@ query SeriesState($seriesId: ID!) {
           character { id name }
           kills deaths killAssistsGiven firstKill
           ... on GamePlayerStateLol {
+            netWorth
+            objectives { id type }
             damageDealt
             experiencePoints
             visionScore
@@ -235,6 +258,48 @@ query SeriesState($seriesId: ID!) {
           character { id name }
           kills deaths killAssistsGiven firstKill
           ... on GamePlayerStateLol {
+            netWorth
+            objectives { id type }
+            damageDealt
+            experiencePoints
+            visionScore
+            kdaRatio
+            killParticipation
+          }
+        }
+      }
+    }
+  }
+}
+""",
+    "v3.36": """
+query SeriesState($seriesId: ID!) {
+  seriesState(id: $seriesId) {
+    id version
+    title { nameShortened }
+    format started finished startedAt
+    teams { id name won score }
+    games {
+      id sequenceNumber started finished paused
+      clock { currentSeconds ticking }
+      titleVersion { name }
+      map { name }
+      draftActions {
+        id sequenceNumber type
+        drafter { id type }
+        draftable { id type name }
+      }
+      teams {
+        id name side won score kills deaths structuresDestroyed firstKill
+        objectives { id type }
+        players {
+          id name participationStatus
+          character { id name }
+          kills deaths killAssistsGiven firstKill
+          ... on GamePlayerStateLol {
+            netWorth
+            moneyPerMinute
+            objectives { id type }
             damageDealt
             experiencePoints
             visionScore
@@ -272,6 +337,10 @@ query SeriesState($seriesId: ID!) {
           character { id name }
           kills deaths killAssistsGiven firstKill
           ... on GamePlayerStateLol {
+            roles { id }
+            netWorth
+            moneyPerMinute
+            objectives { id type }
             damageDealt
             experiencePoints
             visionScore
@@ -369,7 +438,8 @@ def run_exists(run_id: str) -> bool:
 
 
 def save_run_config(input_source: str, series_ids: Optional[List[str]] = None,
-                    limit: Optional[int] = None):
+                    limit: Optional[int] = None,
+                    tournament_context_source: Optional[str] = None):
     """Save run configuration to run_config.json."""
     config = {
         "run_id": RUN_DIR.name,
@@ -378,6 +448,7 @@ def save_run_config(input_source: str, series_ids: Optional[List[str]] = None,
         "series_ids": series_ids,
         "limit": limit,
         "api_endpoint": API_URL,
+        "tournament_context_source": tournament_context_source,
     }
     with open(RUN_CONFIG_FILE, 'w') as f:
         json.dump(config, f, indent=2)
@@ -435,8 +506,61 @@ def load_series_ids(csv_path: str) -> List[str]:
     with open(csv_path, 'r', encoding='utf-8-sig') as f:
         reader = csv.DictReader(f)
         for row in reader:
-            series_ids.add(row['SeriesID'])
+            sid = row.get('SeriesID')
+            if sid:
+                series_ids.add(sid)
     return sorted(list(series_ids))
+
+
+def load_tournament_context(csv_path: Optional[str]) -> Tuple[Dict[str, Dict[str, str]], Dict[str, Dict[str, str]], Optional[str]]:
+    """Load tournament mapping from a CSV with TournamentID/TournamentName columns."""
+    candidate_paths: List[Path] = []
+
+    if csv_path:
+        candidate_paths.append(Path(csv_path))
+    if DEFAULT_SERIES_CSV.exists():
+        default_path = DEFAULT_SERIES_CSV
+        if not candidate_paths or candidate_paths[0] != default_path:
+            candidate_paths.append(default_path)
+
+    for path in candidate_paths:
+        if not path.exists():
+            continue
+
+        with open(path, 'r', encoding='utf-8-sig') as f:
+            reader = csv.DictReader(f)
+            fieldnames = set(reader.fieldnames or [])
+            has_context = {'SeriesID', 'TournamentID', 'TournamentName'}.issubset(fieldnames)
+            if not has_context:
+                continue
+
+            context: Dict[str, Dict[str, str]] = {}
+            tournaments: Dict[str, Dict[str, str]] = {}
+
+            for row in reader:
+                sid = row.get('SeriesID')
+                tid = row.get('TournamentID')
+                tname = row.get('TournamentName')
+                scheduled = row.get('StartTimeScheduled')
+
+                if not sid:
+                    continue
+
+                context[sid] = {
+                    'tournament_id': tid or '',
+                    'tournament_name': tname or '',
+                    'scheduled_start_time': scheduled or '',
+                }
+
+                if tid:
+                    tournaments[tid] = {
+                        'id': tid,
+                        'name': tname or '',
+                    }
+
+            return context, tournaments, str(path)
+
+    return {}, {}, None
 
 
 def select_query_for_version(version_str: str) -> str:
@@ -448,6 +572,8 @@ def select_query_for_version(version_str: str) -> str:
     
     if version_tuple >= (3, 43):
         return QUERIES["v3.43"]
+    elif version_tuple >= (3, 36):
+        return QUERIES["v3.36"]
     elif version_tuple >= (3, 35):
         return QUERIES["v3.35"]
     elif version_tuple >= (3, 30):
@@ -600,50 +726,27 @@ def process_series(
 # Data Export
 # =============================================================================
 
-def infer_role_from_champion(champion_name: str) -> str:
-    """Infer role from champion pick."""
-    TOP = {'Aatrox', 'Ambessa', 'Aurora', 'Camille', 'Cho\'Gath', 'Darius', 'Dr. Mundo', 'Fiora', 
-           'Gangplank', 'Garen', 'Gnar', 'Gragas', 'Gwen', 'Illaoi', 'Irelia', 'Jax', 'Jayce',
-           'K\'Sante', 'Kayle', 'Kennen', 'Kled', 'Malphite', 'Mordekaiser', 'Nasus', 'Olaf',
-           'Ornn', 'Quinn', 'Renekton', 'Riven', 'Rumble', 'Sett', 'Shen', 'Singed', 'Sion',
-           'Tahm Kench', 'Teemo', 'Trundle', 'Tryndamere', 'Urgot', 'Volibear', 'Warwick',
-           'Wukong', 'Yasuo', 'Yone', 'Yorick'}
-    JNG = {'Amumu', 'Bel\'Veth', 'Brand', 'Briar', 'Diana', 'Ekko', 'Elise', 'Evelynn',
-           'Fiddlesticks', 'Graves', 'Hecarim', 'Ivern', 'Jarvan IV', 'Karthus', 'Kayn',
-           'Kha\'Zix', 'Kindred', 'Lee Sin', 'Lillia', 'Maokai', 'Master Yi', 'Nidalee',
-           'Nocturne', 'Nunu & Willump', 'Poppy', 'Rek\'Sai', 'Rengar', 'Sejuani', 'Shaco',
-           'Shyvana', 'Skarner', 'Talon', 'Udyr', 'Vi', 'Viego', 'Xin Zhao', 'Zac'}
-    MID = {'Ahri', 'Akali', 'Akshan', 'Anivia', 'Annie', 'Aurelion Sol', 'Azir', 'Cassiopeia',
-           'Corki', 'Fizz', 'Galio', 'Hwei', 'Kassadin', 'Katarina', 'LeBlanc', 'Lissandra',
-           'Lux', 'Malzahar', 'Naafiri', 'Neeko', 'Orianna', 'Qiyana', 'Ryze', 'Syndra',
-           'Sylas', 'Taliyah', 'Twisted Fate', 'Veigar', 'Vex', 'Viktor', 'Vladimir',
-           'Xerath', 'Zed', 'Ziggs', 'Zoe'}
-    ADC = {'Aphelios', 'Ashe', 'Caitlyn', 'Draven', 'Ezreal', 'Jhin', 'Jinx', 'Kai\'Sa',
-           'Kalista', 'Kog\'Maw', 'Lucian', 'Miss Fortune', 'Nilah', 'Samira', 'Senna',
-           'Sivir', 'Smolder', 'Tristana', 'Twitch', 'Varus', 'Vayne', 'Xayah', 'Zeri'}
-    SUP = {'Alistar', 'Bard', 'Blitzcrank', 'Braum', 'Janna', 'Karma', 'Leona', 'Lulu',
-           'Milio', 'Morgana', 'Nami', 'Nautilus', 'Pyke', 'Rakan', 'Rell', 'Renata Glasc',
-           'Seraphine', 'Sona', 'Soraka', 'Taric', 'Thresh', 'Yuumi', 'Zilean', 'Zyra'}
-    
-    if champion_name in TOP: return 'TOP'
-    elif champion_name in JNG: return 'JNG'
-    elif champion_name in MID: return 'MID'
-    elif champion_name in ADC: return 'ADC'
-    elif champion_name in SUP: return 'SUP'
-    return 'UNKNOWN'
-
-
-def extract_and_export(raw_data: Dict[str, Dict]):
+def extract_and_export(
+    raw_data: Dict[str, Dict],
+    tournament_context: Optional[Dict[str, Dict[str, str]]] = None,
+    tournaments: Optional[Dict[str, Dict[str, str]]] = None,
+):
     """Extract entities from raw data and export to CSVs."""
-    
+
+    tournament_context = tournament_context or {}
+    tournaments = tournaments or {}
+
     teams = {}
     players = {}
     champions = {}
     series_list = []
     games_list = []
     draft_actions_list = []
+    team_objectives_list = []
     player_game_stats_list = []
     player_teams = defaultdict(lambda: {"team_id": None, "team_name": None})
+    player_roles = defaultdict(lambda: None)  # Track most recent role per player
+    tournament_series_counts: Dict[str, int] = defaultdict(int)
     
     for series_id, response in raw_data.items():
         if "errors" in response or not response.get("data", {}).get("seriesState"):
@@ -651,6 +754,17 @@ def extract_and_export(raw_data: Dict[str, Dict]):
         
         series = response["data"]["seriesState"]
         version = series.get("version", "3.0")
+
+        series_ctx = tournament_context.get(series_id, {})
+        tournament_id = series_ctx.get("tournament_id", "")
+        tournament_name = series_ctx.get("tournament_name", "")
+        scheduled_start_time = series_ctx.get("scheduled_start_time", "")
+        if tournament_id:
+            tournament_series_counts[tournament_id] += 1
+            if tournament_id not in tournaments:
+                tournaments[tournament_id] = {"id": tournament_id, "name": tournament_name}
+
+        match_date = series.get("startedAt") or scheduled_start_time or ""
         
         for team in series.get("teams", []):
             teams[team["id"]] = {"id": team["id"], "name": team["name"]}
@@ -663,11 +777,13 @@ def extract_and_export(raw_data: Dict[str, Dict]):
         
         series_list.append({
             "id": series_id,
-            "tournament_id": None,
+            "tournament_id": tournament_id or None,
+            "tournament_name": tournament_name,
+            "scheduled_start_time": scheduled_start_time,
             "blue_team_id": blue_team_id,
             "red_team_id": red_team_id,
             "format": series.get("format", ""),
-            "match_date": series.get("startedAt", ""),
+            "match_date": match_date,
             "started": series.get("started", False),
             "finished": series.get("finished", False),
             "schema_version": version
@@ -707,24 +823,66 @@ def extract_and_export(raw_data: Dict[str, Dict]):
             for team in game.get("teams", []):
                 team_id = team.get("id", "")
                 team_kills = team.get("kills", 0)
+
+                objectives = team.get("objectives") or []
+                for obj in objectives:
+                    if isinstance(obj, dict):
+                        obj_id = obj.get("id", "")
+                        obj_type = obj.get("type", "")
+                    else:
+                        obj_id = str(obj)
+                        obj_type = str(obj)
+
+                    team_objectives_list.append({
+                        "game_id": game_id,
+                        "series_id": series_id,
+                        "team_id": team_id,
+                        "team_side": team.get("side", ""),
+                        "team_won": team.get("won", False),
+                        "objective_id": obj_id,
+                        "objective_type": obj_type,
+                    })
                 
-                for player in team.get("players", []):
+                # Standard role order in pro LoL data: Top, Jungle, Mid, Bot, Support
+                POSITION_TO_ROLE = ["top", "jungle", "mid", "bot", "support"]
+
+                for player_idx, player in enumerate(team.get("players", [])):
                     player_id = player.get("id", "")
                     champ_id = player.get("character", {}).get("id", "")
                     champ_name = player.get("character", {}).get("name", "")
-                    
+
                     players[player_id] = {"id": player_id, "name": player.get("name", "")}
                     player_teams[player_id] = {"team_id": team_id, "team_name": team.get("name", "")}
-                    
+
                     if champ_id:
                         champions[champ_id] = {"id": champ_id, "name": champ_name}
-                    
+
                     kills = player.get("kills", 0)
                     deaths = player.get("deaths", 0)
                     assists = player.get("killAssistsGiven", 0)
-                    
-                    roles = player.get("roles", [])
-                    role = roles[0].get("id", "UNKNOWN") if roles else infer_role_from_champion(champ_name)
+
+                    # Try to get role from GRID data first
+                    roles_raw: Any = player.get("roles")
+                    role = None
+                    roles_json = None
+                    if roles_raw:
+                        roles_json = json.dumps(roles_raw, ensure_ascii=True)
+                        first_role = roles_raw[0] if isinstance(roles_raw, list) else roles_raw
+                        if isinstance(first_role, dict):
+                            role = first_role.get("id") or first_role.get("name")
+                        else:
+                            role = str(first_role)
+
+                    # Fall back to positional inference if no role from API
+                    if not role and player_idx < len(POSITION_TO_ROLE):
+                        role = POSITION_TO_ROLE[player_idx]
+
+                    # Track player role (most recent game's role)
+                    if role:
+                        player_roles[player_id] = role
+
+                    player_objectives = player.get("objectives")
+                    player_objectives_json = json.dumps(player_objectives, ensure_ascii=True) if player_objectives else None
                     
                     kda = player.get("kdaRatio") or ((kills + assists) / max(deaths, 1))
                     kp = player.get("killParticipation")
@@ -742,6 +900,10 @@ def extract_and_export(raw_data: Dict[str, Dict]):
                         "champion_id": champ_id,
                         "champion_name": champ_name,
                         "role": role,
+                        "roles_json": roles_json,
+                        "net_worth": player.get("netWorth"),
+                        "money_per_minute": player.get("moneyPerMinute"),
+                        "player_objectives": player_objectives_json,
                         "kills": kills,
                         "deaths": deaths,
                         "assists": assists,
@@ -757,6 +919,16 @@ def extract_and_export(raw_data: Dict[str, Dict]):
     for pid, p in players.items():
         p["team_id"] = player_teams[pid]["team_id"]
         p["team_name"] = player_teams[pid]["team_name"]
+        p["role"] = player_roles[pid]
+
+    tournaments_list = []
+    for tid, count in tournament_series_counts.items():
+        tinfo = tournaments.get(tid, {})
+        tournaments_list.append({
+            "id": tid,
+            "name": tinfo.get("name", ""),
+            "series_count": count,
+        })
     
     def write_csv(data, filename, fieldnames):
         if not data:
@@ -771,26 +943,50 @@ def extract_and_export(raw_data: Dict[str, Dict]):
     
     log("Exporting CSVs...")
     write_csv(list(teams.values()), "teams.csv", ["id", "name"])
-    write_csv(list(players.values()), "players.csv", ["id", "name", "team_id", "team_name"])
+    write_csv(list(players.values()), "players.csv", ["id", "name", "role", "team_id", "team_name"])
     write_csv(list(champions.values()), "champions.csv", ["id", "name"])
-    write_csv(series_list, "series.csv", 
-              ["id", "tournament_id", "blue_team_id", "red_team_id", "format", "match_date", "started", "finished", "schema_version"])
+    write_csv(tournaments_list, "tournaments.csv", ["id", "name", "series_count"])
+    write_csv(
+        series_list,
+        "series.csv",
+        [
+            "id",
+            "tournament_id",
+            "blue_team_id",
+            "red_team_id",
+            "format",
+            "match_date",
+            "started",
+            "finished",
+            "schema_version",
+            "tournament_name",
+            "scheduled_start_time",
+        ],
+    )
     write_csv(games_list, "games.csv",
               ["id", "series_id", "game_number", "winner_team_id", "duration_seconds", "patch_version"])
     write_csv(draft_actions_list, "draft_actions.csv",
               ["game_id", "series_id", "sequence_number", "action_type", "team_id", "champion_id", "champion_name"])
+    write_csv(
+        team_objectives_list,
+        "team_objectives.csv",
+        ["game_id", "series_id", "team_id", "team_side", "team_won", "objective_id", "objective_type"],
+    )
     write_csv(player_game_stats_list, "player_game_stats.csv",
               ["game_id", "series_id", "player_id", "player_name", "team_id", "team_side", "team_won",
                "champion_id", "champion_name", "role", "kills", "deaths", "assists", "kda_ratio",
-               "kill_participation", "damage_dealt", "experience_points", "vision_score", "first_kill", "team_first_kill"])
+               "kill_participation", "damage_dealt", "experience_points", "vision_score", "first_kill", "team_first_kill",
+               "roles_json", "net_worth", "money_per_minute", "player_objectives"])
     
     return {
         "teams": len(teams),
         "players": len(players),
         "champions": len(champions),
+        "tournaments": len(tournaments_list),
         "series": len(series_list),
         "games": len(games_list),
         "draft_actions": len(draft_actions_list),
+        "team_objectives": len(team_objectives_list),
         "player_game_stats": len(player_game_stats_list)
     }
 
@@ -907,7 +1103,19 @@ def cmd_export():
         print("No data to export!")
         return
 
-    stats = extract_and_export(raw_data)
+    config = load_run_config() or {}
+    context_source = config.get("tournament_context_source") or config.get("input_source")
+    tournament_context, tournaments, context_used = load_tournament_context(context_source)
+
+    global TOURNAMENT_CONTEXT, TOURNAMENTS
+    TOURNAMENT_CONTEXT, TOURNAMENTS = tournament_context, tournaments
+
+    if context_used:
+        print(f"Tournament context: {context_used}")
+    else:
+        print("Tournament context: not available")
+
+    stats = extract_and_export(raw_data, tournament_context=tournament_context, tournaments=tournaments)
 
     print(f"\n=== Export Summary ===")
     print(f"Output directory: {CSV_DIR}")
@@ -928,16 +1136,6 @@ def cmd_fetch(input_csv: Optional[str] = None, limit: Optional[int] = None,
         is_new_run: Whether this is a new run (save config) or continuing existing
     """
     setup_directories()
-
-    # Save run config for new runs
-    if is_new_run:
-        if series_ids:
-            save_run_config("explicit_series_ids", series_ids=series_ids, limit=limit)
-        elif input_csv:
-            save_run_config(input_csv, limit=limit)
-        else:
-            print("ERROR: Must provide --input CSV file or --series IDs")
-            sys.exit(1)
 
     log(f"=== GRID API Series Fetcher v3 ===")
     log(f"Run: {RUN_DIR.name}")
@@ -975,6 +1173,30 @@ def cmd_fetch(input_csv: Optional[str] = None, limit: Optional[int] = None,
 
     total = len(all_series_ids)
     log(f"Total series to process: {total}")
+
+    tournament_context, tournaments, context_used = load_tournament_context(input_csv)
+    global TOURNAMENT_CONTEXT, TOURNAMENTS
+    TOURNAMENT_CONTEXT, TOURNAMENTS = tournament_context, tournaments
+
+    if context_used:
+        mapped_count = sum(1 for sid in all_series_ids if sid in tournament_context)
+        log(f"Tournament context: {mapped_count}/{total} mapped ({context_used})")
+    else:
+        log("Tournament context: not available")
+
+    if is_new_run:
+        if series_ids:
+            save_run_config(
+                "explicit_series_ids",
+                series_ids=series_ids,
+                limit=limit,
+                tournament_context_source=context_used,
+            )
+        elif input_csv:
+            save_run_config(input_csv, limit=limit, tournament_context_source=context_used)
+        else:
+            print("ERROR: Must provide --input CSV file or --series IDs")
+            sys.exit(1)
 
     progress = load_progress()
     if not progress.get("started_at"):
@@ -1200,8 +1422,10 @@ Examples:
                         help="List all available runs")
 
     # Data source
-    parser.add_argument("--input", type=str,
-                        help="Input CSV file with SeriesID column")
+    input_help = "Input CSV file with SeriesID column"
+    if DEFAULT_INPUT_CSV:
+        input_help += f" (default: {DEFAULT_INPUT_CSV})"
+    parser.add_argument("--input", type=str, help=input_help)
     parser.add_argument("--series", type=str,
                         help="Comma-separated list of specific series IDs to fetch")
     parser.add_argument("--limit", type=int,
@@ -1298,6 +1522,11 @@ Examples:
     if not API_KEY:
         print("ERROR: API key required. Provide via --api-key or set GRID_API_KEY environment variable.")
         sys.exit(1)
+
+    # Default to the tournament-context CSV when available
+    if is_new_run and not series_ids and not args.input and DEFAULT_INPUT_CSV:
+        args.input = DEFAULT_INPUT_CSV
+        print(f"Using default input CSV: {args.input}")
 
     # Validate input for new runs
     if is_new_run and not series_ids and not args.input:
