@@ -83,24 +83,24 @@ Since we can't guarantee a live match during judging, we'll build a **replay sys
 ```
 
 **MVP Features:**
-| Feature | Description | Effort |
+| Feature | Description | Status |
 |---------|-------------|--------|
-| Draft Tracker UI | Real-time ban/pick visualization | M |
-| Layered Analytics | Meta, tendencies, proficiency, synergies | L |
-| Pick Recommendations | Top 3-5 suggestions with confidence + flags | M |
-| Ban Recommendations | Opponent's highest-impact champions | S |
-| Surprise Pick Detection | Low sample but contextually strong picks | M |
-| Replay Mode | Step through historical drafts | M |
-| LLM Insights | Natural language draft commentary | M |
+| Draft Tracker UI | Real-time ban/pick visualization | ✅ Done |
+| Layered Analytics | Meta, tendencies, proficiency, synergies | 🔄 In Progress |
+| Pick Recommendations | Top 3-5 suggestions with confidence + flags | 🔄 In Progress |
+| Ban Recommendations | Opponent's highest-impact champions | 🔄 In Progress |
+| Surprise Pick Detection | Low sample but contextually strong picks | 🔄 In Progress |
+| Replay Mode | Step through historical drafts | ✅ Done |
+| LLM Insights | Natural language draft commentary | ⏳ Not Started |
 
 ### 2.2 Stretch Goals (Week 4 - if time)
 
-| Feature | Demo Impact | Effort |
+| Feature | Demo Impact | Status |
 |---------|-------------|--------|
-| **Post-Game Analysis** | "Here's what optimal draft would've been" | M |
-| **What-If Simulator** | Drag-drop to explore alternate drafts | L |
-| **Win Probability** | Live % that updates with each pick | M |
-| **Head-to-Head History** | "Last 5 times these teams met..." | S |
+| **Post-Game Analysis** | "Here's what optimal draft would've been" | ⏳ Not Started |
+| **What-If Simulator** | Drag-drop to explore alternate drafts | ⏳ Not Started |
+| **Win Probability** | Live % that updates with each pick | ⏳ Not Started |
+| **Head-to-Head History** | "Last 5 times these teams met..." | ⏳ Not Started |
 
 ### 2.3 Explicitly Out of Scope
 
@@ -114,6 +114,8 @@ Since we can't guarantee a live match during judging, we'll build a **replay sys
 ---
 
 ## 3. Technical Architecture
+
+> **Full Details:** See dedicated design documents in Appendix B
 
 ### 3.1 Tech Stack
 
@@ -135,17 +137,16 @@ Frontend:
 
 LLM:
   - Llama 3.1 70B via Groq or Together.ai
-  - ~$0.90/1M tokens
   - Fast inference for real-time insights
 
 Data:
   - Riot Data Dragon (champion icons)
   - GRID API (match data) - already extracted to CSV
   - DuckDB querying CSV files directly (zero ETL)
-  - Domain expert knowledge files (JSON/MD)
+  - Domain expert knowledge files (JSON)
 ```
 
-### 3.2 System Architecture
+### 3.2 High-Level Architecture
 
 ```
 ┌────────────────────────────────────────────────────────────────────┐
@@ -156,12 +157,8 @@ Data:
                             ▼
 ┌────────────────────────────────────────────────────────────────────┐
 │                        BACKEND (FastAPI)                           │
-│  /draft/live/{series_id}     - Stream draft updates                │
-│  /draft/replay/{series_id}   - Replay historical draft             │
-│  /recommend/pick             - Get pick recommendations            │
-│  /recommend/ban              - Get ban recommendations             │
-│  /insight/generate           - LLM-powered analysis                │
-│  /analysis/post-game         - Post-draft analysis (stretch)       │
+│  Services: Draft, Replay, Recommendation, Archetype, Synergy      │
+│  Knowledge: Pre-computed JSON files for fast lookups              │
 └───────────────────────────┬────────────────────────────────────────┘
                             │
         ┌───────────────────┼───────────────────┬────────────────────┐
@@ -169,267 +166,65 @@ Data:
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐    ┌───────────────┐
 │  GRID API    │    │   DuckDB     │    │  Llama 3.1   │    │ Domain Expert │
 │  (Live Data) │    │  (Analytics) │    │  (Insights)  │    │ Knowledge     │
-│              │    │  ↓ queries   │    │  via Groq    │    │ (JSON/MD)     │
-└──────────────┘    │  CSV Files   │    └──────────────┘    └───────────────┘
-                    └──────────────┘
+└──────────────┘    │  → CSV Files │    │  via Groq    │    │ (JSON)        │
+                    └──────────────┘    └──────────────┘    └───────────────┘
 ```
 
-### 3.3 Knowledge Directory Structure
+### 3.3 Data Setup
 
-Pre-computed analytics and reference data committed to the repository:
-
-```
-knowledge/
-├── # Computed Analytics (generated from GRID data)
-├── champion_counters.json     # Matchup win rates between champions
-├── champion_synergies.json    # Normalized synergy scores between champion pairs
-├── flex_champions.json        # Champions with multi-role probabilities
-├── meta_stats.json            # Current patch meta statistics
-├── patch_info.json            # Patch dates and game counts per patch
-├── player_proficiency.json    # Player performance metrics per champion
-├── role_baselines.json        # Statistical baselines for normalization by role
-├── skill_transfers.json       # Champion similarity from co-play patterns
-│
-├── # Reference Data
-├── knowledge_base.json        # Champion metadata (positions, damage types, stats)
-├── synergies.json             # Detailed synergy relationships
-├── player_roles.json          # Player primary role assignments
-├── patch_dates.json           # Patch version → date mapping
-└── rework_patch_mapping.json  # Champion rework history for data filtering
-```
-
-> **Implementation Details:** See [recommendation-service-architecture.md](./recommendation-service-architecture.md) Section 2.3 for the full knowledge file schema and data generation approach.
-
----
-
-## 4. Layered Analysis System
-
-### 4.1 Core Insight
-
-**Different analyses have different time sensitivities.**
-
-| Layer | Purpose | Time Range | Why |
-|-------|---------|------------|-----|
-| **Layer 1: Meta Strength** | Champion viability | Last 3-6 months | Patches change everything |
-| **Layer 2: Player Tendencies** | Playstyle indicators | 2-3 years | Habits persist across metas |
-| **Layer 3: Proficiency** | Player-champion mastery | 2-3 years, recency-weighted | Balance sample size + recency |
-| **Layer 4: Relationships** | Synergies & counters | 2-3 years | Need volume for significance |
-
-### 4.2 Recommendation Weighting
-
-The recommendation engine combines all layers with confidence-adjusted weights:
-
-| Factor | Base Weight | Notes |
-|--------|-------------|-------|
-| Meta Score | 15% | Global champion strength |
-| Proficiency | 30% | How well THIS player performs on champion |
-| Matchup | 20% | Counter value against enemy picks |
-| Synergy | 20% | Pair value with ally picks |
-| Counter | 15% | Threat value against enemy team |
-
-When data is uncertain (flex picks, low sample size), weights automatically redistribute toward more certain factors.
-
-> **Implementation Details:** See [recommendation-service-overview.md](./recommendation-service-overview.md) for the complete scoring algorithm, including flex pick resolution and uncertainty handling.
-
-### 4.3 Recency Weighting
-
-```
-Recent (0-12 months):  100% weight
-Older (12-24 months):  50% weight
-Ancient (24+ months):  25% weight
-```
-
-### 4.4 Confidence Levels
-
-| Games Played | Confidence | Behavior |
-|--------------|------------|----------|
-| 8+ games | HIGH | Trust proficiency score directly |
-| 4-7 games | MEDIUM | Trust with caution |
-| 1-3 games | LOW | Check contextual strength |
-| 0 games | NO DATA | Rely on skill transfer + context |
-
----
-
-## 5. Surprise Pick Detection
-
-A "surprise pick" is flagged when:
-- Player has low stage games on champion (< 3)
-- BUT other signals are strong (meta tier, counter value, synergy, style fit)
-
-### 5.1 Contextual Strength Signals
-
-When direct proficiency data is lacking, use:
-- **Meta tier** - Is this champion S/A-tier?
-- **Counter value** - Does it counter enemy picks?
-- **Synergy value** - Does it pair well with allies?
-- **Skill transfer** - Does player excel on similar champions?
-
-### 5.2 UI Representation
-
-| Proficiency | Flag | Display |
-|-------------|------|---------|
-| HIGH (8+ games) | None | "Zeus: 23 games, 67% WR" |
-| LOW + surprise eligible | `SURPRISE_PICK` | "2 stage games, but strong meta + style fit" |
-| LOW + weak context | `LOW_CONFIDENCE` | "Limited data, consider safer options" |
-
-> **Implementation Details:** See [recommendation-service-architecture.md](./recommendation-service-architecture.md) Section 5 for the proficiency scoring algorithm and contextual strength calculation.
-
----
-
-## 6. Data Foundation
-
-### 6.1 Available Data (Exceeds Targets)
-
-| Entity | Spec Target | Actual | Status |
-|--------|-------------|--------|--------|
-| Teams | ~30 | 57 | 1.9x target |
-| Players | ~150 | 445 | 3.0x target |
-| Champions | ~170 | 162 | Near complete |
-| Series | ~200 | 1,482 | 7.4x target |
-| Games | ~500 | 3,436 | 6.9x target |
-| Draft Actions | ~10,000 | 68,529 | 6.9x target |
-| Player Stats | ~5,000 | 34,416 | 6.9x target |
-
-**Regions Covered:** LCK (409), LEC (323), LCS (174), LPL (458), International (117)
-
-### 6.2 Layer Support Status
-
-| Layer | Status | Notes |
-|-------|--------|-------|
-| Layer 1 (Meta) | Fully supported | Pick/ban rates, win rates |
-| Layer 2 (Tendencies) | Mostly supported | Vision 61.3%, damage 61.3%, KP 96.3% |
-| Layer 3 (Proficiency) | Fully supported | KDA, win rate, games |
-| Layer 4 (Relationships) | Fully supported | Synergies + counters both calculable |
-
-### 6.3 Data Architecture
-
-DuckDB queries CSV files directly with zero ETL. Pre-computed JSON files in `knowledge/` provide fast API lookups.
-
-> **Implementation Details:** See [architecture-v2-review.md](./architecture-v2-review.md) for:
-> - Complete data quality assessment
-> - All DuckDB query patterns
-> - Gap analysis and workarounds
-> - Pre-computed knowledge file schemas
-
-> **Database Decision:** See [duckdb-analysis.md](./duckdb-analysis.md) for why DuckDB over SQLite/pandas.
-
-### 6.4 Data Setup
-
-**Quick Start:**
 ```bash
 ./scripts/download-data.sh
 ```
 
-This downloads the CSV data from GitHub releases to `outputs/full_2024_2025_v2/`.
+Downloads 114 MB CSV data from GitHub releases to `outputs/full_2024_2025_v2/`.
 
-**Data Releases:**
+| Entity | Records |
+|--------|---------|
+| Teams | 57 |
+| Players | 445 |
+| Series | 1,482 |
+| Games | 3,436 |
+| Draft Actions | 68,529 |
+| Player Stats | 34,416 |
 
-| Version | Tag | Contents |
-|---------|-----|----------|
-| v1.0.0 | `data-v1.0.0` | Full 2024-2025 season, v2 schema with team_objectives + tournaments |
-
-**CSV Schema (v2):**
-
-| File | Records | Description |
-|------|---------|-------------|
-| `champions.csv` | 162 | Champion metadata |
-| `draft_actions.csv` | 68K+ | All pick/ban actions |
-| `games.csv` | 3,436 | Game outcomes |
-| `player_game_stats.csv` | 34K+ | Player performance per game |
-| `players.csv` | 445 | Player roster |
-| `series.csv` | 1,482 | Series metadata |
-| `teams.csv` | 57 | Team info |
-| `team_objectives.csv` | NEW | Team objective stats per game |
-| `tournaments.csv` | NEW | Tournament metadata |
-
-**Version Bump Rules:**
-- Patch (`v1.0.1`): Bug fixes, re-fetch same timeframe
-- Minor (`v1.1.0`): New data fetched, same schema
-- Major (`v2.0.0`): Schema changes
+**Regions:** LCK (409), LEC (323), LCS (174), LPL (458), International (117)
 
 ---
 
-## 7. Draft Simulation Service
-
-The replay system is the core demo mechanism. It loads historical drafts and streams actions over WebSocket.
-
-### 7.1 Key Capabilities
-
-- Load any historical series/game from CSV data
-- Stream draft actions with configurable delays
-- Generate recommendations at each step
-- Support pause/resume/jump controls
-
-### 7.2 Draft Order Reference
-
-Standard pro draft (20 actions):
-- Bans 1-6 (alternating)
-- Picks 1-6 (B, RR, BB, R)
-- Bans 7-10 (RB, RB)
-- Picks 7-10 (R, BB, R)
-
-> **Implementation Details:** See [plans/2026-01-23-draft-simulation-service-design.md](./plans/2026-01-23-draft-simulation-service-design.md) for:
-> - Complete data models (DraftState, ReplaySession)
-> - Module structure
-> - API endpoints and WebSocket protocol
-> - DuckDB queries for loading data
-
----
-
-## 8. LLM Integration
-
-### 8.1 Model Selection
-
-| Model | Provider | Cost | Use Case |
-|-------|----------|------|----------|
-| Llama 3.1 70B | Groq | ~$0.59/1M in, $0.79/1M out | Production insights |
-| Llama 3.1 8B | Groq (free tier) | Free | Development/testing |
-| Mixtral 8x7B | Together.ai | ~$0.60/1M | Fallback option |
-
-**Recommendation:** Start with Groq free tier for development, upgrade to 70B for final demo.
-
-### 8.2 Prompt Design Principles
-
-- Provide full draft state context
-- Include team/player profiles from knowledge files
-- Include current meta context
-- Request specific, actionable insights (not hedging)
-- Limit response to 1-2 sentences
-
----
-
-## 9. Development Plan
+## 4. Development Plan
 
 ### Week 1: Foundation & Data
 - Project setup (repo, CI, uv, FastAPI skeleton) - ✅ Done
 - GRID API client - ✅ Done (68K+ records)
-- DuckDB analytics service + query functions
-- Domain expert: provide knowledge files (team profiles, archetypes)
-- Champion Data Dragon icon mapping
-- Knowledge file integration (JSON/MD loading)
+- DuckDB analytics service + query functions - ✅ Done
+- Domain expert: provide knowledge files - ✅ Done
+- Champion Data Dragon icon mapping - ✅ Done
+- Knowledge file generation - ✅ Done
 
 **Deliverable:** DuckDB analytics layer with all query functions, knowledge files ready
 
 ### Week 2: Core Backend Logic
-- Pick recommendation algorithm (all 4 layers)
-- Ban recommendation algorithm
-- Surprise pick detection logic
-- Replay controller (timer-driven action release)
-- WebSocket endpoint for draft streaming
-- REST endpoints for analytics
-- Comp archetype detection
+- Pick recommendation algorithm (all 4 layers) - 🔄 In Progress
+- Ban recommendation service with multi-factor scoring - 🔄 In Progress
+- Surprise pick detection logic - 🔄 In Progress
+- Archetype service (team comp classification + RPS matchups) - 🔄 In Progress
+- Synergy service (S/A/B/C rating multipliers) - 🔄 In Progress
+- Team evaluation service (cumulative scoring) - 🔄 In Progress
+- Replay controller (timer-driven action release) - ✅ Done
+- WebSocket endpoint for draft streaming - ✅ Done
+- REST endpoints for analytics - ✅ Done
 
-**Deliverable:** Backend that can replay drafts and generate layered recommendations
+**Deliverable:** Backend that can replay drafts and generate layered recommendations with team evaluation
 
 ### Week 3: Frontend & LLM
 - React app scaffold - ✅ Done
 - Data Dragon utilities + icon mapping - ✅ Done
-- Draft board component implementation
-- Recommendation panel component
-- LLM integration (Groq/Together client)
-- Insight prompt engineering + iteration
-- WebSocket client integration
-- Series selector / replay controls UI
+- Draft board component implementation - ✅ Done
+- Recommendation panel component - 🔄 In Progress
+- LLM integration (Groq/Together client) - ⏳ Not Started
+- Insight prompt engineering + iteration - ⏳ Not Started
+- WebSocket client integration - ✅ Done
+- Series selector / replay controls UI - ✅ Done
 
 **Deliverable:** Working end-to-end demo with AI insights
 
@@ -445,7 +240,7 @@ Standard pro draft (20 actions):
 
 ---
 
-## 10. Demo Script (3 minutes)
+## 5. Demo Script (3 minutes)
 
 ### 0:00-0:15 - Hook
 *"What if you had a pro analyst whispering in your ear during every draft?"*
@@ -490,7 +285,7 @@ Show: GitHub link, team credits
 
 ---
 
-## 11. Submission Checklist
+## 6. Submission Checklist
 
 - [ ] Public GitHub repo with MIT license
 - [ ] README with:
@@ -510,54 +305,28 @@ Show: GitHub link, team credits
 
 ---
 
-## 12. Domain Expert Request List
+## 7. Domain Expert Request List
 
 Please provide the following to maximize AI insight quality:
 
-### Required (Week 1)
-1. **Team profiles** for top 20 teams (LCK, LEC priority):
-   - Playstyle (aggressive/scaling/flexible)
-   - Draft tendencies
-   - Signature strategies
+### Required (Week 1) - ✅ Complete
+1. **Team profiles** for top 20 teams (LCK, LEC priority)
+2. **200 interesting series** to ingest
+3. **Current meta summary** (2025)
 
-2. **200 interesting series** to ingest:
-   - Series IDs or "Tournament + Teams + Game" identifiers
-   - Brief note on why (upset, draft diff, creative picks)
+### Required (Week 2) - ✅ Complete
+4. **Player hidden pools**
+5. **Comp archetype definitions**
+6. **Champion flex mappings**
 
-3. **Current meta summary** (2025):
-   - S/A tier champions by role
-   - What defines good drafts now
-   - Key strategic principles
+### Required (Week 3) - ⏳ Pending
+7. **Prompt review** - Review AI insights for accuracy
+8. **Draft rules document** - Phase-by-phase priorities
 
-### Required (Week 2)
-4. **Player hidden pools**:
-   - Champions players are known for but rarely pick on stage
-   - Solo queue comfort picks
-
-5. **Comp archetype definitions**:
-   - Champion markers for each archetype
-   - Win conditions
-   - Counter archetypes
-
-6. **Champion flex mappings**:
-   - Which champions flex to which roles
-   - "Trap" flexes to avoid
-
-### Required (Week 3)
-7. **Prompt review**:
-   - Review AI insights for accuracy
-   - Suggest domain-specific language
-   - Flag any nonsensical outputs
-
-8. **Draft rules document**:
-   - Phase-by-phase priorities
-   - Blue vs red side strategy
-   - Common mistakes to flag
-
-### Nice to Have
-9. **Champion rework dates** (for data filtering)
-10. **Skill transfer mappings** (if good at X, can play Y)
-11. **Red flag picks** (statistically okay but strategically bad)
+### Nice to Have - ✅ Complete
+9. **Champion rework dates** - In `knowledge/rework_patch_mapping.json`
+10. **Skill transfer mappings** - In `knowledge/skill_transfers.json`
+11. **Red flag picks** - TBD
 
 ---
 
@@ -576,20 +345,36 @@ Domain expert should prioritize:
 
 ---
 
-## Appendix B: Related Documents
+## Appendix B: Technical Design Documents
 
+This spec provides the project charter and high-level overview. Implementation details live in dedicated design documents:
+
+### Architecture & System Design
 | Document | Purpose |
 |----------|---------|
-| [recommendation-service-architecture.md](./recommendation-service-architecture.md) | Detailed scoring algorithms, flex pick resolution, data structures |
-| [recommendation-service-overview.md](./recommendation-service-overview.md) | High-level system overview, uncertainty handling, UI representation |
+| [recommendation-service-overview.md](./recommendation-service-overview.md) | System design: uncertainty handling, confidence weighting, flex pick resolution |
+| [recommendation-service-architecture.md](./recommendation-service-architecture.md) | Implementation: data structures, algorithms, service interfaces |
 | [architecture-v2-review.md](./architecture-v2-review.md) | Data quality analysis, DuckDB queries, gap analysis |
-| [duckdb-analysis.md](./duckdb-analysis.md) | Database technology decision |
-| [plans/2026-01-23-draft-simulation-service-design.md](./plans/2026-01-23-draft-simulation-service-design.md) | Draft replay service design |
+| [duckdb-analysis.md](./duckdb-analysis.md) | Database technology decision rationale |
+
+### Implementation Plans
+| Document | Purpose |
+|----------|---------|
+| [plans/2026-01-26-coach-mode-recommendation-system.md](./plans/2026-01-26-coach-mode-recommendation-system.md) | Coach mode with enemy pool analysis |
+| [plans/2026-01-26-recommendation-system-enhancements.md](./plans/2026-01-26-recommendation-system-enhancements.md) | Archetype system, synergy service, ban recommendations |
+| [plans/2026-01-25-computed-datasets-design.md](./plans/2026-01-25-computed-datasets-design.md) | Pre-computed knowledge file generation |
+| [plans/2026-01-25-data-organization-design.md](./plans/2026-01-25-data-organization-design.md) | GitHub release strategy for data files |
+| [plans/2026-01-24-frontend-draft-visualization.md](./plans/2026-01-24-frontend-draft-visualization.md) | Draft board UI components |
+| [plans/2026-01-23-draft-simulation-service-design.md](./plans/2026-01-23-draft-simulation-service-design.md) | Replay system architecture |
+
+### UI/UX
+| Document | Purpose |
+|----------|---------|
+| [lol-draft-assistant-style-guide.md](./lol-draft-assistant-style-guide.md) | Design guidelines and visual standards |
 
 ---
 
-*Spec Version: Hackathon v2.3 | January 2026*
+*Spec Version: Hackathon v3.0 | January 2026*
+*v3.0 changes: Slimmed to project charter; moved implementation details to dedicated design documents*
+*v2.4 changes: Added archetype system, ban scoring weights, team evaluation, updated knowledge files*
 *v2.3 changes: Refactored to high-level spec; moved implementation details to dedicated design documents*
-*v2.2 changes: Added DuckDB + FastAPI async/sync implementation patterns*
-*v2.1 changes: Switched from SQLite to DuckDB for zero-ETL CSV querying*
-*v2.0: Layered analysis, recency weighting, surprise pick detection, open source LLM, domain knowledge integration*

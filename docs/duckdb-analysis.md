@@ -118,7 +118,7 @@ def get_champion_meta():
 The key insight: self-join `player_game_stats` where `game_id` matches, `role` matches, but `team_side` differs.
 
 ```python
-def get_champion_counters(champion: str, role: str, min_games: int = 3):
+def get_matchup_stats(champion: str, role: str, min_games: int = 3):
     return duckdb.query(f"""
         SELECT
             pgs2.champion_name as enemy_champion,
@@ -249,13 +249,13 @@ def champion_meta(
     return df.to_dict(orient="records")
 
 
-@app.get("/champions/{champion}/counters")
-def champion_counters(
+@app.get("/champions/{champion}/matchups")
+def matchup_stats(
     champion: str,
     role: str = Query(..., description="Role: TOP, JUNGLE, MID, ADC, SUPPORT"),
     min_games: int = Query(3)
 ):
-    df = get_champion_counters(champion, role, min_games)
+    df = get_matchup_stats(champion, role, min_games)
     return df.to_dict(orient="records")
 
 

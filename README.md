@@ -134,7 +134,7 @@ ban-teemo/
 │       └── utils/             # Data Dragon helpers
 │
 ├── knowledge/                  # Pre-computed analytics (JSON)
-│   ├── champion_counters.json # Role-specific matchup win rates
+│   ├── matchup_stats.json # Role-specific matchup win rates
 │   ├── champion_synergies.json # Normalized pair synergies
 │   ├── player_proficiency.json # Player-champion performance
 │   ├── flex_champions.json    # Champion role distributions
@@ -192,7 +192,7 @@ The `knowledge/` directory contains pre-computed analytics for fast API lookups:
 
 | File | Description |
 |------|-------------|
-| `champion_counters.json` | Role-specific matchup win rates |
+| `matchup_stats.json` | Role-specific matchup win rates |
 | `champion_synergies.json` | Normalized synergy scores |
 | `player_proficiency.json` | Player-champion performance metrics |
 | `flex_champions.json` | Champion role probability distributions |

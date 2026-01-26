@@ -1167,7 +1167,7 @@ Per recommendation-service-overview.md, we use **pre-computed JSON files** for A
 knowledge/
 ├── champion_meta_stats.json      # Computed from draft_actions + player_game_stats
 ├── champion_synergies.json       # Computed from pair analysis
-├── champion_counters.json        # Computed from matchup analysis
+├── matchup_stats.json        # Computed from matchup analysis
 ├── player_proficiency.json       # Computed from player_game_stats
 ├── player_matchups.json          # Computed from head-to-head data
 ├── flex_champions.json           # Champion → role probability
@@ -1205,7 +1205,7 @@ knowledge/
   }
 }
 
-// champion_counters.json
+// matchup_stats.json
 {
   "Azir": {
     "MID": {
@@ -1470,7 +1470,7 @@ def identify_archetype(team_picks: list[str]) -> dict:
 1. **Generate pre-computed knowledge files (DuckDB → JSON)**
    - `knowledge/champion_meta_stats.json` - Meta tier with KDA + win rate + performance
    - `knowledge/champion_synergies.json` - Normalized synergy with co-pick lift
-   - `knowledge/champion_counters.json` - Role-specific matchups with KDA differential
+   - `knowledge/matchup_stats.json` - Role-specific matchups with KDA differential
    - `knowledge/player_proficiency.json` - Multi-metric player-champion scores
    - `knowledge/player_matchups.json` - Head-to-head with performance differentials
    - `knowledge/role_baselines.json` - Role averages for z-score normalization
