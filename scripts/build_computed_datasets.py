@@ -242,44 +242,94 @@ def build_role_baselines(current_patch: str) -> dict:
     return result
 
 
+def classify_pick_context(sequence: int) -> str:
+    """
+    Classify if a pick is blind, early, or counter based on draft sequence.
+
+    Draft sequence for picks:
+    - Seq 7: Pick 1 (Blue) - 0 enemy picks visible (blind)
+    - Seq 8-9: Pick 2-3 (Red) - 1 enemy pick visible (early)
+    - Seq 10-11: Pick 4-5 (Blue) - 2 enemy picks visible (early)
+    - Seq 12: Pick 6 (Red) - 3 enemy picks visible (counter)
+    - Seq 17: Pick 7 (Red) - 3 enemy picks visible (counter)
+    - Seq 18-19: Pick 8-9 (Blue) - 4 enemy picks visible (counter)
+    - Seq 20: Pick 10 (Red) - 5 enemy picks visible (counter)
+    """
+    if sequence == 7:
+        return "blind"
+    elif sequence in [8, 9, 10, 11]:
+        return "early"
+    elif sequence in [12, 17, 18, 19, 20]:
+        return "counter"
+    else:
+        return "unknown"
+
+
 def build_meta_stats(current_patch: str) -> dict:
-    """Build meta_stats.json with current meta tier for champions."""
+    """Build meta_stats.json with current meta tier for champions and counter-pick detection."""
     print("Building meta_stats.json...")
 
     draft_actions = load_csv(DRAFT_ACTIONS_CSV)
     stats = load_csv(PLAYER_GAME_STATS_CSV)
     games = load_csv(GAMES_CSV)
 
-    # Build game -> patch mapping
-    game_patches = {g["id"]: g.get("patch_version", "") for g in games}
+    # Build game -> (patch, winner_team_id) mapping
+    game_info = {}
+    for g in games:
+        game_info[g["id"]] = {
+            "patch": g.get("patch_version", ""),
+            "winner_team_id": g.get("winner_team_id", "")
+        }
 
     # Filter to last 3 patches (current meta)
     current_num = patch_to_num(current_patch)
 
     def is_recent(game_id: str) -> bool:
-        patch = game_patches.get(game_id, "")
+        patch = game_info.get(game_id, {}).get("patch", "")
         return current_num - patch_to_num(patch) <= 2
 
-    # Count picks and bans
+    # Count picks, bans, and track pick context
     picks = defaultdict(int)
     bans = defaultdict(int)
     total_games = set()
 
+    # Counter-pick tracking: champion -> {context -> {games, wins}}
+    pick_context_stats = defaultdict(lambda: {
+        "blind": {"games": 0, "wins": 0},
+        "early": {"games": 0, "wins": 0},
+        "counter": {"games": 0, "wins": 0}
+    })
+
     for action in draft_actions:
-        if not is_recent(action["game_id"]):
+        game_id = action["game_id"]
+        if not is_recent(game_id):
             continue
 
-        total_games.add(action["game_id"])
+        total_games.add(game_id)
         champ = action.get("champion_name", "")
         if not champ:
             continue
 
         if action["action_type"] == "pick":
             picks[champ] += 1
+
+            # Track pick context for counter-pick detection
+            sequence = int(action.get("sequence_number", 0))
+            context = classify_pick_context(sequence)
+
+            if context in ["blind", "early", "counter"]:
+                pick_context_stats[champ][context]["games"] += 1
+
+                # Check if this team won
+                winner_team_id = game_info.get(game_id, {}).get("winner_team_id", "")
+                team_id = action.get("team_id", "")
+                if team_id and winner_team_id and team_id == winner_team_id:
+                    pick_context_stats[champ][context]["wins"] += 1
+
         elif action["action_type"] == "ban":
             bans[champ] += 1
 
-    # Calculate win rates
+    # Calculate win rates from player stats (more reliable)
     wins = defaultdict(int)
     games_played = defaultdict(int)
 
@@ -298,6 +348,7 @@ def build_meta_stats(current_patch: str) -> dict:
     # Build meta stats
     num_games = len(total_games)
     champions = {}
+    min_games_for_tier = 15
 
     all_champs = set(picks.keys()) | set(bans.keys())
 
@@ -313,8 +364,33 @@ def build_meta_stats(current_patch: str) -> dict:
         presence = pick_rate + ban_rate
         win_rate = win_count / games_count if games_count > 0 else 0.5
 
-        # Tier calculation
-        if presence >= 0.6 and win_rate >= 0.50:
+        # Calculate counter-pick bias
+        context_data = pick_context_stats[champ]
+        blind_early_games = context_data["blind"]["games"] + context_data["early"]["games"]
+        blind_early_wins = context_data["blind"]["wins"] + context_data["early"]["wins"]
+        counter_games = context_data["counter"]["games"]
+        counter_wins = context_data["counter"]["wins"]
+
+        blind_early_wr = blind_early_wins / blind_early_games if blind_early_games >= 5 else None
+        counter_wr = counter_wins / counter_games if counter_games >= 5 else None
+
+        # Counter-pick bias = difference in win rate when picked late vs early
+        counter_pick_bias = None
+        is_counter_pick_dependent = False
+
+        if blind_early_wr is not None and counter_wr is not None:
+            counter_pick_bias = counter_wr - blind_early_wr
+            # If win rate is 15%+ higher when counter-picking, flag it
+            is_counter_pick_dependent = counter_pick_bias > 0.15
+
+        # Sample sufficient check
+        sample_sufficient = games_count >= min_games_for_tier
+
+        # Tier calculation (only for sufficient samples)
+        if not sample_sufficient:
+            tier = None
+            tier_score = None
+        elif presence >= 0.6 and win_rate >= 0.50:
             tier = "S"
             tier_score = 0.9 + (presence - 0.6) * 0.25
         elif presence >= 0.3 and win_rate >= 0.48:
@@ -327,15 +403,36 @@ def build_meta_stats(current_patch: str) -> dict:
             tier = "C"
             tier_score = 0.3 + presence * 0.5
 
-        champions[champ] = {
+        # Build flags
+        flags = []
+        if not sample_sufficient:
+            flags.append("insufficient_data")
+        if is_counter_pick_dependent:
+            flags.append("counter_pick_inflated")
+
+        champ_data = {
+            "games_picked": pick_count,
+            "games_banned": ban_count,
             "pick_rate": round(pick_rate, 3),
             "ban_rate": round(ban_rate, 3),
             "presence": round(presence, 3),
             "win_rate": round(win_rate, 3),
             "games": games_count,
-            "tier": tier,
-            "tier_score": round(min(tier_score, 1.0), 3)
+            "pick_context": {
+                "blind_early_games": blind_early_games,
+                "counter_games": counter_games,
+                "blind_early_win_rate": round(blind_early_wr, 3) if blind_early_wr is not None else None,
+                "counter_win_rate": round(counter_wr, 3) if counter_wr is not None else None,
+                "counter_pick_bias": round(counter_pick_bias, 3) if counter_pick_bias is not None else None,
+                "is_counter_pick_dependent": is_counter_pick_dependent
+            },
+            "meta_tier": tier,
+            "meta_score": round(min(tier_score, 1.0), 3) if tier_score is not None else None,
+            "sample_sufficient": sample_sufficient,
+            "flags": flags
         }
+
+        champions[champ] = champ_data
 
     result = {
         "metadata": {
@@ -343,9 +440,11 @@ def build_meta_stats(current_patch: str) -> dict:
             "current_patch": current_patch,
             "patches_included": 3,
             "games_analyzed": num_games,
-            "champions_count": len(champions)
+            "champions_count": len(champions),
+            "min_games_for_tier": min_games_for_tier,
+            "counter_pick_threshold": 0.15
         },
-        "champions": dict(sorted(champions.items(), key=lambda x: -x[1]["presence"]))
+        "champions": dict(sorted(champions.items(), key=lambda x: -(x[1]["presence"] or 0)))
     }
 
     save_json(result, OUTPUT_DIR / "meta_stats.json")
@@ -661,9 +760,9 @@ def build_champion_synergies(current_patch: str) -> dict:
     return result
 
 
-def build_champion_counters(current_patch: str) -> dict:
-    """Build champion_counters.json with matchup win rates."""
-    print("Building champion_counters.json...")
+def build_matchup_stats(current_patch: str) -> dict:
+    """Build matchup_stats.json with empirical matchup win rates from pro play."""
+    print("Building matchup_stats.json...")
 
     stats = load_csv(PLAYER_GAME_STATS_CSV)
 
@@ -774,7 +873,7 @@ def build_champion_counters(current_patch: str) -> dict:
         "counters": counters
     }
 
-    save_json(result, OUTPUT_DIR / "champion_counters.json")
+    save_json(result, OUTPUT_DIR / "matchup_stats.json")
     return result
 
 
@@ -866,7 +965,7 @@ DATASETS = {
     "flex_champions": build_flex_champions,
     "player_proficiency": build_player_proficiency,
     "champion_synergies": build_champion_synergies,
-    "champion_counters": build_champion_counters,
+    "matchup_stats": build_matchup_stats,
     "skill_transfers": build_skill_transfers,
 }
 
@@ -901,7 +1000,7 @@ def main():
             "flex_champions",
             "player_proficiency",  # Depends on role_baselines
             "champion_synergies",
-            "champion_counters",
+            "matchup_stats",
             "skill_transfers",
         ]
         for name in order:
