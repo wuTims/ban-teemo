@@ -1,7 +1,8 @@
 # Data Organization Design
 
-**Status:** Approved
+**Status:** Implemented ✓
 **Date:** 2026-01-25
+**Implementation:** `knowledge/` directory structure, GitHub releases, `scripts/download-data.sh`
 
 ---
 
@@ -35,7 +36,7 @@ Data files are scattered across the repository with no clear organization:
 ```
 ban-teemo/
 ├── knowledge/                    # Committed to repo (~3 MB)
-│   ├── champion_counters.json    # Computed matchup data
+│   ├── matchup_stats.json    # Computed matchup data
 │   ├── champion_synergies.json   # Computed synergy data
 │   ├── flex_champions.json       # Multi-role champions
 │   ├── meta_stats.json           # Current meta statistics

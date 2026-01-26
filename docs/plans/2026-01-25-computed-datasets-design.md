@@ -1,8 +1,8 @@
 # Computed Datasets Design
 
 **Date:** 2026-01-25
-**Status:** Draft
-**Prerequisite:** Run CSV export on v2 raw data first
+**Status:** Implemented ✓
+**Implementation:** `scripts/build_computed_datasets.py`, `knowledge/*.json` files
 
 ---
 
@@ -353,7 +353,7 @@ HAVING COUNT(*) >= 15
 
 ---
 
-## 4. champion_counters.json
+## 4. matchup_stats.json
 
 **Purpose:** Matchup win rates for lane and team counters.
 
@@ -697,7 +697,7 @@ JOIN role_baselines rb ON ps.role = rb.role
 3. **meta_stats.json** - needed for tier scores (no dependencies)
 4. **flex_champions.json** - combine API roles + knowledge_base (needs CSV export)
 5. **player_proficiency.json** - needs role_baselines for normalization
-6. **champion_counters.json** - straightforward matchup calculation
+6. **matchup_stats.json** - straightforward matchup calculation
 7. **champion_synergies.json** - needs synergies.json for mechanical link
 8. **skill_transfers.json** - co-play mining
 9. **player_tendencies.json** - needs role_baselines + knowledge_base

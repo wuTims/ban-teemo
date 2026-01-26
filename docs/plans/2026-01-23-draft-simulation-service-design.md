@@ -1,8 +1,9 @@
 # Draft Simulation Service Design
 
 **Date:** 2026-01-23
-**Status:** Approved
+**Status:** Implemented ✓
 **Scope:** Replay-first draft simulation for demo
+**Implementation:** `backend/src/ban_teemo/services/draft_service.py`, `replay_manager.py`
 
 ---
 

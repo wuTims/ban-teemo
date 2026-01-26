@@ -1,9 +1,12 @@
 # Recommendation Service Overview
 
-**Status:** Design Complete
-**Date:** 2026-01-24
+**Status:** Design Complete (Reference Document)
+**Date:** 2026-01-26
+**Implementation Plan:** `docs/plans/2026-01-26-unified-recommendation-system.md`
 
-A high-level guide to how the recommendation engine handles uncertainty in draft predictions.
+A high-level guide to how the recommendation engine handles uncertainty in draft predictions, team composition evaluation, and ban recommendations.
+
+> **Note:** This document describes the concepts and formulas. For implementation tasks, see the unified plan.
 
 ---
 
@@ -40,18 +43,17 @@ When recommending picks during a draft, we face two types of uncertainty:
 │            "Recommend picks for Blue team, MID lane"            │
 └─────────────────────────────────────────────────────────────────┘
                                 │
-                                ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                      FLEX PICK RESOLVER                         │
-│                                                                 │
-│  For each enemy pick, estimate role probability:                │
-│                                                                 │
-│  Aurora (G2 picks it) → who plays it? → { MID: 73%, TOP: 27% }  │
-│  Rumble (already have TOP) → { TOP: 100% }                      │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-                                │
-                                ▼
+          ┌─────────────────────┼─────────────────────┐
+          ▼                     ▼                     ▼
+┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
+│  FLEX RESOLVER   │  │ ARCHETYPE SERVICE│  │  SYNERGY SERVICE │
+│                  │  │                  │  │                  │
+│  Estimate role   │  │  Team archetype  │  │  S/A/B/C ratings │
+│  probabilities   │  │  + RPS matchups  │  │  as multipliers  │
+└────────┬─────────┘  └────────┬─────────┘  └────────┬─────────┘
+         │                     │                     │
+         └─────────────────────┼─────────────────────┘
+                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                    RECOMMENDATION ENGINE                        │
 │                                                                 │
@@ -70,20 +72,20 @@ When recommending picks during a draft, we face two types of uncertainty:
 │  Combine with confidence-adjusted weights                       │
 └─────────────────────────────────────────────────────────────────┘
                                 │
-                                ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                        RECOMMENDATIONS                          │
-│                                                                 │
-│  1. Syndra (78% confidence)                                     │
-│     "Strong meta pick, counters likely Aurora mid"              │
-│                                                                 │
-│  2. Azir (72% confidence)                                       │
-│     "Safe scaling, good team synergy"                           │
-│                                                                 │
-│  3. Orianna (55% confidence) [SURPRISE PICK]                    │
-│     "⚠️ 2 stage games, but strong synergy + skill transfer"     │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+          ┌─────────────────────┴─────────────────────┐
+          ▼                                           ▼
+┌──────────────────────────────────┐  ┌──────────────────────────────────┐
+│       PICK RECOMMENDATIONS       │  │        TEAM EVALUATION           │
+│                                  │  │                                  │
+│  1. Syndra (78% confidence)      │  │  Archetype: Engage/Teamfight     │
+│     "Counters Aurora mid"        │  │  Synergy Score: 0.72             │
+│                                  │  │  Composition: 0.78               │
+│  2. Azir (72% confidence)        │  │                                  │
+│     "Safe scaling, good synergy" │  │  Strengths:                      │
+│                                  │  │    • Strong initiation           │
+│  3. Orianna [SURPRISE PICK]      │  │    • High internal synergy       │
+│     "2 games, skill transfer"    │  │                                  │
+└──────────────────────────────────┘  └──────────────────────────────────┘
 ```
 
 ---
@@ -483,8 +485,39 @@ Pro teams intentionally pair certain champions. High co-pick rate suggests belie
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+### Synergy Rating Multipliers
+
+Curated synergies in `synergies.json` include partner ratings (S/A/B/C). These ratings act as quality multipliers:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    RATING MULTIPLIERS                           │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Rating    Multiplier    Example                                │
+│  ───────   ──────────    ───────────────────────────────────    │
+│  S         1.00          Yasuo + Malphite (perfect ult combo)   │
+│  A         0.80          Orianna + Nocturne (ball delivery)     │
+│  B         0.60          Generic lane partner synergy           │
+│  C         0.40          Situational/conditional synergy        │
+│                                                                 │
+│  For curated synergies:                                         │
+│    Synergy Score = Base Score (0.85) × Rating Multiplier        │
+│                                                                 │
+│  Example: Yasuo + Malphite (S-tier)                             │
+│    Score = 0.85 × 1.0 = 0.85                                    │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
 ### Final Synergy Formula
 
+For curated synergies (from `synergies.json`):
+```
+Synergy Score = 0.85 × Rating Multiplier (S=1.0, A=0.8, B=0.6, C=0.4)
+```
+
+For statistical synergies (fallback):
 ```
 Synergy Score = (Normalized Win Delta × 0.6) + (Co-Pick Lift × 0.4)
 ```
@@ -602,7 +635,181 @@ Each recommendation includes both a score and transparency about uncertainty:
 
 ---
 
-## Part 8: Potential Misleading Signals
+## Part 8: Team Composition Archetypes
+
+### The Five Archetypes
+
+Teams are classified into 5 archetypes with rock-paper-scissors matchups:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    ARCHETYPE DEFINITIONS                        │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ENGAGE     Hard initiation, force fights on your terms         │
+│             Champions: Malphite, Leona, Nautilus, Rakan         │
+│             Beats: Split, Teamfight                             │
+│             Loses to: Protect, Pick                             │
+│                                                                 │
+│  SPLIT      Side lane pressure, 1-3-1, avoid 5v5                │
+│             Champions: Fiora, Jax, Tryndamere, Camille          │
+│             Beats: Teamfight, Protect                           │
+│             Loses to: Engage, Pick                              │
+│                                                                 │
+│  TEAMFIGHT  5v5 grouped fighting, wombo combos, AoE damage      │
+│             Champions: Orianna, Miss Fortune, Rumble, Kennen    │
+│             Beats: Protect, Pick                                │
+│             Loses to: Engage, Split                             │
+│                                                                 │
+│  PROTECT    Keep carry alive, scale to late game, peel-focused  │
+│             Champions: Lulu, Janna, Karma, Kog'Maw              │
+│             Beats: Engage, Pick                                 │
+│             Loses to: Split, Teamfight                          │
+│                                                                 │
+│  PICK       Catch isolated targets, vision control, burst       │
+│             Champions: Zoe, Nidalee, Thresh, Blitzcrank         │
+│             Beats: Engage, Split                                │
+│             Loses to: Teamfight, Protect                        │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Archetype Effectiveness Matrix
+
+| Our Archetype | vs Engage | vs Split | vs Teamfight | vs Protect | vs Pick |
+|---------------|-----------|----------|--------------|------------|---------|
+| **Engage** | 1.0 | 1.2 | 1.2 | 0.8 | 0.8 |
+| **Split** | 0.8 | 1.0 | 1.2 | 1.2 | 0.8 |
+| **Teamfight** | 0.8 | 0.8 | 1.0 | 1.2 | 1.2 |
+| **Protect** | 1.2 | 0.8 | 0.8 | 1.0 | 1.2 |
+| **Pick** | 1.2 | 1.2 | 0.8 | 0.8 | 1.0 |
+
+### Champion Archetype Scores
+
+Each champion has scores (0.0-1.0) for all five archetypes:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                  CHAMPION ARCHETYPE EXAMPLE                     │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Orianna:                                                       │
+│    Primary: Teamfight (0.95)                                    │
+│    Secondary: Protect (0.70)                                    │
+│                                                                 │
+│    Engage:    0.30  ██████░░░░░░░░░░░░░░                        │
+│    Split:     0.10  ██░░░░░░░░░░░░░░░░░░                        │
+│    Teamfight: 0.95  ███████████████████░                        │
+│    Protect:   0.70  ██████████████░░░░░░                        │
+│    Pick:      0.40  ████████░░░░░░░░░░░░                        │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Part 9: Team Draft Evaluation
+
+### Cumulative Team Scoring
+
+As picks are made, we evaluate the team's composition:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    TEAM EVALUATION OUTPUT                       │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Team Picks: Malphite, Nocturne, Orianna, Jinx, Thresh          │
+│                                                                 │
+│  ARCHETYPE:                                                     │
+│    Primary: Engage (alignment: 0.42)                            │
+│    Secondary: Teamfight                                         │
+│    Scores: {engage: 0.65, teamfight: 0.58, pick: 0.48, ...}     │
+│                                                                 │
+│  SYNERGY:                                                       │
+│    Total Score: 0.72                                            │
+│    Notable Pairs:                                               │
+│      • Orianna + Nocturne (0.85) - Ball delivery combo          │
+│      • Malphite + Jinx (0.68) - Engage + follow-up              │
+│                                                                 │
+│  COMPOSITION SCORE: 0.78                                        │
+│    = Archetype Alignment (35%) × Synergy (40%) × Coverage (25%) │
+│                                                                 │
+│  STRENGTHS:                                                     │
+│    • Strong initiation and pick potential                       │
+│    • High internal synergy between picks                        │
+│    • Strong combo: Orianna + Nocturne                           │
+│                                                                 │
+│  WEAKNESSES:                                                    │
+│    • Vulnerable to disengage/peel comps                         │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Matchup Advantage
+
+When both teams have picks, we calculate archetype-based matchup advantage:
+
+```
+Our archetype: Engage (primary)
+Enemy archetype: Split (primary)
+
+Effectiveness = archetype_counters["engage"]["vs_split"] = 1.2
+
+Interpretation: Our engage comp has ~20% advantage over their split comp
+```
+
+---
+
+## Part 10: Ban Recommendations
+
+### Ban Priority Scoring
+
+Ban recommendations consider multiple factors:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                   BAN PRIORITY WEIGHTS                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Meta Strength       (30%)  High presence + win rate            │
+│  Player Proficiency  (25%)  Target enemy player's best champs   │
+│  Archetype Counter   (20%)  Ban what enables counter-archetype  │
+│  Flex Value          (15%)  Flex picks remove multiple options  │
+│  Matchup Threat      (10%)  Champions that counter our picks    │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Ban Recommendation Output
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                   BAN RECOMMENDATION                            │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  1. Aurora (Priority: 0.87)                                     │
+│     Reasons:                                                    │
+│       • S-tier meta pick (78% presence)                         │
+│       • Flex pick - removes multiple options                    │
+│       • High win rate (56%)                                     │
+│                                                                 │
+│  2. Yone (Priority: 0.82)                                       │
+│     Reasons:                                                    │
+│       • A-tier meta pick (62% presence)                         │
+│       • Enemy mid player: 15 games, 73% WR                      │
+│                                                                 │
+│  3. Nautilus (Priority: 0.75)                                   │
+│     Reasons:                                                    │
+│       • Enables enemy engage archetype                          │
+│       • Often used as counter-pick                              │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Part 11: Potential Misleading Signals (Statistical Caveats)
 
 ### Critical Analysis of Our Statistical Approach
 
@@ -722,7 +929,7 @@ When data quality is low, we reduce that signal's weight:
 
 ---
 
-## Part 9: Complex Scenarios Requiring Contextual Data
+## Part 12: Complex Scenarios Requiring Contextual Data
 
 ### When Statistics Aren't Enough
 
@@ -803,16 +1010,29 @@ knowledge/
     }
 ```
 
+**Core archetype files (implemented):**
+
+```
+knowledge/
+├── champion_archetypes.json   # Per-champion archetype scores
+│   {
+│     "Orianna": {
+│       "primary": "teamfight",
+│       "secondary": "protect",
+│       "scores": {"engage": 0.3, "split": 0.1, "teamfight": 0.95, "protect": 0.7, "pick": 0.4}
+│     }
+│   }
+│
+└── archetype_counters.json    # RPS effectiveness matrix
+    {
+      "engage": {"vs_engage": 1.0, "vs_split": 1.2, "vs_teamfight": 1.2, "vs_protect": 0.8, "vs_pick": 0.8}
+    }
+```
+
 **Nice to have (if time permits):**
 
 ```
 knowledge/
-├── champion_archetypes.json   # Role in team comps
-│   {
-│     "Orianna": ["teamfight", "zone_control", "ball_delivery"],
-│     "Nocturne": ["dive", "pick", "vision_denial"]
-│   }
-│
 ├── hidden_pools.json          # Scrim/solo queue intel
 │   {
 │     "Caps": {
@@ -886,8 +1106,10 @@ Download: `./scripts/download-data.sh v1.0.0`
 
 | File | Source | Contents |
 |------|--------|----------|
-| `champion_counters.json` | Computed from matchup data | Champion pairs → lane and team counter scores |
+| `matchup_stats.json` | Computed from matchup data | Champion pairs → lane and team counter scores |
 | `champion_synergies.json` | Computed from game outcomes | Champion pairs → normalized synergy score |
+| `champion_archetypes.json` | Computed + domain expert overrides | Champion → archetype scores (engage/split/teamfight/protect/pick) |
+| `archetype_counters.json` | Domain expert | RPS effectiveness matrix for team comp matchups |
 | `flex_champions.json` | Computed from v3.43+ API data | Champion → role probability distribution |
 | `meta_stats.json` | Computed from draft_actions | Current patch meta statistics |
 | `patch_info.json` | Computed from series data | Patch dates and game counts |
@@ -901,7 +1123,7 @@ Download: `./scripts/download-data.sh v1.0.0`
 | File | Contents |
 |------|----------|
 | `knowledge_base.json` | Champion metadata (positions, damage types, base stats) |
-| `synergies.json` | Detailed synergy relationships |
+| `synergies.json` | Detailed synergy relationships with S/A/B/C partner ratings |
 | `patch_dates.json` | Patch version → date mapping |
 | `rework_patch_mapping.json` | Champion rework history for data filtering |
 
@@ -918,7 +1140,7 @@ Download: `./scripts/download-data.sh v1.0.0`
 │      ▼                                                   ▼      │
 │  v2 fields:               Precompute:     Tag: data-vX.Y.Z      │
 │  • roles (actual)         • champion_synergies                  │
-│  • team_objectives        • champion_counters                   │
+│  • team_objectives        • matchup_stats                       │
 │  • tournaments            • player_proficiency                  │
 │                           • role_baselines                      │
 │                                                                 │
@@ -976,19 +1198,22 @@ Download: `./scripts/download-data.sh v1.0.0`
 │ PHASE 2: PRECOMPUTE                                             │
 ├─────────────────────────────────────────────────────────────────┤
 │ • Build flex_champions.json from role data                      │
-│ • Build team_champion_players.json from trading patterns        │
 │ • Build role_baselines.json for stat normalization              │
 │ • Build player_proficiency.json with composite scores           │
 │ • Build champion_synergies.json with normalized win deltas      │
 │ • Build skill_transfers.json from co-play mining                │
+│ • Build champion_archetypes.json from classification + overrides│
+│ • Create archetype_counters.json (RPS matrix)                   │
 │ • Fetch champion data from Data Dragon                          │
 └───────────────────────────────────┬─────────────────────────────┘
                                     │
                                     ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│ PHASE 3: CORE ENGINE                                            │
+│ PHASE 3: CORE SERVICES                                          │
 ├─────────────────────────────────────────────────────────────────┤
 │ • Flex resolver (role probability estimation)                   │
+│ • Archetype service (team comp classification + RPS matchups)   │
+│ • Synergy service (rating multipliers + statistical fallback)   │
 │ • Proficiency scorer (with multiple metrics)                    │
 │ • Contextual strength calculator (for surprise picks)           │
 │ • Confidence penalty system                                     │
@@ -996,29 +1221,32 @@ Download: `./scripts/download-data.sh v1.0.0`
                                     │
                                     ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│ PHASE 4: ANALYTICS                                              │
+│ PHASE 4: TEAM EVALUATION                                        │
 ├─────────────────────────────────────────────────────────────────┤
-│ • Matchup calculator (lane + team counter)                      │
-│ • Synergy calculator (normalized + co-pick)                     │
-│ • Meta tier calculator                                          │
+│ • Team evaluation service (cumulative team scoring)             │
+│ • Archetype alignment calculation                               │
+│ • Strengths/weaknesses identification                           │
+│ • Matchup advantage calculation                                 │
 └───────────────────────────────────┬─────────────────────────────┘
                                     │
                                     ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│ PHASE 5: INTEGRATION                                            │
+│ PHASE 5: RECOMMENDATION ENGINE                                  │
 ├─────────────────────────────────────────────────────────────────┤
-│ • Combine all components into recommendation engine             │
+│ • Pick recommendation scoring (meta + prof + matchup + synergy) │
+│ • Ban recommendation service (multi-factor priority scoring)    │
 │ • Weight adjustment for uncertainty/data quality                │
 │ • Flag and warning generation                                   │
 └───────────────────────────────────┬─────────────────────────────┘
                                     │
                                     ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│ PHASE 6: API                                                    │
+│ PHASE 6: API & INTEGRATION                                      │
 ├─────────────────────────────────────────────────────────────────┤
-│ • Update REST endpoints to use new engine                       │
-│ • Update WebSocket messages with confidence/warnings            │
-│ • Frontend updates to display uncertainty indicators            │
+│ • Draft service integration with all scoring services           │
+│ • REST endpoints for recommendations and team evaluation        │
+│ • WebSocket messages with confidence/warnings                   │
+│ • Frontend updates to display team evaluation                   │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -1036,6 +1264,7 @@ Download: `./scripts/download-data.sh v1.0.0`
 
 ---
 
-*Version 1.2 | January 2026*
+*Version 1.3 | January 2026*
+*v1.3: Added archetype system (5 archetypes with RPS matrix), team evaluation, ban recommendations, synergy rating multipliers*
 *v1.2: Removed style fit, added misleading signals analysis, added complex scenarios section, integrated new performance metrics*
 *v1.1: Updated flex resolution to use team-champion-player trading patterns*

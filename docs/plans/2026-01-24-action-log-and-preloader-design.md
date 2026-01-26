@@ -1,7 +1,8 @@
 # Action Log and Champion Preloader Design
 
 **Date:** 2026-01-24
-**Status:** Approved
+**Status:** Implemented ✓
+**Implementation:** `deepdraft/src/components/ActionLog/`, `ChampionPreloader/`
 
 ## Overview
 

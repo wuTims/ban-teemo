@@ -1,8 +1,11 @@
 # Recommendation Service Architecture
 
-**Status:** Design Complete
-**Date:** 2026-01-24
+**Status:** Design Complete (Reference Document)
+**Date:** 2026-01-26
 **Authors:** Design session with AI assistance
+**Implementation Plan:** `docs/plans/2026-01-26-unified-recommendation-system.md`
+
+> **Note:** This document provides detailed technical design. For implementation tasks with TDD workflow, see the unified plan.
 
 ---
 
@@ -50,8 +53,11 @@ All files in `knowledge/` are committed to the repository.
 **Computed Analytics:**
 ```
 knowledge/
-├── champion_counters.json     # Champion matchup win rates
+├── matchup_stats.json         # Champion matchup win rates
 ├── champion_synergies.json    # Normalized synergy scores between champion pairs
+├── champion_archetypes.json   # Per-champion archetype scores (engage/split/teamfight/protect/pick)
+│   {"Malphite": {"primary": "engage", "secondary": "teamfight", "scores": {...}}, ...}
+├── archetype_counters.json    # RPS effectiveness matrix for team comp matchups
 ├── flex_champions.json        # Champion → role probability distribution
 │   {"Aurora": {"MID": 0.65, "TOP": 0.35}, ...}
 ├── meta_stats.json            # Current patch meta statistics
@@ -68,7 +74,7 @@ knowledge/
 ```
 knowledge/
 ├── knowledge_base.json        # Champion metadata (positions, damage types, stats)
-├── synergies.json             # Detailed synergy relationships
+├── synergies.json             # Detailed synergy relationships with S/A/B/C partner ratings
 ├── patch_dates.json           # Patch version → date mapping
 └── rework_patch_mapping.json  # Champion rework history for data filtering
 ```
@@ -295,16 +301,14 @@ def calculate_contextual_strength(champion, player, draft_context, meta_data):
         "meta_tier": meta_data.get_tier_score(champion),
         "counter_value": calc_counter_value(champion, draft_context.enemy_picks),
         "synergy_value": calc_synergy_value(champion, draft_context.ally_picks),
-        "style_fit": calc_style_fit(player, champion),
         "skill_transfer": calc_skill_transfer(player, champion),
     }
 
     strength = (
-        scores["meta_tier"] * 0.25 +
+        scores["meta_tier"] * 0.30 +
         scores["counter_value"] * 0.25 +
-        scores["synergy_value"] * 0.20 +
-        scores["style_fit"] * 0.15 +
-        scores["skill_transfer"] * 0.15
+        scores["synergy_value"] * 0.25 +
+        scores["skill_transfer"] * 0.20
     )
 
     return ContextualScore(
@@ -314,43 +318,7 @@ def calculate_contextual_strength(champion, player, draft_context, meta_data):
     )
 ```
 
-### 5.3 Style Fit Calculation
-
-**Player tendencies** (computed from player_game_stats):
-
-```python
-def compute_player_tendencies(player: str) -> PlayerTendencies:
-    stats = get_player_all_games(player)
-
-    return PlayerTendencies(
-        aggression=calc_aggression(stats),      # kills, first_blood %, deaths
-        carry_focus=calc_carry_focus(stats),    # damage_dealt, kill_participation
-        vision_control=calc_vision(stats),      # vision_score per game
-        early_game=calc_early_game(stats),      # first_kill involvement
-    )
-```
-
-**Champion archetypes** (from Riot Data Dragon tags):
-
-```python
-def calc_style_fit(player: str, champion: str) -> float:
-    champ_tags = CHAMPION_TAGS[champion]  # ["Mage", "Assassin"]
-
-    # Get player's most-played champion tags
-    player_pool = get_player_champion_pool(player)
-    player_tags = Counter()
-    for champ, games in player_pool.items():
-        for tag in CHAMPION_TAGS.get(champ, []):
-            player_tags[tag] += games
-
-    # Score = tag overlap
-    overlap = sum(player_tags.get(tag, 0) for tag in champ_tags)
-    total = sum(player_tags.values())
-
-    return overlap / total if total > 0 else 0.5
-```
-
-### 5.4 Skill Transfer Calculation
+### 5.3 Skill Transfer Calculation
 
 **Computed from co-play patterns** (players who play X tend to play Y):
 
@@ -388,13 +356,13 @@ def calc_skill_transfer(player: str, champion: str) -> float:
     return best_score
 ```
 
-### 5.5 UI Surfacing
+### 5.4 UI Surfacing
 
 | Proficiency | Flag | Display |
 |-------------|------|---------|
 | HIGH (8+ games) | None | "Zeus: 23 games, 67% WR" |
 | MEDIUM (4-7) | None | "Zeus: 5 games, 60% WR" |
-| LOW + surprise eligible | `SURPRISE_PICK` | "2 stage games, but strong meta + style fit" |
+| LOW + surprise eligible | `SURPRISE_PICK` | "2 stage games, but strong meta + skill transfer" |
 | LOW + weak context | `LOW_CONFIDENCE` | "Limited data, consider safer options" |
 | NO_DATA + surprise eligible | `SURPRISE_PICK` | "No stage games, but transfers from Ahri" |
 | NO_DATA + weak context | `LOW_CONFIDENCE` | "No data, weak contextual support" |
@@ -416,17 +384,44 @@ class PickRecommendation:
     confidence: float           # 0.0 - 1.0
 
     # Component scores
-    meta_score: float           # Layer 1
-    proficiency: ProficiencyScore  # Layer 3
-    matchup_score: float        # Layer 4a
+    meta_score: float           # Layer 1: Global champion strength (15%)
+    proficiency: ProficiencyScore  # Layer 3: Player mastery (30%)
+    matchup_score: float        # Layer 4a: Counter value (20%)
     matchup_confidence: float   # Flex uncertainty indicator
-    synergy_score: float        # Layer 4b
-    comp_fit_score: float       # Layer 4c
+    synergy_score: float        # Layer 4b: Ally synergy (20%)
+    counter_score: float        # Layer 4c: Threat to enemy team (15%)
 
     # Flags
     flag: str | None            # "SURPRISE_PICK" | "LOW_CONFIDENCE" | None
     warnings: list[str]         # ["Uncertain matchup: Aurora may go TOP"]
     reasons: list[str]          # Positive reasons to pick
+
+
+@dataclass
+class BanRecommendation:
+    champion_name: str
+    priority: float             # 0.0 - 1.0
+
+    # Component scores (weights: 30/25/20/15/10)
+    meta_strength: float        # High presence + win rate (30%)
+    player_proficiency: float   # Target enemy player's best champs (25%)
+    archetype_counter: float    # Ban what enables counter-archetype (20%)
+    flex_value: float           # Flex picks remove multiple options (15%)
+    matchup_threat: float       # Champions that counter our picks (10%)
+
+    # Context
+    target_player: str | None   # Player being targeted
+    reasons: list[str]          # ["S-tier meta pick", "Enemy mid comfort"]
+
+
+@dataclass
+class TeamEvaluation:
+    archetype: dict             # {"primary": "engage", "secondary": "teamfight", "scores": {...}}
+    synergy: dict               # {"total_score": 0.72, "pairs": [...]}
+    composition_score: float    # 0.0 - 1.0
+    role_coverage: dict         # {"filled": 3, "missing": 2}
+    strengths: list[str]        # ["Strong initiation"]
+    weaknesses: list[str]       # ["Vulnerable to disengage"]
 ```
 
 ### 6.2 Scoring Algorithm
@@ -454,18 +449,19 @@ def score_champion(
         flex_resolutions=flex_resolutions
     )
 
-    # Layer 4b & 4c
+    # Layer 4b: Synergy (using S/A/B/C rating multipliers from synergies.json)
     synergy_score = calculate_synergy_score(champion, draft_state.ally_picks)
-    comp_fit_score = calculate_comp_fit(champion, draft_state.ally_picks)
+    # Layer 4c: Counter threat value
+    counter_score = calculate_counter_score(champion, draft_state.enemy_picks)
 
     # === WEIGHT ADJUSTMENT FOR UNCERTAINTY ===
 
     base_weights = {
         "meta": 0.15,
-        "proficiency": 0.35,
+        "proficiency": 0.30,
         "matchup": 0.20,
-        "synergy": 0.15,
-        "comp_fit": 0.15
+        "synergy": 0.20,
+        "counter": 0.15
     }
 
     # Reduce matchup weight when uncertain, redistribute
@@ -473,11 +469,11 @@ def score_champion(
     redistributed = base_weights["matchup"] * (1 - matchup_confidence)
 
     adjusted_weights = {
-        "meta": base_weights["meta"] + redistributed * 0.3,
+        "meta": base_weights["meta"] + redistributed * 0.2,
         "proficiency": base_weights["proficiency"] + redistributed * 0.4,
         "matchup": effective_matchup_weight,
-        "synergy": base_weights["synergy"] + redistributed * 0.15,
-        "comp_fit": base_weights["comp_fit"] + redistributed * 0.15
+        "synergy": base_weights["synergy"] + redistributed * 0.2,
+        "counter": base_weights["counter"] + redistributed * 0.2
     }
 
     overall_score = (
@@ -485,7 +481,7 @@ def score_champion(
         proficiency.score * adjusted_weights["proficiency"] +
         matchup_score * adjusted_weights["matchup"] +
         synergy_score * adjusted_weights["synergy"] +
-        comp_fit_score * adjusted_weights["comp_fit"]
+        counter_score * adjusted_weights["counter"]
     )
 
     # === OVERALL CONFIDENCE ===
@@ -532,26 +528,31 @@ def score_champion(
 ```
 backend/src/ban_teemo/
 ├── services/
-│   ├── recommendation_engine.py   # Main scoring logic
-│   ├── flex_resolver.py           # Flex pick probability
-│   ├── proficiency_scorer.py      # Surprise pick detection
+│   ├── draft_service.py            # Main draft logic and service orchestration
+│   ├── archetype_service.py        # Team comp archetype + RPS matchups
+│   ├── synergy_service.py          # S/A/B/C rating multipliers + statistical
+│   ├── team_evaluation_service.py  # Cumulative team scoring
+│   ├── ban_recommendation_service.py  # Multi-factor ban priority
+│   ├── flex_resolver.py            # Flex pick probability
+│   ├── proficiency_scorer.py       # Surprise pick detection
 │   └── analytics/
-│       ├── meta_stats.py          # Layer 1: Champion meta
-│       ├── player_tendencies.py   # Layer 2: Player style
-│       ├── matchup_calculator.py  # Layer 4a: Matchups
-│       ├── synergy_calculator.py  # Layer 4b: Synergies
-│       └── comp_analyzer.py       # Layer 4c: Comp archetypes
+│       ├── meta_stats.py           # Layer 1: Champion meta
+│       ├── matchup_calculator.py   # Layer 4a: Matchups
+│       └── counter_calculator.py   # Layer 4c: Counter value
 │
 ├── data/
-│   └── precompute.py              # Generate knowledge JSONs
+│   └── precompute.py               # Generate knowledge JSONs
 
 knowledge/                          # Pre-computed data
+├── archetype_counters.json         # RPS effectiveness matrix
+├── champion_archetypes.json        # Per-champion archetype scores
 ├── flex_champions.json
 ├── player_roles.json
 ├── skill_transfers.json
-├── skill_transfer_overrides.json
-├── champion_tags.json
-└── player_tendencies.json
+├── meta_stats.json
+├── matchup_stats.json
+├── champion_synergies.json
+└── player_proficiency.json
 ```
 
 ### 7.2 Data Pipeline
@@ -595,11 +596,12 @@ knowledge/                          # Pre-computed data
 | Phase | Tasks | Depends On |
 |-------|-------|------------|
 | **1. Data** | Update fetch script, re-fetch v3.43+, export | GRID API key |
-| **2. Precompute** | Build knowledge JSONs from data | Phase 1 |
-| **3. Core Engine** | `flex_resolver.py`, `proficiency_scorer.py` | Phase 2 |
-| **4. Analytics** | Matchup, synergy, comp calculators | Phase 2 |
-| **5. Integration** | `recommendation_engine.py` | Phase 3-4 |
-| **6. API** | Update endpoints to use new engine | Phase 5 |
+| **2. Precompute** | Build knowledge JSONs including champion_archetypes, archetype_counters | Phase 1 |
+| **3. Core Services** | `archetype_service.py`, `synergy_service.py`, `flex_resolver.py`, `proficiency_scorer.py` | Phase 2 |
+| **4. Team Evaluation** | `team_evaluation_service.py` with archetype alignment + cumulative scoring | Phase 3 |
+| **5. Ban Service** | `ban_recommendation_service.py` with multi-factor priority | Phase 3-4 |
+| **6. Integration** | `draft_service.py` wiring all services together | Phase 4-5 |
+| **7. API** | Update endpoints for picks, bans, and team evaluation | Phase 6 |
 
 ### 7.4 GraphQL Query Update
 
@@ -628,11 +630,14 @@ players {
 
 ## 8. Open Questions
 
-1. **Domain expert validation:** Should overrides file be reviewed before launch?
+1. **Domain expert validation:** Should champion_archetypes.json overrides be reviewed before launch?
 2. **Confidence thresholds:** Is 0.7 the right cutoff for "uncertain" matchups?
-3. **Weight tuning:** Base weights (0.15/0.35/0.20/0.15/0.15) may need adjustment after testing
-4. **Caching:** Should matchup/synergy queries be cached, or is DuckDB fast enough?
+3. **Weight tuning:** Base weights (15/30/20/20/15) may need adjustment after testing
+4. **Archetype RPS values:** Are 0.8/1.0/1.2 effectiveness multipliers appropriate?
+5. **Synergy rating usage:** How to blend curated S/A/B/C ratings with statistical synergy?
 
 ---
 
-*Design Version: 1.0 | January 2026*
+*Design Version: 1.1 | January 2026*
+*v1.1: Added archetype system, ban recommendation service, team evaluation, removed style_fit, aligned weights with overview doc*
+*v1.0: Initial design*
