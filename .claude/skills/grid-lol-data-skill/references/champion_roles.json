@@ -1,13 +1,14 @@
 {
   "_metadata": {
-    "description": "Champion to role mappings for role inference from picks",
+    "description": "Champion to role mappings derived from pro play data (2024-2025)",
     "last_updated": "2025-01",
-    "notes": "Some champions are flex picks - listed under primary role only"
+    "source": "GRID API pro match data with Leaguepedia player role validation",
+    "notes": "Roles reflect professional play meta, not solo queue"
   },
   "TOP": [
     "Aatrox",
     "Ambessa",
-    "Aurora",
+    "Anivia",
     "Camille",
     "Cho'Gath",
     "Darius",
@@ -18,12 +19,10 @@
     "Gnar",
     "Gragas",
     "Gwen",
-    "Illaoi",
     "Irelia",
     "Jax",
     "Jayce",
     "K'Sante",
-    "Kayle",
     "Kennen",
     "Kled",
     "Malphite",
@@ -31,114 +30,88 @@
     "Nasus",
     "Olaf",
     "Ornn",
-    "Quinn",
+    "Rek'Sai",
     "Renekton",
-    "Riven",
     "Rumble",
-    "Sett",
     "Shen",
-    "Singed",
     "Sion",
-    "Tahm Kench",
-    "Teemo",
-    "Trundle",
-    "Tryndamere",
+    "Twisted Fate",
+    "Udyr",
     "Urgot",
-    "Volibear",
-    "Warwick",
-    "Wukong",
-    "Yasuo",
-    "Yone",
-    "Yorick"
+    "Vayne",
+    "Vladimir",
+    "Yorick",
+    "Zac"
   ],
   "JNG": [
     "Amumu",
-    "Bel'Veth",
     "Brand",
-    "Briar",
     "Diana",
-    "Ekko",
-    "Elise",
-    "Evelynn",
     "Fiddlesticks",
     "Graves",
-    "Hecarim",
     "Ivern",
     "Jarvan IV",
     "Karthus",
-    "Kayn",
     "Kha'Zix",
     "Kindred",
     "Lee Sin",
     "Lillia",
     "Maokai",
-    "Master Yi",
+    "Morgana",
+    "Naafiri",
     "Nidalee",
     "Nocturne",
-    "Nunu & Willump",
+    "Pantheon",
     "Poppy",
-    "Rek'Sai",
+    "Qiyana",
     "Rengar",
     "Sejuani",
-    "Shaco",
     "Shyvana",
     "Skarner",
-    "Talon",
-    "Udyr",
+    "Trundle",
     "Vi",
     "Viego",
-    "Warwick",
+    "Volibear",
     "Wukong",
     "Xin Zhao",
-    "Zac"
+    "Zed",
+    "Zyra"
   ],
   "MID": [
     "Ahri",
     "Akali",
-    "Akshan",
-    "Anivia",
     "Annie",
     "Aurelion Sol",
     "Aurora",
     "Azir",
     "Cassiopeia",
     "Corki",
-    "Ekko",
-    "Fizz",
     "Galio",
     "Hwei",
     "Kassadin",
-    "Katarina",
     "LeBlanc",
     "Lissandra",
-    "Lux",
     "Malzahar",
-    "Naafiri",
-    "Neeko",
+    "Mel",
     "Orianna",
-    "Qiyana",
     "Ryze",
-    "Syndra",
+    "Swain",
     "Sylas",
+    "Syndra",
     "Taliyah",
-    "Talon",
-    "Twisted Fate",
+    "Tristana",
+    "Tryndamere",
     "Veigar",
-    "Vex",
     "Viktor",
-    "Vladimir",
     "Xerath",
     "Yasuo",
     "Yone",
-    "Zed",
-    "Ziggs",
     "Zoe"
   ],
   "ADC": [
     "Aphelios",
     "Ashe",
     "Caitlyn",
-    "Corki",
     "Draven",
     "Ezreal",
     "Jhin",
@@ -149,61 +122,185 @@
     "Lucian",
     "Miss Fortune",
     "Nilah",
-    "Samira",
     "Senna",
     "Sivir",
     "Smolder",
-    "Tristana",
     "Twitch",
     "Varus",
-    "Vayne",
     "Xayah",
-    "Zeri"
+    "Yunara",
+    "Zeri",
+    "Ziggs"
   ],
   "SUP": [
     "Alistar",
     "Bard",
     "Blitzcrank",
     "Braum",
-    "Janna",
+    "Elise",
     "Karma",
     "Leona",
     "Lulu",
+    "Lux",
     "Milio",
-    "Morgana",
     "Nami",
     "Nautilus",
+    "Neeko",
     "Pyke",
     "Rakan",
     "Rell",
     "Renata Glasc",
-    "Senna",
     "Seraphine",
-    "Sona",
+    "Sett",
     "Soraka",
     "Tahm Kench",
     "Taric",
     "Thresh",
     "Yuumi",
-    "Zilean",
-    "Zyra"
+    "Zilean"
   ],
   "FLEX": {
-    "_description": "Champions commonly flexed between roles in pro play",
-    "Aurora": ["MID", "TOP"],
-    "Corki": ["MID", "ADC"],
-    "Gragas": ["TOP", "JNG", "SUP"],
-    "Neeko": ["MID", "TOP", "ADC"],
-    "Poppy": ["JNG", "SUP", "TOP"],
-    "Rell": ["SUP", "JNG"],
-    "Rumble": ["TOP", "MID", "JNG"],
-    "Senna": ["ADC", "SUP"],
-    "Sett": ["TOP", "SUP", "JNG"],
-    "Seraphine": ["SUP", "ADC", "MID"],
-    "Tahm Kench": ["TOP", "SUP"],
-    "Taliyah": ["MID", "JNG"],
-    "Tristana": ["ADC", "MID"],
-    "Yasuo": ["MID", "TOP", "ADC"],
-    "Yone": ["MID", "TOP"]
+    "Anivia": [
+      "TOP",
+      "MID"
+    ],
+    "Aurora": [
+      "MID",
+      "TOP"
+    ],
+    "Corki": [
+      "MID",
+      "ADC"
+    ],
+    "Dr. Mundo": [
+      "TOP",
+      "JNG"
+    ],
+    "Fiddlesticks": [
+      "JNG",
+      "SUP"
+    ],
+    "Galio": [
+      "MID",
+      "TOP"
+    ],
+    "Garen": [
+      "TOP",
+      "MID"
+    ],
+    "Irelia": [
+      "TOP",
+      "MID"
+    ],
+    "Jayce": [
+      "TOP",
+      "MID"
+    ],
+    "Karma": [
+      "SUP",
+      "MID"
+    ],
+    "Kled": [
+      "TOP",
+      "MID"
+    ],
+    "Lucian": [
+      "ADC",
+      "MID"
+    ],
+    "Mel": [
+      "MID",
+      "ADC"
+    ],
+    "Morgana": [
+      "JNG",
+      "MID"
+    ],
+    "Nasus": [
+      "TOP",
+      "MID"
+    ],
+    "Olaf": [
+      "TOP",
+      "JNG"
+    ],
+    "Ornn": [
+      "TOP",
+      "SUP"
+    ],
+    "Poppy": [
+      "JNG",
+      "SUP",
+      "TOP"
+    ],
+    "Rek'Sai": [
+      "TOP",
+      "JNG"
+    ],
+    "Seraphine": [
+      "SUP",
+      "ADC"
+    ],
+    "Sett": [
+      "SUP",
+      "TOP",
+      "MID"
+    ],
+    "Shen": [
+      "TOP",
+      "SUP"
+    ],
+    "Skarner": [
+      "JNG",
+      "TOP"
+    ],
+    "Smolder": [
+      "ADC",
+      "MID"
+    ],
+    "Swain": [
+      "MID",
+      "TOP"
+    ],
+    "Tryndamere": [
+      "MID",
+      "JNG"
+    ],
+    "Twisted Fate": [
+      "TOP",
+      "MID"
+    ],
+    "Vayne": [
+      "TOP",
+      "ADC"
+    ],
+    "Vladimir": [
+      "TOP",
+      "MID"
+    ],
+    "Volibear": [
+      "JNG",
+      "TOP"
+    ],
+    "Yasuo": [
+      "MID",
+      "TOP"
+    ],
+    "Zac": [
+      "TOP",
+      "JNG"
+    ],
+    "Zeri": [
+      "ADC",
+      "MID"
+    ],
+    "Ziggs": [
+      "ADC",
+      "MID"
+    ],
+    "Zilean": [
+      "SUP",
+      "MID"
+    ]
   }
 }
