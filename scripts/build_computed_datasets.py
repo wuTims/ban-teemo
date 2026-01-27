@@ -23,11 +23,14 @@ KNOWLEDGE_DIR = BASE_DIR / "knowledge"
 OUTPUT_DIR = KNOWLEDGE_DIR
 
 # Input files
-PATCH_DATES_FILE = BASE_DIR / "patch_dates.json"
-REWORK_MAPPING_FILE = BASE_DIR / "rework_patch_mapping.json"
-PLAYER_ROLES_FILE = BASE_DIR / "player_roles.json"
-KNOWLEDGE_BASE_FILE = BASE_DIR / "knowledge_base.json"
-SYNERGIES_FILE = BASE_DIR / "synergies.json"
+PATCH_DATES_FILE = KNOWLEDGE_DIR / "patch_dates.json"
+REWORK_MAPPING_FILE = KNOWLEDGE_DIR / "rework_patch_mapping.json"
+PLAYER_ROLES_FILE = KNOWLEDGE_DIR / "player_roles.json"  # Corrected roles
+KNOWLEDGE_BASE_FILE = KNOWLEDGE_DIR / "knowledge_base.json"
+SYNERGIES_FILE = KNOWLEDGE_DIR / "synergies.json"
+
+# Cached player roles (loaded once)
+_PLAYER_ROLES_CACHE = None
 
 # CSV files
 PLAYER_GAME_STATS_CSV = CSV_DIR / "player_game_stats.csv"
@@ -54,6 +57,41 @@ def load_csv(path: Path) -> list[dict]:
     """Load a CSV file as list of dicts."""
     with open(path) as f:
         return list(csv.DictReader(f))
+
+
+def load_player_roles() -> dict[str, str]:
+    """Load corrected player roles (from Leaguepedia + champion inference)."""
+    global _PLAYER_ROLES_CACHE
+    if _PLAYER_ROLES_CACHE is not None:
+        return _PLAYER_ROLES_CACHE
+
+    _PLAYER_ROLES_CACHE = {}
+    if PLAYER_ROLES_FILE.exists():
+        data = load_json(PLAYER_ROLES_FILE)
+        _PLAYER_ROLES_CACHE = {k: v["role"] for k, v in data.get("players", {}).items()}
+    return _PLAYER_ROLES_CACHE
+
+
+def get_player_role(player_name: str, csv_role: str = "") -> str:
+    """Get player role using corrected data, falling back to CSV if needed.
+
+    Returns normalized role: TOP, JUNGLE, MID, ADC, SUP
+    """
+    player_roles = load_player_roles()
+    player_key = player_name.lower()
+
+    if player_key in player_roles:
+        role = player_roles[player_key].upper()
+    else:
+        role = csv_role.upper()
+
+    # Normalize
+    if role == "BOT":
+        role = "ADC"
+    if role == "SUPPORT":
+        role = "SUP"
+
+    return role if role in ["TOP", "JUNGLE", "MID", "ADC", "SUP"] else ""
 
 
 def patch_to_num(patch: str) -> int:
@@ -166,15 +204,10 @@ def build_role_baselines(current_patch: str) -> dict:
     role_stats = defaultdict(lambda: defaultdict(list))
 
     for row in stats:
-        role = row.get("role", "").upper()
-        if not role or role not in ["TOP", "JUNGLE", "MID", "ADC", "BOT", "SUPPORT", "SUP"]:
+        # Use corrected player role
+        role = get_player_role(row.get("player_name", ""), row.get("role", ""))
+        if not role:
             continue
-
-        # Normalize role names
-        if role == "BOT":
-            role = "ADC"
-        if role == "SUPPORT":
-            role = "SUP"
 
         game_patch = game_patches.get(row["game_id"], "")
 
@@ -469,10 +502,12 @@ def build_player_proficiency(current_patch: str) -> dict:
     for row in stats:
         player = row.get("player_name", "")
         champion = row.get("champion_name", "")
-        role = row.get("role", "").upper()
 
         if not player or not champion:
             continue
+
+        # Use corrected player role
+        role = get_player_role(player, row.get("role", ""))
 
         game_patch = game_patches.get(row["game_id"], "")
 
@@ -482,12 +517,6 @@ def build_player_proficiency(current_patch: str) -> dict:
 
         patch_weight = get_patch_weight(game_patch, current_patch)
         won = row.get("team_won") == "True"
-
-        # Normalize role names
-        if role == "BOT":
-            role = "ADC"
-        if role == "SUPPORT":
-            role = "SUP"
 
         def safe_float(val):
             try:
@@ -593,22 +622,21 @@ def build_flex_champions(current_patch: str) -> dict:
     stats = load_csv(PLAYER_GAME_STATS_CSV)
     knowledge_base = load_json(KNOWLEDGE_BASE_FILE)
 
+    # Pre-load player roles for logging
+    player_roles = load_player_roles()
+    print(f"  Using {len(player_roles)} corrected player roles")
+
     # Count role occurrences per champion
     champ_roles = defaultdict(lambda: defaultdict(int))
 
     for row in stats:
         champion = row.get("champion_name", "")
-        role = row.get("role", "").upper()
-
-        if not champion or not role:
+        if not champion:
             continue
 
-        # Normalize role names
-        if role == "BOT":
-            role = "ADC"
-        if role == "SUPPORT":
-            role = "SUP"
-        if role not in ["TOP", "JUNGLE", "MID", "ADC", "SUP"]:
+        # Use corrected player role
+        role = get_player_role(row.get("player_name", ""), row.get("role", ""))
+        if not role:
             continue
 
         champ_roles[champion][role] += 1
@@ -774,9 +802,12 @@ def build_matchup_stats(current_patch: str) -> dict:
         if not game_id:
             continue
 
+        # Use corrected player role
+        role = get_player_role(row.get("player_name", ""), row.get("role", ""))
+
         game_players[game_id].append({
             "champion": row.get("champion_name", ""),
-            "role": row.get("role", "").upper(),
+            "role": role,
             "team_id": row.get("team_id", ""),
             "won": row.get("team_won") == "True"
         })
@@ -800,17 +831,9 @@ def build_matchup_stats(current_patch: str) -> dict:
         # Lane matchups (same role)
         for player_a in team_a:
             role_a = player_a["role"]
-            if role_a == "BOT":
-                role_a = "ADC"
-            if role_a == "SUPPORT":
-                role_a = "SUP"
 
             for player_b in team_b:
                 role_b = player_b["role"]
-                if role_b == "BOT":
-                    role_b = "ADC"
-                if role_b == "SUPPORT":
-                    role_b = "SUP"
 
                 if role_a == role_b and role_a in ["TOP", "JUNGLE", "MID", "ADC", "SUP"]:
                     # Lane matchup
@@ -954,6 +977,308 @@ def build_skill_transfers(current_patch: str) -> dict:
     return result
 
 
+def build_champion_role_history(current_patch: str) -> dict:
+    """Build champion_role_history.json with per-patch role tracking and meta shift detection.
+
+    This dataset tracks:
+    1. Canonical roles (from knowledge_base.json) - the "intended" role
+    2. Per-patch role distributions - how roles evolved over time
+    3. Meta shifts - when off-meta roles emerged and ended
+    4. Current viable roles - what should be recommended NOW
+    """
+    print("Building champion_role_history.json...")
+
+    stats = load_csv(PLAYER_GAME_STATS_CSV)
+    games = load_csv(GAMES_CSV)
+    knowledge_base = load_json(KNOWLEDGE_BASE_FILE)
+
+    # Build game -> patch mapping
+    game_patches = {g["id"]: g.get("patch_version", "") for g in games}
+
+    # Normalize role names from knowledge_base
+    def normalize_kb_role(role: str) -> str:
+        """Convert knowledge_base role names to our format."""
+        mapping = {
+            "Top": "TOP",
+            "Jungle": "JUNGLE",
+            "Mid": "MID",
+            "ADC": "ADC",
+            "Bot": "ADC",
+            "Support": "SUP",
+        }
+        return mapping.get(role, role.upper())
+
+    # Get canonical roles from knowledge_base
+    canonical_roles = {}
+    for champ_name, champ_data in knowledge_base.get("champions", {}).items():
+        positions = champ_data.get("positions", [])
+        flex_positions = champ_data.get("flex_positions", [])
+
+        if positions:
+            canonical_roles[champ_name] = {
+                "primary": normalize_kb_role(positions[0]),
+                "all": [normalize_kb_role(p) for p in positions + flex_positions],
+                "source": "knowledge_base",
+            }
+
+    # Collect role data per champion per patch
+    # Structure: {champion: {patch: {role: count}}}
+    champ_patch_roles = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
+    champ_patch_games = defaultdict(lambda: defaultdict(int))
+
+    for row in stats:
+        champion = row.get("champion_name", "")
+        if not champion:
+            continue
+
+        game_id = row.get("game_id", "")
+        patch = game_patches.get(game_id, "")
+        if not patch:
+            continue
+
+        # Use corrected player role
+        role = get_player_role(row.get("player_name", ""), row.get("role", ""))
+        if not role:
+            continue
+
+        champ_patch_roles[champion][patch][role] += 1
+        champ_patch_games[champion][patch] += 1
+
+    # Get all patches sorted
+    all_patches = sorted(
+        set(game_patches.values()) - {""},
+        key=patch_to_num
+    )
+
+    current_num = patch_to_num(current_patch)
+
+    # Configuration
+    META_WINDOW = 3  # Patches to consider for "current" viability
+    MIN_ROLE_RATE_FOR_VIABLE = 0.10  # 10% threshold to be considered viable
+    MIN_GAMES_FOR_STATS = 3  # Minimum games in a patch for reliable stats
+    META_SHIFT_THRESHOLD = 0.15  # 15% in off-role to be considered a meta shift
+    MIN_GAMES_FOR_META_SHIFT = 10  # Minimum total games to count as a real meta shift
+
+    # Build champion role history
+    champion_history = {}
+
+    for champion in sorted(champ_patch_roles.keys()):
+        patch_data = champ_patch_roles[champion]
+        games_data = champ_patch_games[champion]
+
+        # Get canonical role
+        canonical = canonical_roles.get(champion, {})
+        canonical_primary = canonical.get("primary", None)
+        canonical_all = canonical.get("all", [])
+
+        # Build per-patch role distributions
+        role_by_patch = {}
+        for patch in all_patches:
+            if patch not in patch_data:
+                continue
+
+            total = games_data[patch]
+            if total < 1:
+                continue
+
+            patch_roles = {}
+            for role, count in patch_data[patch].items():
+                rate = count / total
+                if rate >= 0.01:  # Only include roles with at least 1%
+                    patch_roles[role] = round(rate, 3)
+
+            if patch_roles:
+                role_by_patch[patch] = {
+                    **dict(sorted(patch_roles.items(), key=lambda x: -x[1])),
+                    "games": total,
+                }
+
+        # Calculate ALL-TIME role distribution first (used for pro_play_primary)
+        all_time_roles = defaultdict(float)
+        all_time_total = 0
+        for patch_info in role_by_patch.values():
+            games = patch_info["games"]
+            all_time_total += games
+            for role, rate in patch_info.items():
+                if role != "games":
+                    all_time_roles[role] += rate * games
+
+        # Calculate all_time_distribution as percentages
+        all_time_distribution = {}
+        pro_play_primary_role = None
+        if all_time_total > 0:
+            for role, weighted in sorted(all_time_roles.items(), key=lambda x: -x[1]):
+                pct = weighted / all_time_total
+                if pct >= 0.01:  # At least 1%
+                    all_time_distribution[role] = round(pct, 3)
+            # Pro play primary = most played role in all data
+            pro_play_primary_role = max(all_time_roles.items(), key=lambda x: x[1])[0]
+
+        # Calculate current viable roles (last N patches)
+        recent_patches = [
+            p for p in all_patches
+            if current_num - patch_to_num(p) <= META_WINDOW - 1 and current_num >= patch_to_num(p)
+        ]
+
+        recent_role_weighted = defaultdict(float)
+        recent_total_games = 0
+
+        for patch in recent_patches:
+            if patch in role_by_patch:
+                games = role_by_patch[patch]["games"]
+                recent_total_games += games
+                for role, rate in role_by_patch[patch].items():
+                    if role != "games":
+                        recent_role_weighted[role] += rate * games
+
+        # Determine current viable roles
+        current_viable = set()
+
+        # Include ALL canonical positions (not just primary)
+        for role in canonical_all:
+            current_viable.add(role)
+
+        # Add roles with significant recent play
+        if recent_total_games >= MIN_GAMES_FOR_STATS:
+            for role, weighted in recent_role_weighted.items():
+                rate = weighted / recent_total_games
+                if rate >= MIN_ROLE_RATE_FOR_VIABLE:
+                    current_viable.add(role)
+
+        # Also add pro_play_primary if it's dominant (>50%) and not already included
+        if pro_play_primary_role and all_time_total >= 10:
+            primary_pct = all_time_distribution.get(pro_play_primary_role, 0)
+            if primary_pct >= 0.5:  # Dominant role
+                current_viable.add(pro_play_primary_role)
+
+        # If still no viable roles, use pro_play_primary
+        if not current_viable and pro_play_primary_role:
+            current_viable.add(pro_play_primary_role)
+
+        # Detect meta shifts (off-meta roles that emerged)
+        meta_shifts = []
+
+        # Find roles that aren't canonical but were played significantly
+        for role in set(r for pd in role_by_patch.values() for r in pd if r != "games"):
+            if canonical_primary and role == canonical_primary:
+                continue  # Skip canonical role
+            if role in canonical_all:
+                continue  # Skip known flex positions
+
+            # Find patches where this role was significant
+            significant_patches = []
+            total_games_in_role = 0
+            for patch in all_patches:
+                if patch in role_by_patch:
+                    rate = role_by_patch[patch].get(role, 0)
+                    games_in_patch = role_by_patch[patch]["games"]
+                    if rate >= META_SHIFT_THRESHOLD:
+                        significant_patches.append((patch, rate, games_in_patch))
+                        # Count actual games played in this role
+                        total_games_in_role += int(rate * games_in_patch)
+
+            # Require both significant patches AND minimum total games
+            if not significant_patches or total_games_in_role < MIN_GAMES_FOR_META_SHIFT:
+                continue
+
+            # Determine start and end of meta shift
+            started_patch = significant_patches[0][0]
+            peak_rate = max(r for _, r, _ in significant_patches)
+            peak_patch = next(p for p, r, _ in significant_patches if r == peak_rate)
+
+            # Check if meta ended (no significant play in recent patches)
+            recent_rate = 0
+            if recent_total_games > 0:
+                recent_rate = recent_role_weighted.get(role, 0) / recent_total_games
+
+            if recent_rate < MIN_ROLE_RATE_FOR_VIABLE:
+                # Meta ended - find when
+                ended_patch = None
+                for patch in reversed(all_patches):
+                    if patch in role_by_patch:
+                        rate = role_by_patch[patch].get(role, 0)
+                        if rate >= META_SHIFT_THRESHOLD:
+                            # This was the last patch with significant play
+                            patch_idx = all_patches.index(patch)
+                            if patch_idx + 1 < len(all_patches):
+                                ended_patch = all_patches[patch_idx + 1]
+                            break
+
+                meta_shifts.append({
+                    "role": role,
+                    "started_patch": started_patch,
+                    "ended_patch": ended_patch,
+                    "peak_patch": peak_patch,
+                    "peak_rate": round(peak_rate, 3),
+                    "total_games": total_games_in_role,
+                    "status": "ended",
+                    "reason": "no_recent_picks",
+                })
+            else:
+                # Meta still active
+                meta_shifts.append({
+                    "role": role,
+                    "started_patch": started_patch,
+                    "ended_patch": None,
+                    "peak_patch": peak_patch,
+                    "peak_rate": round(peak_rate, 3),
+                    "total_games": total_games_in_role,
+                    "status": "active",
+                    "reason": None,
+                })
+
+        # Calculate current role distribution for quick access
+        current_distribution = {}
+        if recent_total_games > 0:
+            for role, weighted in sorted(recent_role_weighted.items(), key=lambda x: -x[1]):
+                rate = weighted / recent_total_games
+                if rate >= 0.01:
+                    current_distribution[role] = round(rate, 3)
+
+        champion_history[champion] = {
+            "canonical_role": canonical_primary,
+            "canonical_all": canonical_all,
+            "canonical_source": canonical.get("source", "inferred"),
+            "pro_play_primary_role": pro_play_primary_role,
+            "all_time_distribution": all_time_distribution,
+            "all_time_games": all_time_total,
+            "role_by_patch": role_by_patch,
+            "meta_shifts": meta_shifts,
+            "current_viable_roles": sorted(current_viable),
+            "current_distribution": current_distribution,
+            "current_patch_window": recent_patches,
+            "recent_games": recent_total_games,
+        }
+
+    # Summary stats
+    total_meta_shifts = sum(len(c["meta_shifts"]) for c in champion_history.values())
+    active_meta_shifts = sum(
+        1 for c in champion_history.values()
+        for ms in c["meta_shifts"]
+        if ms["status"] == "active"
+    )
+    ended_meta_shifts = total_meta_shifts - active_meta_shifts
+
+    result = {
+        "metadata": {
+            "generated_at": datetime.now().isoformat(),
+            "current_patch": current_patch,
+            "meta_window_patches": META_WINDOW,
+            "min_role_rate_for_viable": MIN_ROLE_RATE_FOR_VIABLE,
+            "meta_shift_threshold": META_SHIFT_THRESHOLD,
+            "min_games_for_meta_shift": MIN_GAMES_FOR_META_SHIFT,
+            "champions_count": len(champion_history),
+            "total_meta_shifts_detected": total_meta_shifts,
+            "active_meta_shifts": active_meta_shifts,
+            "ended_meta_shifts": ended_meta_shifts,
+        },
+        "champions": champion_history,
+    }
+
+    save_json(result, OUTPUT_DIR / "champion_role_history.json")
+    return result
+
+
 # ============================================================================
 # Main
 # ============================================================================
@@ -967,6 +1292,7 @@ DATASETS = {
     "champion_synergies": build_champion_synergies,
     "matchup_stats": build_matchup_stats,
     "skill_transfers": build_skill_transfers,
+    "champion_role_history": build_champion_role_history,
 }
 
 
@@ -1002,6 +1328,7 @@ def main():
             "champion_synergies",
             "matchup_stats",
             "skill_transfers",
+            "champion_role_history",  # Tracks role evolution and meta shifts
         ]
         for name in order:
             DATASETS[name](args.current_patch)

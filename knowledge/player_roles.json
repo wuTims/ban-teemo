@@ -1,3546 +1,4475 @@
 {
   "metadata": {
-    "generated_at": "2026-01-26T11:57:23Z",
-    "total_players": 442,
-    "source": "grid",
-    "description": "Player roles inferred from GRID match data player order (Top, Jungle, Mid, Bot, Support)"
+    "generated_at": "2026-01-27T10:11:44.184780",
+    "total_players": 446,
+    "sources": {
+      "leaguepedia_cached": 388,
+      "leaguepedia_fetched": 0,
+      "champion_inference": 33,
+      "leaguepedia_corrected": 25
+    },
+    "description": "Player roles: Leaguepedia + champion inference (validated)"
   },
   "players": {
     "doran": {
       "id": "20728",
       "name": "Doran",
       "role": "top",
-      "team": "Hanwha Life Esports",
-      "team_id": "406",
-      "source": "grid"
+      "team": "",
+      "team_id": "47494",
+      "source": "leaguepedia",
+      "games": 227,
+      "inference_confidence": 0.85
     },
     "peanut": {
       "id": "23810",
       "name": "Peanut",
       "role": "jungle",
-      "team": "Hanwha Life Esports",
+      "team": "",
       "team_id": "406",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 233,
+      "inference_confidence": 0.96
     },
     "zeka": {
       "id": "23472",
       "name": "Zeka",
       "role": "mid",
-      "team": "Hanwha Life Esports",
+      "team": "",
       "team_id": "406",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 233,
+      "inference_confidence": 0.92
     },
     "viper": {
       "id": "27265",
       "name": "Viper",
       "role": "bot",
-      "team": "Hanwha Life Esports",
+      "team": "",
       "team_id": "406",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 233,
+      "inference_confidence": 0.91
     },
     "delight": {
       "id": "20199",
       "name": "Delight",
       "role": "support",
-      "team": "Hanwha Life Esports",
+      "team": "",
       "team_id": "406",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 233,
+      "inference_confidence": 0.85
     },
     "dudu": {
       "id": "24460",
       "name": "DuDu",
       "role": "top",
-      "team": "DN FREECS",
+      "team": "",
       "team_id": "3483",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 178,
+      "inference_confidence": 0.91
     },
     "cuzz": {
       "id": "24669",
       "name": "Cuzz",
       "role": "jungle",
-      "team": "KWANGDONG FREECS",
-      "team_id": "3483",
-      "source": "grid"
+      "team": "",
+      "team_id": "407",
+      "source": "leaguepedia",
+      "games": 204,
+      "inference_confidence": 0.95
     },
     "bulldog": {
       "id": "20269",
       "name": "BuLLDoG",
       "role": "mid",
-      "team": "DN FREECS",
+      "team": "",
       "team_id": "3483",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 166,
+      "inference_confidence": 0.96
     },
     "bull": {
       "id": "19896",
       "name": "Bull",
       "role": "bot",
-      "team": "OKSavingsBank BRION",
-      "team_id": "52817",
-      "source": "grid"
+      "team": "",
+      "team_id": "3483",
+      "source": "leaguepedia",
+      "games": 54,
+      "inference_confidence": 0.91
     },
     "quantum": {
       "id": "28728",
       "name": "Quantum",
-      "role": "bot",
-      "team": "DN FREECS",
+      "role": "support",
+      "team": "",
       "team_id": "3483",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 10,
+      "inference_confidence": 0.6
     },
     "irrelevant": {
       "id": "20473",
       "name": "Irrelevant",
       "role": "top",
-      "team": "Team BDS",
-      "team_id": "52661",
-      "source": "grid"
+      "team": "",
+      "team_id": "353",
+      "source": "leaguepedia",
+      "games": 90,
+      "inference_confidence": 0.92
     },
     "isma": {
       "id": "26519",
       "name": "ISMA",
       "role": "jungle",
-      "team": "GIANTX",
-      "team_id": "53168",
-      "source": "grid"
+      "team": "",
+      "team_id": "353",
+      "source": "leaguepedia",
+      "games": 103,
+      "inference_confidence": 0.91
     },
     "nisqy": {
       "id": "24079",
       "name": "Nisqy",
-      "role": "support",
-      "team": "Team Vitality",
-      "team_id": "47370",
-      "source": "grid"
+      "role": "mid",
+      "team": "",
+      "team_id": "353",
+      "source": "leaguepedia",
+      "games": 73,
+      "inference_confidence": 0.67
     },
     "exakick": {
       "id": "20366",
       "name": "Exakick",
       "role": "bot",
-      "team": "SK Gaming",
+      "team": "",
       "team_id": "353",
-      "source": "grid"
+      "source": "champion_inference",
+      "games": 33,
+      "inference_confidence": 1.0
     },
     "doss": {
       "id": "23181",
       "name": "Doss",
       "role": "support",
-      "team": "SK Gaming",
+      "team": "",
       "team_id": "353",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 33,
+      "inference_confidence": 0.94
     },
     "myrwn": {
       "id": "27293",
       "name": "Myrwn",
       "role": "top",
-      "team": "Movistar KOI",
+      "team": "",
       "team_id": "47619",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 161,
+      "inference_confidence": 0.62
     },
     "elyoya": {
       "id": "24521",
       "name": "Elyoya",
       "role": "jungle",
-      "team": "Movistar KOI",
+      "team": "",
       "team_id": "47619",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 161,
+      "inference_confidence": 0.92
     },
     "fresskowy": {
       "id": "25711",
       "name": "Fresskowy",
       "role": "mid",
-      "team": "MAD Lions",
+      "team": "",
       "team_id": "47619",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 75,
+      "inference_confidence": 0.83
     },
     "supa": {
       "id": "20690",
       "name": "Supa",
       "role": "bot",
-      "team": "Movistar KOI",
+      "team": "",
       "team_id": "47619",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 161,
+      "inference_confidence": 0.9
     },
     "alvaro": {
       "id": "21245",
       "name": "Alvaro",
       "role": "support",
-      "team": "Movistar KOI",
+      "team": "",
       "team_id": "47619",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 161,
+      "inference_confidence": 0.93
     },
     "bin": {
       "id": "24854",
       "name": "Bin",
       "role": "top",
-      "team": "BILIBILI GAMING DREAMSMART",
+      "team": "",
       "team_id": "356",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 194,
+      "inference_confidence": 0.95
     },
     "beichuan": {
       "id": "25939",
       "name": "Beichuan",
       "role": "jungle",
-      "team": "THUNDERTALKGAMING",
+      "team": "",
       "team_id": "52606",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 142,
+      "inference_confidence": 0.93
     },
     "knight": {
       "id": "21575",
       "name": "Knight",
       "role": "mid",
-      "team": "BILIBILI GAMING DREAMSMART",
+      "team": "",
       "team_id": "356",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 194,
+      "inference_confidence": 0.92
     },
     "elk": {
       "id": "25091",
       "name": "Elk",
       "role": "bot",
-      "team": "BILIBILI GAMING DREAMSMART",
+      "team": "",
       "team_id": "356",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 194,
+      "inference_confidence": 0.89
     },
     "on": {
       "id": "25485",
       "name": "ON",
       "role": "support",
-      "team": "BILIBILI GAMING DREAMSMART",
+      "team": "",
       "team_id": "356",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 311,
+      "inference_confidence": 0.51
     },
     "369": {
       "id": "23995",
       "name": "369",
       "role": "top",
-      "team": "TopEsports",
+      "team": "",
       "team_id": "375",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 209,
+      "inference_confidence": 0.96
     },
     "kanavi": {
       "id": "20879",
       "name": "Kanavi",
       "role": "jungle",
-      "team": "TopEsports",
+      "team": "",
       "team_id": "375",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 209,
+      "inference_confidence": 0.92
     },
     "creme": {
       "id": "20333",
       "name": "Creme",
       "role": "mid",
-      "team": "TopEsports",
+      "team": "",
       "team_id": "375",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 209,
+      "inference_confidence": 0.91
     },
     "jackeylove": {
       "id": "24065",
       "name": "JackeyLove",
       "role": "bot",
-      "team": "TopEsports",
+      "team": "",
       "team_id": "375",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 209,
+      "inference_confidence": 0.9
     },
     "hang": {
       "id": "23716",
       "name": "Hang",
       "role": "support",
-      "team": "WeiboGaming Faw Audi",
-      "team_id": "52822",
-      "source": "grid"
+      "team": "",
+      "team_id": "375",
+      "source": "leaguepedia",
+      "games": 144,
+      "inference_confidence": 0.91
     },
     "shad0w": {
       "id": "26243",
       "name": "shad0w",
       "role": "jungle",
-      "team": "BILIBILI GAMING DREAMSMART",
-      "team_id": "356",
-      "source": "grid"
+      "team": "",
+      "team_id": "47514",
+      "source": "leaguepedia",
+      "games": 121,
+      "inference_confidence": 0.96
     },
     "theshy": {
       "id": "23782",
       "name": "TheShy",
       "role": "top",
-      "team": "Invictus Gaming",
+      "team": "",
       "team_id": "47472",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 137,
+      "inference_confidence": 0.81
     },
     "jiejie": {
       "id": "23694",
       "name": "JieJie",
       "role": "jungle",
-      "team": "Invictus Gaming",
+      "team": "",
       "team_id": "47472",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 128,
+      "inference_confidence": 0.97
     },
     "rookie": {
       "id": "26680",
       "name": "Rookie",
       "role": "mid",
-      "team": "Invictus Gaming",
+      "team": "",
       "team_id": "47472",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 196,
+      "inference_confidence": 0.87
     },
     "gala": {
       "id": "24551",
       "name": "GALA",
       "role": "bot",
-      "team": "Invictus Gaming",
+      "team": "",
       "team_id": "47472",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 184,
+      "inference_confidence": 0.85
     },
     "meiko": {
       "id": "22910",
       "name": "Meiko",
       "role": "support",
-      "team": "Invictus Gaming",
+      "team": "",
       "team_id": "47472",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 190,
+      "inference_confidence": 0.83
     },
     "zdz": {
       "id": "21139",
       "name": "Zdz",
       "role": "top",
-      "team": "FunPlus Phoenix",
-      "team_id": "47514",
-      "source": "grid"
+      "team": "",
+      "team_id": "47509",
+      "source": "leaguepedia",
+      "games": 101,
+      "inference_confidence": 0.87
     },
     "xiaohao": {
       "id": "26154",
       "name": "Xiaohao",
       "role": "jungle",
-      "team": "SHANGHAI EDWARD GAMING HYCAN",
+      "team": "",
       "team_id": "47509",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 101,
+      "inference_confidence": 0.96
     },
     "angel": {
       "id": "23828",
       "name": "Angel",
       "role": "mid",
-      "team": "SHANGHAI EDWARD GAMING HYCAN",
+      "team": "",
       "team_id": "47509",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 99,
+      "inference_confidence": 0.87
     },
     "ahn": {
       "id": "25993",
       "name": "Ahn",
       "role": "bot",
-      "team": "Invictus Gaming",
-      "team_id": "47472",
-      "source": "grid"
+      "team": "",
+      "team_id": "47509",
+      "source": "leaguepedia",
+      "games": 97,
+      "inference_confidence": 0.79
     },
     "winkk": {
       "id": "22376",
       "name": "Winkk",
       "role": "support",
-      "team": "SHANGHAI EDWARD GAMING HYCAN",
+      "team": "",
       "team_id": "47509",
-      "source": "grid"
+      "source": "champion_inference",
+      "games": 78,
+      "inference_confidence": 0.9
     },
     "rich": {
       "id": "20786",
       "name": "Rich",
       "role": "top",
-      "team": "Dignitas",
-      "team_id": "47499",
-      "source": "grid"
+      "team": "",
+      "team_id": "47961",
+      "source": "leaguepedia",
+      "games": 116,
+      "inference_confidence": 0.9
     },
     "sponge": {
       "id": "25156",
       "name": "Sponge",
       "role": "jungle",
-      "team": "DRX",
+      "team": "",
       "team_id": "47961",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 181,
+      "inference_confidence": 0.95
     },
     "ucal": {
       "id": "20845",
       "name": "Ucal",
       "role": "mid",
-      "team": "DRX",
+      "team": "",
       "team_id": "47961",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 92,
+      "inference_confidence": 0.75
     },
     "teddy": {
       "id": "24229",
       "name": "Teddy",
       "role": "bot",
-      "team": "DRX",
+      "team": "",
       "team_id": "47961",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 143,
+      "inference_confidence": 0.94
     },
     "andil": {
       "id": "20733",
       "name": "Andil",
       "role": "support",
-      "team": "DRX",
+      "team": "",
       "team_id": "47961",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 164,
+      "inference_confidence": 0.82
     },
     "pyosik": {
       "id": "20576",
       "name": "Pyosik",
       "role": "jungle",
-      "team": "KT Rolster",
+      "team": "",
       "team_id": "407",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 190,
+      "inference_confidence": 0.98
     },
     "berserker": {
       "id": "24292",
       "name": "Berserker",
       "role": "bot",
-      "team": "DN FREECS",
+      "team": "",
       "team_id": "3483",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 135,
+      "inference_confidence": 0.88
     },
     "life": {
       "id": "21663",
       "name": "Life",
       "role": "support",
-      "team": "FunPlus Phoenix",
-      "team_id": "47514",
-      "source": "grid"
+      "team": "",
+      "team_id": "3483",
+      "source": "leaguepedia",
+      "games": 118,
+      "inference_confidence": 0.87
     },
     "carlsen": {
       "id": "21372",
       "name": "Carlsen",
       "role": "top",
-      "team": "Team Heretics",
+      "team": "",
       "team_id": "47435",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 55,
+      "inference_confidence": 0.93
     },
     "sheo": {
       "id": "25148",
       "name": "Sheo",
       "role": "jungle",
-      "team": "Team Heretics",
-      "team_id": "47435",
-      "source": "grid"
+      "team": "",
+      "team_id": "52661",
+      "source": "leaguepedia",
+      "games": 136,
+      "inference_confidence": 0.9
     },
     "kamiloo": {
       "id": "20224",
       "name": "Kamiloo",
       "role": "mid",
-      "team": "Team Heretics",
+      "team": "",
       "team_id": "47435",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 55,
+      "inference_confidence": 0.87
     },
     "th flakked": {
       "id": "28555",
       "name": "TH Flakked",
       "role": "bot",
-      "team": "Team Heretics",
+      "team": "",
       "team_id": "47435",
-      "source": "grid"
+      "source": "champion_inference",
+      "games": 69,
+      "inference_confidence": 0.78
     },
     "stend": {
       "id": "20899",
       "name": "Stend",
       "role": "support",
-      "team": "Team Heretics",
+      "team": "",
       "team_id": "47435",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 55,
+      "inference_confidence": 0.89
     },
     "jnx": {
       "id": "24971",
       "name": "JNX",
       "role": "top",
-      "team": "SK Gaming",
+      "team": "",
       "team_id": "353",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 33,
+      "inference_confidence": 0.82
     },
     "rkr": {
       "id": "26574",
       "name": "RKR",
       "role": "mid",
-      "team": "SK Gaming",
+      "team": "",
       "team_id": "353",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 28,
+      "inference_confidence": 0.96
     },
     "rahel": {
       "id": "26893",
       "name": "Rahel",
       "role": "bot",
-      "team": "SK Gaming",
+      "team": "",
       "team_id": "353",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 45,
+      "inference_confidence": 0.89
     },
     "loopy": {
       "id": "24452",
       "name": "Loopy",
       "role": "support",
-      "team": "SK Gaming",
+      "team": "",
       "team_id": "353",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 37,
+      "inference_confidence": 0.86
     },
     "perfect": {
       "id": "20080",
       "name": "PerfecT",
       "role": "top",
-      "team": "KT Rolster",
+      "team": "",
       "team_id": "407",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 198,
+      "inference_confidence": 0.91
     },
     "bdd": {
       "id": "23012",
       "name": "Bdd",
       "role": "mid",
-      "team": "KT Rolster",
+      "team": "",
       "team_id": "407",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 219,
+      "inference_confidence": 0.93
     },
     "deokdam": {
       "id": "26978",
       "name": "deokdam",
       "role": "bot",
-      "team": "FunPlus Phoenix",
-      "team_id": "47514",
-      "source": "grid"
+      "team": "",
+      "team_id": "407",
+      "source": "leaguepedia",
+      "games": 144,
+      "inference_confidence": 0.87
     },
     "way": {
       "id": "23124",
       "name": "Way",
       "role": "support",
-      "team": "KT Rolster",
+      "team": "",
       "team_id": "407",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 22,
+      "inference_confidence": 0.82
     },
     "kingen": {
       "id": "23425",
       "name": "Kingen",
       "role": "top",
-      "team": "Dplus KIA",
-      "team_id": "48179",
-      "source": "grid"
+      "team": "",
+      "team_id": "52747",
+      "source": "leaguepedia",
+      "games": 233,
+      "inference_confidence": 0.82
     },
     "fisher": {
       "id": "25466",
       "name": "Fisher",
       "role": "mid",
-      "team": "NongShim REDFORCE",
+      "team": "",
       "team_id": "52747",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 75,
+      "inference_confidence": 0.88
     },
     "jiwoo": {
       "id": "20095",
       "name": "Jiwoo",
-      "role": "support",
-      "team": "NONGSHIM RED FORCE",
+      "role": "bot",
+      "team": "",
       "team_id": "52747",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 193,
+      "inference_confidence": 0.93
     },
     "lehends": {
       "id": "20972",
       "name": "Lehends",
-      "role": "mid",
-      "team": "NONGSHIM RED FORCE",
+      "role": "support",
+      "team": "",
       "team_id": "52747",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 220,
+      "inference_confidence": 0.8
     },
     "breathe": {
       "id": "24316",
       "name": "Breathe",
       "role": "top",
-      "team": "WeiboGaming TapTap",
+      "team": "",
       "team_id": "52822",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 203,
+      "inference_confidence": 0.93
     },
     "tian": {
       "id": "24459",
       "name": "Tian",
       "role": "jungle",
-      "team": "WeiboGaming Faw Audi",
+      "team": "",
       "team_id": "52822",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 192,
+      "inference_confidence": 0.95
     },
     "xiaohu": {
       "id": "25639",
       "name": "Xiaohu",
       "role": "mid",
-      "team": "WeiboGaming TapTap",
+      "team": "",
       "team_id": "52822",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 204,
+      "inference_confidence": 0.88
     },
     "light": {
       "id": "24435",
       "name": "Light",
       "role": "bot",
-      "team": "WeiboGaming TapTap",
+      "team": "",
       "team_id": "52822",
-      "source": "grid"
+      "source": "leaguepedia_corrected",
+      "games": 204,
+      "inference_confidence": 0.88
     },
     "erha": {
       "id": "29435",
       "name": "Erha",
       "role": "support",
-      "team": "WeiboGaming Faw Audi",
+      "team": "",
       "team_id": "52822",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 48,
+      "inference_confidence": 0.88
     },
     "wei": {
       "id": "22073",
       "name": "Wei",
       "role": "jungle",
-      "team": "Invictus Gaming",
-      "team_id": "47472",
-      "source": "grid"
+      "team": "",
+      "team_id": "356",
+      "source": "leaguepedia",
+      "games": 139,
+      "inference_confidence": 0.97
     },
     "hoya": {
       "id": "24906",
       "name": "Hoya",
       "role": "top",
-      "team": "THUNDERTALKGAMING",
+      "team": "",
       "team_id": "52606",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 132,
+      "inference_confidence": 0.8
     },
     "xiaohuangren": {
       "id": "123512",
       "name": "xiaohuangren",
       "role": "jungle",
-      "team": "THUNDERTALKGAMING",
+      "team": "",
       "team_id": "52606",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 24,
+      "inference_confidence": 1.0
     },
     "setab": {
       "id": "25576",
       "name": "SeTab",
       "role": "mid",
-      "team": "THUNDERTALKGAMING",
+      "team": "",
       "team_id": "52606",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 134,
+      "inference_confidence": 0.93
     },
     "1xn": {
       "id": "24085",
       "name": "1xn",
       "role": "bot",
-      "team": "THUNDERTALKGAMING",
+      "team": "",
       "team_id": "52606",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 132,
+      "inference_confidence": 0.93
     },
     "feather": {
       "id": "21829",
       "name": "Feather",
       "role": "support",
-      "team": "THUNDERTALKGAMING",
+      "team": "",
       "team_id": "52606",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 130,
+      "inference_confidence": 0.95
     },
     "photon": {
       "id": "21951",
       "name": "Photon",
       "role": "top",
-      "team": "Team Vitality",
+      "team": "",
       "team_id": "47370",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 57,
+      "inference_confidence": 0.81
     },
     "daglas": {
       "id": "21610",
       "name": "Daglas",
       "role": "jungle",
-      "team": "Team Vitality",
+      "team": "",
       "team_id": "47370",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 36,
+      "inference_confidence": 0.69
     },
     "vetheo": {
       "id": "21646",
       "name": "Vetheo",
       "role": "mid",
-      "team": "Team Vitality",
+      "team": "",
       "team_id": "47370",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 46,
+      "inference_confidence": 0.89
     },
     "carzzy": {
       "id": "25400",
       "name": "Carzzy",
       "role": "bot",
-      "team": "Team Vitality",
+      "team": "",
       "team_id": "47370",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 98,
+      "inference_confidence": 0.85
     },
     "hylissang": {
       "id": "24192",
       "name": "Hylissang",
       "role": "support",
-      "team": "Team Vitality",
+      "team": "",
       "team_id": "47370",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 60,
+      "inference_confidence": 0.87
     },
     "wizer": {
       "id": "22797",
       "name": "Wizer",
       "role": "top",
-      "team": "Pain Gaming",
+      "team": "",
       "team_id": "3389",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 62,
+      "inference_confidence": 0.94
     },
     "cariok": {
       "id": "23038",
       "name": "CarioK",
       "role": "jungle",
-      "team": "Pain Gaming",
+      "team": "",
       "team_id": "3389",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 62,
+      "inference_confidence": 1.0
     },
     "roamer": {
       "id": "22195",
       "name": "Roamer",
       "role": "mid",
-      "team": "Pain Gaming",
+      "team": "",
       "team_id": "3389",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 50,
+      "inference_confidence": 0.96
     },
     "titan": {
       "id": "25075",
       "name": "TitaN",
       "role": "bot",
-      "team": "Pain Gaming",
+      "team": "",
       "team_id": "3389",
-      "source": "grid"
+      "source": "leaguepedia_corrected",
+      "games": 62,
+      "inference_confidence": 0.82
     },
     "kuri": {
       "id": "23553",
       "name": "Kuri",
       "role": "support",
-      "team": "Pain Gaming",
+      "team": "",
       "team_id": "3389",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 62,
+      "inference_confidence": 0.82
     },
     "burdol": {
       "id": "21821",
       "name": "Burdol",
       "role": "top",
-      "team": "Isurus Estral",
+      "team": "",
       "team_id": "54284",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 23,
+      "inference_confidence": 0.87
     },
     "josedeodo": {
       "id": "23109",
       "name": "Josedeodo",
       "role": "jungle",
-      "team": "Isurus Estral",
+      "team": "",
       "team_id": "54284",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 51,
+      "inference_confidence": 0.96
     },
     "mireu": {
       "id": "20362",
       "name": "Mireu",
       "role": "mid",
-      "team": "Isurus Estral",
+      "team": "",
       "team_id": "54284",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 67,
+      "inference_confidence": 0.99
     },
     "snaker": {
       "id": "21513",
       "name": "Snaker",
       "role": "bot",
-      "team": "Isurus Estral",
+      "team": "",
       "team_id": "54284",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 51,
+      "inference_confidence": 0.96
     },
     "ackerman": {
       "id": "20131",
       "name": "Ackerman",
       "role": "support",
-      "team": "Isurus Estral",
+      "team": "",
       "team_id": "54284",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 51,
+      "inference_confidence": 0.84
     },
     "busio": {
       "id": "23604",
       "name": "Busio",
       "role": "support",
-      "team": "FlyQuest",
+      "team": "",
       "team_id": "340",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 131,
+      "inference_confidence": 0.83
     },
     "inspired": {
       "id": "20697",
       "name": "Inspired",
       "role": "jungle",
-      "team": "FlyQuest",
+      "team": "",
       "team_id": "340",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 131,
+      "inference_confidence": 0.97
     },
     "massu": {
       "id": "26927",
       "name": "Massu",
       "role": "bot",
-      "team": "FlyQuest",
+      "team": "",
       "team_id": "340",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 131,
+      "inference_confidence": 0.87
     },
     "bwipo": {
       "id": "23969",
       "name": "Bwipo",
       "role": "top",
-      "team": "FlyQuest",
+      "team": "",
       "team_id": "340",
-      "source": "grid"
+      "source": "leaguepedia_corrected",
+      "games": 128,
+      "inference_confidence": 0.76
     },
     "quad": {
       "id": "24908",
       "name": "Quad",
       "role": "mid",
-      "team": "FlyQuest",
+      "team": "",
       "team_id": "340",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 105,
+      "inference_confidence": 0.88
     },
     "castle": {
       "id": "23652",
       "name": "Castle",
       "role": "top",
-      "team": "Immortals Progressive",
-      "team_id": "52572",
-      "source": "grid"
+      "team": "",
+      "team_id": "52416",
+      "source": "leaguepedia",
+      "games": 66,
+      "inference_confidence": 0.83
     },
     "exyu": {
       "id": "24581",
       "name": "eXyu",
       "role": "jungle",
-      "team": "Dignitas",
-      "team_id": "47499",
-      "source": "grid"
+      "team": "",
+      "team_id": "52416",
+      "source": "leaguepedia",
+      "games": 55,
+      "inference_confidence": 0.91
     },
     "huhi": {
       "id": "19964",
       "name": "huhi",
       "role": "support",
-      "team": "NRG Kia",
+      "team": "",
       "team_id": "52541",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 81,
+      "inference_confidence": 0.81
     },
     "darkwings": {
       "id": "22031",
       "name": "DARKWINGS",
-      "role": "support",
-      "team": "Disguised",
+      "role": "mid",
+      "team": "",
       "team_id": "52416",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 17,
+      "inference_confidence": 1.0
     },
     "gakgos": {
       "id": "29034",
       "name": "Gakgos",
-      "role": "mid",
-      "team": "FlyQuest",
+      "role": "top",
+      "team": "",
       "team_id": "340",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 8,
+      "inference_confidence": 0.62
     },
     "shanji": {
       "id": "26675",
       "name": "shanji",
       "role": "top",
-      "team": "Shenzhen NINJAS IN PYJAMAS",
+      "team": "",
       "team_id": "52905",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 106,
+      "inference_confidence": 0.73
     },
     "aki": {
       "id": "20741",
       "name": "Aki",
       "role": "jungle",
-      "team": "Shenzhen NINJAS IN PYJAMAS",
+      "team": "",
       "team_id": "52905",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 133,
+      "inference_confidence": 0.98
     },
     "doinb": {
       "id": "24050",
       "name": "Doinb",
       "role": "mid",
-      "team": "Shenzhen NINJAS IN PYJAMAS",
+      "team": "",
       "team_id": "52905",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 111,
+      "inference_confidence": 0.87
     },
     "leave": {
       "id": "26469",
       "name": "Leave",
       "role": "bot",
-      "team": "SHANGHAI EDWARD GAMING HYCAN",
-      "team_id": "47509",
-      "source": "grid"
+      "team": "",
+      "team_id": "52905",
+      "source": "leaguepedia",
+      "games": 142,
+      "inference_confidence": 0.92
     },
     "ppgod": {
       "id": "25461",
       "name": "ppgod",
       "role": "support",
-      "team": "Shenzhen NINJAS IN PYJAMAS",
+      "team": "",
       "team_id": "52905",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 108,
+      "inference_confidence": 0.89
     },
     "crisp": {
       "id": "21006",
       "name": "Crisp",
       "role": "support",
-      "team": "WeiboGaming TapTap",
+      "team": "",
       "team_id": "52822",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 213,
+      "inference_confidence": 0.89
     },
     "canna": {
       "id": "23187",
       "name": "Canna",
       "role": "top",
-      "team": "Karmine Corp",
+      "team": "",
       "team_id": "53165",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 110,
+      "inference_confidence": 0.91
     },
     "yike": {
       "id": "24444",
       "name": "Yike",
       "role": "jungle",
-      "team": "G2 Esports",
-      "team_id": "47380",
-      "source": "grid"
+      "team": "",
+      "team_id": "53165",
+      "source": "leaguepedia",
+      "games": 177,
+      "inference_confidence": 0.95
     },
     "vladi": {
       "id": "23049",
       "name": "Vladi",
       "role": "mid",
-      "team": "Karmine Corp",
+      "team": "",
       "team_id": "53165",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 110,
+      "inference_confidence": 0.98
     },
     "caliste": {
       "id": "21138",
       "name": "Caliste",
       "role": "bot",
-      "team": "Karmine Corp",
+      "team": "",
       "team_id": "53165",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 89,
+      "inference_confidence": 0.91
     },
     "targamas": {
       "id": "25956",
       "name": "Targamas",
       "role": "support",
-      "team": "Karmine Corp",
+      "team": "",
       "team_id": "53165",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 128,
+      "inference_confidence": 0.88
     },
     "boukada": {
       "id": "23857",
       "name": "Boukada",
       "role": "jungle",
-      "team": "Team BDS",
-      "team_id": "52661",
-      "source": "grid"
+      "team": "",
+      "team_id": "353",
+      "source": "leaguepedia",
+      "games": 31,
+      "inference_confidence": 0.97
     },
     "keduii": {
       "id": "27283",
       "name": "Keduii",
       "role": "bot",
-      "team": "SK Gaming",
+      "team": "",
       "team_id": "353",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 28,
+      "inference_confidence": 0.64
     },
     "adam": {
       "id": "24309",
       "name": "Adam",
       "role": "top",
-      "team": "Team BDS",
+      "team": "",
       "team_id": "52661",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 113,
+      "inference_confidence": 0.84
     },
     "malrang": {
       "id": "25214",
       "name": "Malrang",
       "role": "jungle",
-      "team": "Rogue",
+      "team": "",
       "team_id": "106",
-      "source": "grid"
+      "source": "leaguepedia_corrected",
+      "games": 37,
+      "inference_confidence": 0.73
     },
     "larssen": {
       "id": "26822",
       "name": "Larssen",
       "role": "mid",
-      "team": "Rogue",
+      "team": "",
       "team_id": "106",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 66,
+      "inference_confidence": 0.97
     },
     "patrik": {
       "id": "21366",
       "name": "Patrik",
       "role": "bot",
-      "team": "GIANTX",
+      "team": "",
       "team_id": "53168",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 77,
+      "inference_confidence": 0.91
     },
-    "execute": {
+    "jeonghoon": {
       "id": "29553",
-      "name": "Execute",
+      "name": "JeongHoon",
       "role": "support",
-      "team": "FearX",
-      "team_id": "4035",
-      "source": "grid"
+      "team": "",
+      "team_id": "106",
+      "source": "champion_inference",
+      "games": 52,
+      "inference_confidence": 1.0
     },
     "jensen": {
       "id": "19943",
       "name": "Jensen",
       "role": "mid",
-      "team": "Dignitas",
+      "team": "",
       "team_id": "47499",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 57,
+      "inference_confidence": 0.75
     },
     "fakegod": {
       "id": "20258",
       "name": "FakeGod",
       "role": "top",
-      "team": "Shopify Rebellion",
+      "team": "",
       "team_id": "53073",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 30,
+      "inference_confidence": 0.8
     },
     "bugi": {
       "id": "26801",
       "name": "Bugi",
       "role": "jungle",
-      "team": "Shopify Rebellion",
+      "team": "",
       "team_id": "53073",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 24,
+      "inference_confidence": 0.88
     },
     "insanity": {
       "id": "25343",
       "name": "Insanity",
       "role": "mid",
-      "team": "Shopify Rebellion",
+      "team": "",
       "team_id": "53073",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 30,
+      "inference_confidence": 0.53
     },
     "bvoy": {
       "id": "24097",
       "name": "Bvoy",
       "role": "bot",
-      "team": "Shopify Rebellion",
+      "team": "",
       "team_id": "53073",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 92,
+      "inference_confidence": 0.86
     },
     "zeyzal": {
       "id": "27317",
       "name": "Zeyzal",
       "role": "support",
-      "team": "Shopify Rebellion",
+      "team": "",
       "team_id": "53073",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 37,
+      "inference_confidence": 0.95
     },
     "lyncas": {
       "id": "21510",
       "name": "Lyncas",
       "role": "jungle",
-      "team": "Team Vitality",
+      "team": "",
       "team_id": "47370",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 62,
+      "inference_confidence": 0.94
     },
     "kiin": {
       "id": "21335",
       "name": "Kiin",
       "role": "top",
-      "team": "Gen.G Esports",
+      "team": "",
       "team_id": "47558",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 224,
+      "inference_confidence": 0.78
     },
     "canyon": {
       "id": "21233",
       "name": "Canyon",
       "role": "jungle",
-      "team": "Gen.G Esports",
+      "team": "",
       "team_id": "47558",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 224,
+      "inference_confidence": 0.9
     },
     "chovy": {
       "id": "22958",
       "name": "Chovy",
       "role": "mid",
-      "team": "Gen.G Esports",
+      "team": "",
       "team_id": "47558",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 224,
+      "inference_confidence": 0.88
     },
     "peyz": {
       "id": "24653",
       "name": "Peyz",
       "role": "bot",
-      "team": "Beijing JDG Intel Esports",
+      "team": "",
       "team_id": "52796",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 248,
+      "inference_confidence": 0.88
     },
     "lucid": {
       "id": "20038",
       "name": "Lucid",
       "role": "jungle",
-      "team": "Dplus KIA",
+      "team": "",
       "team_id": "48179",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 247,
+      "inference_confidence": 0.93
     },
     "showmaker": {
       "id": "26409",
       "name": "ShowMaker",
       "role": "mid",
-      "team": "Dplus KIA",
+      "team": "",
       "team_id": "48179",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 247,
+      "inference_confidence": 0.86
     },
     "beryl": {
       "id": "27490",
       "name": "BeryL",
       "role": "support",
-      "team": "KT Rolster",
-      "team_id": "407",
-      "source": "grid"
+      "team": "",
+      "team_id": "48179",
+      "source": "leaguepedia",
+      "games": 236,
+      "inference_confidence": 0.75
     },
     "siwoo": {
       "id": "28994",
       "name": "Siwoo",
       "role": "top",
-      "team": "Dplus KIA",
+      "team": "",
       "team_id": "48179",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 131,
+      "inference_confidence": 0.92
     },
     "aiming": {
       "id": "27218",
       "name": "Aiming",
       "role": "bot",
-      "team": "Dplus KIA",
+      "team": "",
       "team_id": "48179",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 247,
+      "inference_confidence": 0.89
     },
     "oner": {
       "id": "21690",
       "name": "Oner",
       "role": "jungle",
-      "team": "T1",
+      "team": "",
       "team_id": "47494",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 237,
+      "inference_confidence": 0.92
     },
     "gumayusi": {
       "id": "24427",
       "name": "Gumayusi",
       "role": "bot",
-      "team": "T1",
+      "team": "",
       "team_id": "47494",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 215,
+      "inference_confidence": 0.88
     },
     "faker": {
       "id": "20763",
       "name": "Faker",
       "role": "mid",
-      "team": "T1",
+      "team": "",
       "team_id": "47494",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 239,
+      "inference_confidence": 0.95
     },
     "keria": {
       "id": "26121",
       "name": "Keria",
       "role": "support",
-      "team": "T1",
+      "team": "",
       "team_id": "47494",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 239,
+      "inference_confidence": 0.72
     },
     "lazyfeel": {
       "id": "56402",
       "name": "LazyFeel",
       "role": "bot",
-      "team": "DRX",
+      "team": "",
       "team_id": "47961",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 36,
+      "inference_confidence": 0.94
     },
     "calix": {
       "id": "21083",
       "name": "Calix",
-      "role": "bot",
-      "team": "NONGSHIM RED FORCE",
+      "role": "mid",
+      "team": "",
       "team_id": "52747",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 86,
+      "inference_confidence": 0.97
     },
     "jojo": {
       "id": "23250",
       "name": "JoJo",
-      "role": "top",
-      "team": "FURIA",
+      "role": "support",
+      "team": "",
       "team_id": "47389",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 54,
+      "inference_confidence": 0.83
     },
     "tutsz": {
       "id": "25566",
       "name": "Tutsz",
-      "role": "jungle",
-      "team": "FURIA",
+      "role": "mid",
+      "team": "",
       "team_id": "47389",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 54,
+      "inference_confidence": 0.96
     },
     "tatu": {
       "id": "27190",
       "name": "Tatu",
-      "role": "mid",
-      "team": "FURIA",
+      "role": "jungle",
+      "team": "",
       "team_id": "47389",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 54,
+      "inference_confidence": 0.94
     },
     "ayu": {
       "id": "26215",
       "name": "Ayu",
       "role": "bot",
-      "team": "FURIA",
+      "team": "",
       "team_id": "47389",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 54,
+      "inference_confidence": 0.85
     },
     "guigo": {
       "id": "22410",
       "name": "Guigo",
-      "role": "support",
-      "team": "FURIA",
+      "role": "top",
+      "team": "",
       "team_id": "47389",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 54,
+      "inference_confidence": 0.93
     },
     "mago": {
       "id": "122673",
       "name": "Mago",
       "role": "mid",
-      "team": "RED Kalunga",
+      "team": "",
       "team_id": "52573",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 11,
+      "inference_confidence": 1.0
     },
     "frostyy": {
       "id": "29597",
       "name": "frostyy",
       "role": "support",
-      "team": "RED Kalunga",
+      "team": "",
       "team_id": "52573",
-      "source": "grid"
+      "source": "champion_inference",
+      "games": 63,
+      "inference_confidence": 0.87
     },
     "brance": {
       "id": "27557",
       "name": "Brance",
       "role": "bot",
-      "team": "RED Kalunga",
+      "team": "",
       "team_id": "52573",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 28,
+      "inference_confidence": 0.93
     },
     "aegis": {
       "id": "22917",
       "name": "Aegis",
       "role": "jungle",
-      "team": "RED Kalunga",
+      "team": "",
       "team_id": "52573",
-      "source": "grid"
+      "source": "leaguepedia_corrected",
+      "games": 22,
+      "inference_confidence": 1.0
     },
     "fnb": {
       "id": "24528",
       "name": "fNb",
       "role": "top",
-      "team": "RED Kalunga",
+      "team": "",
       "team_id": "52573",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 63,
+      "inference_confidence": 0.83
     },
     "brokenblade": {
       "id": "22523",
       "name": "BrokenBlade",
       "role": "top",
-      "team": "G2 Esports",
+      "team": "",
       "team_id": "47380",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 163,
+      "inference_confidence": 0.73
     },
     "caps": {
       "id": "21238",
       "name": "Caps",
       "role": "mid",
-      "team": "G2 Esports",
+      "team": "",
       "team_id": "47380",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 163,
+      "inference_confidence": 0.9
     },
     "hans sama": {
       "id": "22953",
       "name": "Hans Sama",
       "role": "bot",
-      "team": "G2 Esports",
+      "team": "",
       "team_id": "47380",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 163,
+      "inference_confidence": 0.94
     },
     "mikyx": {
       "id": "23778",
       "name": "Mikyx",
       "role": "support",
-      "team": "G2 Esports",
+      "team": "",
       "team_id": "47380",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 173,
+      "inference_confidence": 0.86
     },
     "kyeahoo": {
       "id": "24557",
       "name": "kyeahoo",
       "role": "mid",
-      "team": "DRX",
+      "team": "",
       "team_id": "47961",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 89,
+      "inference_confidence": 0.91
     },
     "raptor": {
       "id": "26187",
       "name": "Raptor",
       "role": "jungle",
-      "team": "BNK FearX",
+      "team": "",
       "team_id": "4035",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 153,
+      "inference_confidence": 0.97
     },
     "kellin": {
       "id": "24955",
       "name": "Kellin",
-      "role": "jungle",
-      "team": "BNK FearX",
+      "role": "support",
+      "team": "",
       "team_id": "4035",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 195,
+      "inference_confidence": 0.89
     },
     "clear": {
       "id": "22125",
       "name": "Clear",
       "role": "top",
-      "team": "BNK FearX",
+      "team": "",
       "team_id": "4035",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 186,
+      "inference_confidence": 0.88
     },
     "diable": {
       "id": "27036",
       "name": "Diable",
       "role": "bot",
-      "team": "BNK FearX",
+      "team": "",
       "team_id": "4035",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 105,
+      "inference_confidence": 0.95
     },
     "vicla": {
       "id": "25531",
       "name": "VicLa",
-      "role": "support",
-      "team": "BNK FearX",
+      "role": "mid",
+      "team": "",
       "team_id": "4035",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 130,
+      "inference_confidence": 0.93
     },
     "zeus": {
       "id": "23596",
       "name": "Zeus",
       "role": "top",
-      "team": "Hanwha Life Esports",
-      "team_id": "406",
-      "source": "grid"
+      "team": "",
+      "team_id": "47494",
+      "source": "leaguepedia",
+      "games": 245,
+      "inference_confidence": 0.79
     },
     "deft": {
       "id": "22816",
       "name": "Deft",
       "role": "bot",
-      "team": "KT Rolster",
+      "team": "",
       "team_id": "407",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 105,
+      "inference_confidence": 0.96
     },
     "sheer": {
       "id": "29446",
       "name": "sheer",
       "role": "top",
-      "team": "FunPlus Phoenix",
+      "team": "",
       "team_id": "47514",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 142,
+      "inference_confidence": 0.92
     },
     "care": {
       "id": "20141",
       "name": "Care",
       "role": "mid",
-      "team": "FunPlus Phoenix",
+      "team": "",
       "team_id": "47514",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 153,
+      "inference_confidence": 0.9
     },
     "assum": {
       "id": "23697",
       "name": "Assum",
       "role": "bot",
-      "team": "Rare Atom",
-      "team_id": "47922",
-      "source": "grid"
+      "team": "",
+      "team_id": "47514",
+      "source": "leaguepedia",
+      "games": 111,
+      "inference_confidence": 0.87
     },
     "jwei": {
       "id": "22421",
       "name": "Jwei",
       "role": "support",
-      "team": "Rare Atom",
-      "team_id": "47922",
-      "source": "grid"
+      "team": "",
+      "team_id": "47514",
+      "source": "leaguepedia",
+      "games": 149,
+      "inference_confidence": 0.85
     },
     "boal": {
       "id": "25068",
       "name": "Boal",
       "role": "top",
-      "team": "Vivo Keyd Stars",
+      "team": "",
       "team_id": "48173",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 62,
+      "inference_confidence": 1.0
     },
     "disamis": {
       "id": "24106",
       "name": "Disamis",
       "role": "jungle",
-      "team": "Vivo Keyd Stars",
+      "team": "",
       "team_id": "48173",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 62,
+      "inference_confidence": 1.0
     },
     "kisee": {
       "id": "19876",
       "name": "Kisee",
       "role": "mid",
-      "team": "Vivo Keyd Stars",
+      "team": "",
       "team_id": "48173",
-      "source": "grid"
+      "source": "leaguepedia_corrected",
+      "games": 33,
+      "inference_confidence": 0.97
     },
     "morttheus": {
       "id": "21209",
       "name": "Morttheus",
       "role": "bot",
-      "team": "Vivo Keyd Stars",
+      "team": "",
       "team_id": "48173",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 62,
+      "inference_confidence": 0.87
     },
     "trymbi": {
       "id": "22338",
       "name": "Trymbi",
       "role": "support",
-      "team": "Vivo Keyd Stars",
+      "team": "",
       "team_id": "48173",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 91,
+      "inference_confidence": 0.87
     },
     "nuc": {
       "id": "27016",
       "name": "nuc",
       "role": "mid",
-      "team": "Team BDS",
+      "team": "",
       "team_id": "52661",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 131,
+      "inference_confidence": 0.85
     },
     "ice": {
       "id": "24080",
       "name": "Ice",
       "role": "bot",
-      "team": "Team BDS",
+      "team": "",
       "team_id": "52661",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 131,
+      "inference_confidence": 0.93
     },
     "labrov": {
       "id": "22767",
       "name": "Labrov",
       "role": "support",
-      "team": "Team BDS",
+      "team": "",
       "team_id": "52661",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 156,
+      "inference_confidence": 0.94
     },
     "cube": {
       "id": "23036",
       "name": "Cube",
       "role": "top",
-      "team": "Xi'an Team WE",
+      "team": "",
       "team_id": "52910",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 129,
+      "inference_confidence": 0.91
     },
     "xiaofang": {
       "id": "29443",
       "name": "xiaofang",
       "role": "jungle",
-      "team": "Suzhou LNG Ninebot Esports",
+      "team": "",
       "team_id": "52726",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 41,
+      "inference_confidence": 0.95
     },
     "starry": {
       "id": "29442",
       "name": "Starry",
       "role": "bot",
-      "team": "Oh My God",
+      "team": "",
       "team_id": "369",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 66,
+      "inference_confidence": 0.94
     },
     "zika": {
       "id": "24612",
       "name": "Zika",
       "role": "top",
-      "team": "Suzhou LNG Ninebot Esports",
+      "team": "",
       "team_id": "52726",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 92,
+      "inference_confidence": 0.86
     },
     "weiwei": {
       "id": "22228",
       "name": "Weiwei",
       "role": "jungle",
-      "team": "Suzhou LNG Ninebot Esports",
+      "team": "",
       "team_id": "52726",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 63,
+      "inference_confidence": 0.98
     },
     "scout": {
       "id": "25478",
       "name": "Scout",
       "role": "mid",
-      "team": "Beijing JDG Intel Esports",
+      "team": "",
       "team_id": "52796",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 192,
+      "inference_confidence": 0.93
     },
     "113": {
       "id": "25794",
       "name": "113",
       "role": "jungle",
-      "team": "Team BDS",
+      "team": "",
       "team_id": "52661",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 38,
+      "inference_confidence": 1.0
     },
     "parus": {
       "id": "22414",
       "name": "Parus",
       "role": "support",
-      "team": "Team BDS",
+      "team": "",
       "team_id": "52661",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 50,
+      "inference_confidence": 0.96
     },
     "abbedagge": {
       "id": "22461",
       "name": "Abbedagge",
       "role": "mid",
-      "team": "Disguised",
+      "team": "",
       "team_id": "52416",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 29,
+      "inference_confidence": 0.97
     },
     "scaryjerry": {
       "id": "21485",
       "name": "ScaryJerry",
       "role": "bot",
-      "team": "Disguised",
+      "team": "",
       "team_id": "52416",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 20,
+      "inference_confidence": 0.8
     },
     "thanatos": {
       "id": "22956",
       "name": "Thanatos",
-      "role": "bot",
-      "team": "Cloud9 Kia",
+      "role": "top",
+      "team": "",
       "team_id": "47351",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 88,
+      "inference_confidence": 0.92
     },
     "blaber": {
       "id": "24165",
       "name": "Blaber",
-      "role": "mid",
-      "team": "Cloud9 Kia",
+      "role": "jungle",
+      "team": "",
       "team_id": "47351",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 111,
+      "inference_confidence": 0.98
     },
-    "loki": {
+    "loki ": {
       "id": "21565",
-      "name": "Loki",
-      "role": "support",
-      "team": "Cloud9 Kia",
+      "name": "Loki ",
+      "role": "mid",
+      "team": "",
       "team_id": "47351",
-      "source": "grid"
+      "source": "champion_inference",
+      "games": 64,
+      "inference_confidence": 0.98
     },
     "zven": {
       "id": "27211",
       "name": "Zven",
       "role": "bot",
-      "team": "Dignitas",
-      "team_id": "47499",
-      "source": "grid"
+      "team": "",
+      "team_id": "47351",
+      "source": "leaguepedia",
+      "games": 95,
+      "inference_confidence": 0.81
     },
     "vulcan": {
       "id": "24843",
       "name": "Vulcan",
-      "role": "top",
-      "team": "Cloud9 Kia",
+      "role": "support",
+      "team": "",
       "team_id": "47351",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 111,
+      "inference_confidence": 0.88
     },
     "luon": {
       "id": "66459",
       "name": "Luon",
       "role": "support",
-      "team": "SK Gaming",
+      "team": "",
       "team_id": "353",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 19,
+      "inference_confidence": 0.95
     },
     "fnc wunder": {
       "id": "28552",
       "name": "FNC Wunder",
       "role": "top",
-      "team": "Team Heretics",
+      "team": "",
       "team_id": "47435",
-      "source": "grid"
+      "source": "champion_inference",
+      "games": 14,
+      "inference_confidence": 0.86
     },
     "jankos": {
       "id": "22117",
       "name": "Jankos",
       "role": "jungle",
-      "team": "Team Heretics",
+      "team": "",
       "team_id": "47435",
-      "source": "grid"
+      "source": "leaguepedia_corrected",
+      "games": 45,
+      "inference_confidence": 0.98
     },
     "zwyroo": {
       "id": "21542",
       "name": "Zwyroo",
       "role": "mid",
-      "team": "Team Heretics",
+      "team": "",
       "team_id": "47435",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 31,
+      "inference_confidence": 0.94
     },
     "grevthar": {
       "id": "27580",
       "name": "Grevthar",
       "role": "mid",
-      "team": "RED Kalunga",
+      "team": "",
       "team_id": "52573",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 17,
+      "inference_confidence": 0.88
     },
     "fudge": {
       "id": "24269",
       "name": "Fudge",
       "role": "top",
-      "team": "Shopify Rebellion",
+      "team": "",
       "team_id": "53073",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 87,
+      "inference_confidence": 0.86
     },
     "contractz": {
       "id": "26987",
       "name": "Contractz",
       "role": "jungle",
-      "team": "Shopify Rebellion",
+      "team": "",
       "team_id": "53073",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 108,
+      "inference_confidence": 0.94
     },
     "palafox": {
       "id": "23297",
       "name": "Palafox",
       "role": "mid",
-      "team": "Shopify Rebellion",
+      "team": "",
       "team_id": "53073",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 108,
+      "inference_confidence": 0.94
     },
     "ceos": {
       "id": "25226",
       "name": "Ceos",
-      "role": "bot",
-      "team": "Shopify Rebellion",
+      "role": "support",
+      "team": "",
       "team_id": "53073",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 57,
+      "inference_confidence": 0.89
     },
     "finn": {
       "id": "25708",
       "name": "Finn",
       "role": "top",
-      "team": "Rogue",
+      "team": "",
       "team_id": "106",
-      "source": "grid"
+      "source": "leaguepedia_corrected",
+      "games": 20,
+      "inference_confidence": 0.9
     },
     "sk markoon": {
       "id": "28312",
       "name": "SK Markoon",
       "role": "jungle",
-      "team": "Rogue",
+      "team": "",
       "team_id": "106",
-      "source": "grid"
+      "source": "champion_inference",
+      "games": 10,
+      "inference_confidence": 1.0
     },
     "koi comp": {
       "id": "28316",
       "name": "KOI Comp",
       "role": "bot",
-      "team": "Rogue",
+      "team": "",
       "team_id": "106",
-      "source": "grid"
+      "source": "champion_inference",
+      "games": 10,
+      "inference_confidence": 0.9
     },
     "zoelys": {
       "id": "25080",
       "name": "Zoelys",
       "role": "support",
-      "team": "Rogue",
+      "team": "",
       "team_id": "106",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 29,
+      "inference_confidence": 0.97
     },
     "pungyeon": {
       "id": "28725",
       "name": "Pungyeon",
       "role": "mid",
-      "team": "DN FREECS",
+      "team": "",
       "team_id": "3483",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 12,
+      "inference_confidence": 1.0
     },
     "flandre": {
       "id": "25299",
       "name": "Flandre",
       "role": "top",
-      "team": "Anyone's Legend",
+      "team": "",
       "team_id": "20483",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 168,
+      "inference_confidence": 0.8
     },
     "tarzan": {
       "id": "27195",
       "name": "Tarzan",
       "role": "jungle",
-      "team": "WeiboGaming TapTap",
-      "team_id": "52822",
-      "source": "grid"
+      "team": "",
+      "team_id": "20483",
+      "source": "leaguepedia",
+      "games": 206,
+      "inference_confidence": 0.97
     },
     "shanks": {
       "id": "25913",
       "name": "Shanks",
       "role": "mid",
-      "team": "Anyone's Legend",
+      "team": "",
       "team_id": "20483",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 190,
+      "inference_confidence": 0.93
     },
     "hope": {
       "id": "22425",
       "name": "Hope",
       "role": "bot",
-      "team": "Anyone's Legend",
+      "team": "",
       "team_id": "20483",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 190,
+      "inference_confidence": 0.79
     },
     "kael": {
       "id": "21788",
       "name": "Kael",
       "role": "support",
-      "team": "Anyone's Legend",
+      "team": "",
       "team_id": "20483",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 190,
+      "inference_confidence": 0.83
     },
     "ruler": {
       "id": "22090",
       "name": "Ruler",
       "role": "bot",
-      "team": "Gen.G Esports",
+      "team": "",
       "team_id": "47558",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 174,
+      "inference_confidence": 0.87
     },
     "duro": {
       "id": "22132",
       "name": "Duro",
       "role": "support",
-      "team": "BNK FearX",
-      "team_id": "4035",
-      "source": "grid"
+      "team": "",
+      "team_id": "47558",
+      "source": "leaguepedia",
+      "games": 158,
+      "inference_confidence": 0.87
     },
     "clozer": {
       "id": "26892",
       "name": "Clozer",
       "role": "mid",
-      "team": "BNK FearX",
-      "team_id": "4035",
-      "source": "grid"
+      "team": "",
+      "team_id": "52817",
+      "source": "leaguepedia",
+      "games": 193,
+      "inference_confidence": 0.95
     },
     "hena": {
       "id": "23365",
       "name": "Hena",
       "role": "bot",
-      "team": "BNK FearX",
+      "team": "",
       "team_id": "4035",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 124,
+      "inference_confidence": 0.92
     },
     "dndn": {
       "id": "21251",
       "name": "DnDn",
       "role": "top",
-      "team": "NongShim REDFORCE",
+      "team": "",
       "team_id": "52747",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 65,
+      "inference_confidence": 0.6
     },
     "sylvie": {
       "id": "20024",
       "name": "Sylvie",
       "role": "jungle",
-      "team": "NongShim REDFORCE",
+      "team": "",
       "team_id": "52747",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 84,
+      "inference_confidence": 0.88
     },
     "callme": {
       "id": "20726",
       "name": "Callme",
       "role": "mid",
-      "team": "NongShim REDFORCE",
+      "team": "",
       "team_id": "52747",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 39,
+      "inference_confidence": 0.85
     },
     "peter": {
       "id": "21499",
       "name": "Peter",
       "role": "support",
-      "team": "KT Rolster",
+      "team": "",
       "team_id": "407",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 136,
+      "inference_confidence": 0.85
     },
     "route": {
       "id": "25345",
       "name": "Route",
-      "role": "top",
-      "team": "LOUD",
+      "role": "bot",
+      "team": "",
       "team_id": "47960",
-      "source": "grid"
+      "source": "leaguepedia_corrected",
+      "games": 57,
+      "inference_confidence": 0.89
     },
     "robo": {
       "id": "24422",
       "name": "Robo",
-      "role": "jungle",
-      "team": "LOUD",
+      "role": "top",
+      "team": "",
       "team_id": "47960",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 57,
+      "inference_confidence": 0.93
     },
     "redbert": {
       "id": "20154",
       "name": "RedBert",
-      "role": "bot",
-      "team": "LOUD",
+      "role": "support",
+      "team": "",
       "team_id": "47960",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 45,
+      "inference_confidence": 1.0
     },
     "gryffinn": {
       "id": "23645",
       "name": "Gryffinn",
-      "role": "bot",
-      "team": "LOUD",
+      "role": "jungle",
+      "team": "",
       "team_id": "47960",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 19,
+      "inference_confidence": 0.89
     },
     "jool": {
       "id": "23933",
       "name": "Jool",
-      "role": "support",
-      "team": "LOUD",
+      "role": "mid",
+      "team": "",
       "team_id": "47960",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 19,
+      "inference_confidence": 1.0
     },
     "kaze": {
       "id": "26212",
       "name": "Kaze",
-      "role": "top",
-      "team": "RED Kalunga",
+      "role": "mid",
+      "team": "",
       "team_id": "52573",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 35,
+      "inference_confidence": 0.97
     },
     "rabelo": {
       "id": "51863",
       "name": "Rabelo",
-      "role": "mid",
-      "team": "RED Kalunga",
+      "role": "bot",
+      "team": "",
       "team_id": "52573",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 35,
+      "inference_confidence": 0.77
     },
     "doom": {
       "id": "20165",
       "name": "DOOM",
-      "role": "support",
-      "team": "RED Kalunga",
+      "role": "jungle",
+      "team": "",
       "team_id": "52573",
-      "source": "grid"
+      "source": "champion_inference",
+      "games": 41,
+      "inference_confidence": 0.98
     },
     "xun": {
       "id": "20759",
       "name": "Xun",
       "role": "jungle",
-      "team": "Beijing JDG Intel Esports",
+      "team": "",
       "team_id": "52796",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 170,
+      "inference_confidence": 0.97
     },
     "sasi": {
       "id": "20391",
       "name": "Sasi",
       "role": "top",
-      "team": "Hangzhou LGD Gaming",
+      "team": "",
       "team_id": "368",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 62,
+      "inference_confidence": 0.84
     },
     "climber": {
       "id": "122442",
       "name": "climber",
       "role": "jungle",
-      "team": "Hangzhou LGD Gaming",
+      "team": "",
       "team_id": "368",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 49,
+      "inference_confidence": 1.0
     },
     "xqw": {
       "id": "22472",
       "name": "xqw",
       "role": "mid",
-      "team": "Hangzhou LGD Gaming",
+      "team": "",
       "team_id": "368",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 62,
+      "inference_confidence": 1.0
     },
     "lgdshaoye": {
       "id": "35446",
       "name": "LGDShaoye",
       "role": "bot",
-      "team": "Hangzhou LGD Gaming",
+      "team": "",
       "team_id": "368",
-      "source": "grid"
+      "source": "champion_inference",
+      "games": 83,
+      "inference_confidence": 0.93
     },
     "ycx": {
       "id": "122443",
       "name": "Ycx",
       "role": "support",
-      "team": "Hangzhou LGD Gaming",
+      "team": "",
       "team_id": "368",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 62,
+      "inference_confidence": 0.94
     },
     "monki": {
       "id": "27436",
       "name": "Monki",
       "role": "jungle",
-      "team": "Xi'an Team WE",
+      "team": "",
       "team_id": "52910",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 117,
+      "inference_confidence": 0.91
     },
     "karis": {
       "id": "26510",
       "name": "Karis",
       "role": "mid",
-      "team": "Xi'an Team WE",
+      "team": "",
       "team_id": "52910",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 183,
+      "inference_confidence": 0.96
     },
     "taeyoon": {
       "id": "21573",
       "name": "Taeyoon",
       "role": "bot",
-      "team": "Xi'an Team WE",
+      "team": "",
       "team_id": "52910",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 127,
+      "inference_confidence": 0.8
     },
     "vampire": {
       "id": "29437",
       "name": "Vampire",
       "role": "support",
-      "team": "Xi'an Team WE",
+      "team": "",
       "team_id": "52910",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 163,
+      "inference_confidence": 0.9
     },
     "morgan": {
       "id": "23325",
       "name": "Morgan",
-      "role": "bot",
-      "team": "OKSavingsBank BRION",
+      "role": "top",
+      "team": "",
       "team_id": "52817",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 184,
+      "inference_confidence": 0.9
     },
     "croco": {
       "id": "21512",
       "name": "Croco",
       "role": "jungle",
-      "team": "OKSavingsBank BRION",
+      "team": "",
       "team_id": "52817",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 113,
+      "inference_confidence": 0.9
     },
     "hype": {
       "id": "28898",
       "name": "Hype",
-      "role": "mid",
-      "team": "OKSavingsBank BRION",
+      "role": "bot",
+      "team": "",
       "team_id": "52817",
-      "source": "grid"
+      "source": "leaguepedia_corrected",
+      "games": 90,
+      "inference_confidence": 0.83
     },
     "pollu": {
       "id": "22026",
       "name": "Pollu",
       "role": "support",
-      "team": "OKSavingsBank BRION",
+      "team": "",
       "team_id": "52817",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 171,
+      "inference_confidence": 0.82
     },
     "dhokla": {
       "id": "21900",
       "name": "Dhokla",
       "role": "top",
-      "team": "NRG Kia",
+      "team": "",
       "team_id": "52541",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 76,
+      "inference_confidence": 0.88
     },
     "fbi": {
       "id": "20579",
       "name": "FBI",
       "role": "bot",
-      "team": "NRG Kia",
-      "team_id": "52541",
-      "source": "grid"
+      "team": "",
+      "team_id": "47497",
+      "source": "leaguepedia",
+      "games": 113,
+      "inference_confidence": 0.89
     },
     "dove": {
       "id": "25070",
       "name": "Dove",
       "role": "mid",
-      "team": "Dignitas",
+      "team": "",
       "team_id": "47499",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 18,
+      "inference_confidence": 0.94
     },
     "tomo": {
       "id": "22074",
       "name": "Tomo",
       "role": "bot",
-      "team": "Dignitas",
+      "team": "",
       "team_id": "47499",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 81,
+      "inference_confidence": 0.83
     },
     "isles": {
       "id": "23379",
       "name": "Isles",
       "role": "support",
-      "team": "Dignitas",
+      "team": "",
       "team_id": "47499",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 88,
+      "inference_confidence": 0.83
     },
     "wayward": {
       "id": "23006",
       "name": "Wayward",
       "role": "top",
-      "team": "Xi'an Team WE",
+      "team": "",
       "team_id": "52910",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 29,
+      "inference_confidence": 0.76
     },
     "heng": {
       "id": "25092",
       "name": "Heng",
       "role": "jungle",
-      "team": "Xi'an Team WE",
-      "team_id": "52910",
-      "source": "grid"
+      "team": "",
+      "team_id": "369",
+      "source": "leaguepedia",
+      "games": 40,
+      "inference_confidence": 0.97
     },
     "fofo": {
       "id": "24539",
       "name": "FoFo",
       "role": "mid",
-      "team": "Xi'an Team WE",
+      "team": "",
       "team_id": "52910",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 29,
+      "inference_confidence": 0.69
     },
     "lp": {
       "id": "21334",
       "name": "LP",
       "role": "bot",
-      "team": "Suzhou LNG Ninebot Esports",
+      "team": "",
       "team_id": "52726",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 29,
+      "inference_confidence": 0.93
     },
     "mark": {
       "id": "27491",
       "name": "Mark",
       "role": "support",
-      "team": "Xi'an Team WE",
+      "team": "",
       "team_id": "52910",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 29,
+      "inference_confidence": 0.97
     },
     "closer": {
       "id": "27600",
       "name": "Closer",
       "role": "jungle",
-      "team": "Karmine Corp",
+      "team": "",
       "team_id": "53165",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 37,
+      "inference_confidence": 1.0
     },
     "upset": {
       "id": "24638",
       "name": "Upset",
       "role": "bot",
-      "team": "Fnatic",
+      "team": "",
       "team_id": "47376",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 124,
+      "inference_confidence": 0.92
     },
     "lgdburdol": {
       "id": "35440",
       "name": "LGDBurdol",
       "role": "top",
-      "team": "LGD Gaming",
+      "team": "",
       "team_id": "368",
-      "source": "grid"
+      "source": "champion_inference",
+      "games": 30,
+      "inference_confidence": 0.67
     },
     "lgdmeteor": {
       "id": "35442",
       "name": "LGDMeteor",
       "role": "jungle",
-      "team": "LGD Gaming",
+      "team": "",
       "team_id": "368",
-      "source": "grid"
+      "source": "champion_inference",
+      "games": 30,
+      "inference_confidence": 0.93
     },
     "lgdhaichao": {
       "id": "35444",
       "name": "LGDhaichao",
       "role": "mid",
-      "team": "LGD Gaming",
-      "team_id": "368",
-      "source": "grid"
+      "team": "",
+      "team_id": "52726",
+      "source": "champion_inference",
+      "games": 75,
+      "inference_confidence": 0.89
     },
     "kepler": {
       "id": "21259",
       "name": "Kepler",
       "role": "bot",
-      "team": "LGD Gaming",
+      "team": "",
       "team_id": "368",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 7,
+      "inference_confidence": 1.0
     },
     "lgdjinjiao": {
       "id": "35448",
       "name": "LGDJinjiao",
       "role": "support",
-      "team": "LGD Gaming",
+      "team": "",
       "team_id": "368",
-      "source": "grid"
+      "source": "champion_inference",
+      "games": 30,
+      "inference_confidence": 0.93
     },
     "jojopyun": {
       "id": "26575",
       "name": "Jojopyun",
       "role": "mid",
-      "team": "Cloud9",
-      "team_id": "47351",
-      "source": "grid"
+      "team": "",
+      "team_id": "47619",
+      "source": "leaguepedia",
+      "games": 133,
+      "inference_confidence": 0.93
     },
     "youngjae": {
       "id": "25097",
       "name": "YoungJae",
       "role": "jungle",
-      "team": "OKSavingsBank BRION",
+      "team": "",
       "team_id": "52817",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 35,
+      "inference_confidence": 0.8
     },
     "envyy": {
       "id": "21455",
       "name": "Envyy",
       "role": "bot",
-      "team": "OKSavingsBank BRION",
+      "team": "",
       "team_id": "52817",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 67,
+      "inference_confidence": 0.94
     },
     "xiaoxu": {
       "id": "27296",
       "name": "Xiaoxu",
       "role": "top",
-      "team": "Royal Never Give Up",
-      "team_id": "47319",
-      "source": "grid"
+      "team": "",
+      "team_id": "52796",
+      "source": "leaguepedia",
+      "games": 124,
+      "inference_confidence": 0.92
     },
     "th3antonio": {
       "id": "24052",
       "name": "Th3Antonio",
       "role": "top",
-      "team": "GIANTX",
+      "team": "",
       "team_id": "53168",
-      "source": "grid"
+      "source": "leaguepedia_corrected",
+      "games": 21,
+      "inference_confidence": 0.76
     },
     "juhan": {
       "id": "22716",
       "name": "Juhan",
       "role": "jungle",
-      "team": "GIANTX",
+      "team": "",
       "team_id": "53168",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 21,
+      "inference_confidence": 0.95
     },
     "jackies": {
       "id": "21155",
       "name": "Jackies",
       "role": "mid",
-      "team": "GIANTX",
+      "team": "",
       "team_id": "53168",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 106,
+      "inference_confidence": 0.8
     },
     "ignar": {
       "id": "25365",
       "name": "IgNar",
       "role": "support",
-      "team": "GIANTX",
+      "team": "",
       "team_id": "53168",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 48,
+      "inference_confidence": 0.94
     },
     "impact": {
       "id": "26791",
       "name": "Impact",
-      "role": "jungle",
-      "team": "Team Liquid",
+      "role": "top",
+      "team": "",
       "team_id": "47363",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 118,
+      "inference_confidence": 0.87
     },
     "umti": {
       "id": "24421",
       "name": "UmTi",
-      "role": "bot",
-      "team": "Team Liquid Honda",
+      "role": "jungle",
+      "team": "",
       "team_id": "47363",
-      "source": "grid"
+      "source": "leaguepedia_corrected",
+      "games": 93,
+      "inference_confidence": 0.92
     },
     "apa": {
       "id": "23510",
       "name": "APA",
-      "role": "top",
-      "team": "Team Liquid",
+      "role": "mid",
+      "team": "",
       "team_id": "47363",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 118,
+      "inference_confidence": 0.98
     },
     "yeon": {
       "id": "21655",
       "name": "Yeon",
-      "role": "mid",
-      "team": "Team Liquid",
+      "role": "bot",
+      "team": "",
       "team_id": "47363",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 118,
+      "inference_confidence": 0.93
     },
     "corejj": {
       "id": "24153",
       "name": "CoreJJ",
       "role": "support",
-      "team": "Team Liquid",
+      "team": "",
       "team_id": "47363",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 118,
+      "inference_confidence": 0.85
     },
     "sniper": {
       "id": "24936",
       "name": "Sniper",
       "role": "top",
-      "team": "100 Thieves",
+      "team": "",
       "team_id": "47497",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 98,
+      "inference_confidence": 0.94
     },
     "river": {
       "id": "22660",
       "name": "River",
       "role": "jungle",
-      "team": "100 Thieves",
+      "team": "",
       "team_id": "47497",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 130,
+      "inference_confidence": 0.94
     },
     "quid": {
       "id": "23783",
       "name": "Quid",
       "role": "mid",
-      "team": "100 Thieves",
+      "team": "",
       "team_id": "47497",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 130,
+      "inference_confidence": 0.82
     },
     "eyla": {
       "id": "21380",
       "name": "Eyla",
       "role": "support",
-      "team": "100 Thieves",
+      "team": "",
       "team_id": "47497",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 130,
+      "inference_confidence": 0.88
     },
     "ddoiv": {
       "id": "25428",
       "name": "DDoiV",
       "role": "jungle",
-      "team": "OKSavingsBank BRION",
+      "team": "",
       "team_id": "52817",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 13,
+      "inference_confidence": 0.92
     },
     "effort": {
       "id": "25728",
       "name": "Effort",
       "role": "support",
-      "team": "OKSavingsBank BRION",
+      "team": "",
       "team_id": "52817",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 14,
+      "inference_confidence": 0.93
     },
     "hidan": {
       "id": "25339",
       "name": "Hidan",
-      "role": "support",
-      "team": "Fluxo W7M",
+      "role": "top",
+      "team": "",
       "team_id": "48070",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 20,
+      "inference_confidence": 0.9
     },
-    "ganks": {
+    "ganks ": {
       "id": "22779",
-      "name": "Ganks",
+      "name": "Ganks ",
       "role": "jungle",
-      "team": "Fluxo W7M",
+      "team": "",
       "team_id": "48070",
-      "source": "grid"
+      "source": "champion_inference",
+      "games": 16,
+      "inference_confidence": 0.94
     },
     "fuuu": {
       "id": "22633",
       "name": "Fuuu",
-      "role": "bot",
-      "team": "Fluxo W7M",
+      "role": "mid",
+      "team": "",
       "team_id": "48070",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 30,
+      "inference_confidence": 0.97
     },
     "marvin": {
       "id": "29543",
       "name": "Marvin",
-      "role": "mid",
-      "team": "Fluxo W7M",
+      "role": "bot",
+      "team": "",
       "team_id": "48070",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 30,
+      "inference_confidence": 0.87
     },
     "guigs": {
       "id": "20237",
       "name": "Guigs",
-      "role": "top",
-      "team": "Fluxo W7M",
+      "role": "support",
+      "team": "",
       "team_id": "48070",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 20,
+      "inference_confidence": 0.8
     },
     "meteor": {
       "id": "26234",
       "name": "Meteor",
       "role": "jungle",
-      "team": "LGD Gaming",
+      "team": "",
       "team_id": "368",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 11,
+      "inference_confidence": 0.64
     },
     "haichao": {
       "id": "21651",
       "name": "haichao",
       "role": "mid",
-      "team": "LGD Gaming",
+      "team": "",
       "team_id": "368",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 13,
+      "inference_confidence": 0.85
     },
     "shaoye": {
       "id": "29445",
       "name": "Shaoye",
       "role": "bot",
-      "team": "LGD Gaming",
+      "team": "",
       "team_id": "368",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 11,
+      "inference_confidence": 1.0
     },
     "jinjiao": {
       "id": "26301",
       "name": "Jinjiao",
       "role": "support",
-      "team": "LGD Gaming",
+      "team": "",
       "team_id": "368",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 11,
+      "inference_confidence": 1.0
     },
     "yanxiang": {
       "id": "111402",
       "name": "Yanxiang",
       "role": "jungle",
-      "team": "Xi'an Team WE",
+      "team": "",
       "team_id": "52910",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 15,
+      "inference_confidence": 1.0
     },
     "able": {
       "id": "24886",
       "name": "Able",
       "role": "bot",
-      "team": "Xi'an Team WE",
+      "team": "",
       "team_id": "52910",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 19,
+      "inference_confidence": 0.95
     },
     "yskm": {
       "id": "22283",
       "name": "YSKM",
       "role": "top",
-      "team": "Invictus Gaming",
+      "team": "",
       "team_id": "47472",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 25,
+      "inference_confidence": 0.92
     },
     "glfs": {
       "id": "73105",
       "name": "glfs",
       "role": "jungle",
-      "team": "Invictus Gaming",
+      "team": "",
       "team_id": "47472",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 40,
+      "inference_confidence": 0.93
     },
     "neny": {
       "id": "21217",
       "name": "neny",
       "role": "mid",
-      "team": "Invictus Gaming",
+      "team": "",
       "team_id": "47472",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 40,
+      "inference_confidence": 0.82
     },
     "fishone": {
       "id": "136459",
       "name": "fishone",
       "role": "bot",
-      "team": "Suzhou LNG Ninebot Esports",
+      "team": "",
       "team_id": "52726",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 13,
+      "inference_confidence": 0.85
     },
     "ovo": {
       "id": "122817",
       "name": "OvO",
       "role": "support",
-      "team": "Suzhou LNG Ninebot Esports",
+      "team": "",
       "team_id": "52726",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 8,
+      "inference_confidence": 1.0
     },
     "fiesta": {
       "id": "25090",
       "name": "FIESTA",
       "role": "mid",
-      "team": "NongShim REDFORCE",
+      "team": "",
       "team_id": "52747",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 11,
+      "inference_confidence": 0.64
     },
     "iyy": {
       "id": "144480",
       "name": "iyy",
       "role": "jungle",
-      "team": "FunPlus Phoenix",
+      "team": "",
       "team_id": "47514",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 18,
+      "inference_confidence": 1.0
     },
     "jiaqi": {
       "id": "122451",
       "name": "Jiaqi",
       "role": "bot",
-      "team": "Royal Never Give Up",
-      "team_id": "47319",
-      "source": "grid"
+      "team": "",
+      "team_id": "47514",
+      "source": "leaguepedia",
+      "games": 66,
+      "inference_confidence": 0.79
     },
     "oscarinin": {
       "id": "23079",
       "name": "Oscarinin",
       "role": "top",
-      "team": "Fnatic",
+      "team": "",
       "team_id": "47376",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 170,
+      "inference_confidence": 0.82
     },
     "razork": {
       "id": "27244",
       "name": "Razork",
       "role": "jungle",
-      "team": "Fnatic",
+      "team": "",
       "team_id": "47376",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 170,
+      "inference_confidence": 0.93
     },
     "humanoid": {
       "id": "25375",
       "name": "Humanoid",
       "role": "mid",
-      "team": "Fnatic",
+      "team": "",
       "team_id": "47376",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 145,
+      "inference_confidence": 0.87
     },
     "lot": {
       "id": "26235",
       "name": "Lot",
       "role": "top",
-      "team": "GIANTX",
+      "team": "",
       "team_id": "53168",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 58,
+      "inference_confidence": 0.95
     },
     "noah": {
       "id": "21819",
       "name": "Noah",
       "role": "bot",
-      "team": "GIANTX",
-      "team_id": "53168",
-      "source": "grid"
+      "team": "",
+      "team_id": "47376",
+      "source": "leaguepedia",
+      "games": 143,
+      "inference_confidence": 0.9
     },
     "jun": {
       "id": "21880",
       "name": "Jun",
       "role": "support",
-      "team": "GIANTX",
-      "team_id": "53168",
-      "source": "grid"
+      "team": "",
+      "team_id": "47376",
+      "source": "leaguepedia",
+      "games": 143,
+      "inference_confidence": 0.83
     },
     "yagao": {
       "id": "21298",
       "name": "Yagao",
       "role": "mid",
-      "team": "Beijing JDG Intel Esports Club",
+      "team": "",
       "team_id": "52796",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 53,
+      "inference_confidence": 0.75
     },
     "missing": {
       "id": "20603",
       "name": "MISSING",
       "role": "support",
-      "team": "Beijing JDG Intel Esports",
+      "team": "",
       "team_id": "52796",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 136,
+      "inference_confidence": 0.88
     },
     "leyan": {
       "id": "20636",
       "name": "Leyan",
       "role": "jungle",
-      "team": "Shenzhen NINJAS IN PYJAMAS",
+      "team": "",
       "team_id": "52905",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 24,
+      "inference_confidence": 1.0
     },
     "photic": {
       "id": "26619",
       "name": "Photic",
       "role": "bot",
-      "team": "Shenzhen NINJAS IN PYJAMAS",
+      "team": "",
       "team_id": "52905",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 75,
+      "inference_confidence": 0.87
     },
     "zhuo": {
       "id": "27261",
       "name": "Zhuo",
       "role": "support",
-      "team": "Shenzhen NINJAS IN PYJAMAS",
+      "team": "",
       "team_id": "52905",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 144,
+      "inference_confidence": 0.85
     },
     "rascal": {
       "id": "21425",
       "name": "Rascal",
       "role": "top",
-      "team": "DRX",
+      "team": "",
       "team_id": "47961",
-      "source": "grid"
+      "source": "leaguepedia_corrected",
+      "games": 65,
+      "inference_confidence": 0.82
     },
     "pleata": {
       "id": "27571",
       "name": "Pleata",
       "role": "support",
-      "team": "DRX",
+      "team": "",
       "team_id": "47961",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 93,
+      "inference_confidence": 0.89
     },
     "milkyyway": {
       "id": "29438",
       "name": "milkyyway",
       "role": "jungle",
-      "team": "Royal Never Give Up",
-      "team_id": "47319",
-      "source": "grid"
+      "team": "",
+      "team_id": "47514",
+      "source": "champion_inference",
+      "games": 71,
+      "inference_confidence": 0.92
     },
     "tangyuan": {
       "id": "21451",
       "name": "Tangyuan",
       "role": "mid",
-      "team": "Royal Never Give Up",
+      "team": "",
       "team_id": "47319",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 58,
+      "inference_confidence": 0.83
     },
     "niket": {
       "id": "29436",
       "name": "Niket",
       "role": "support",
-      "team": "Royal Never Give Up",
-      "team_id": "47319",
-      "source": "grid"
+      "team": "",
+      "team_id": "52905",
+      "source": "leaguepedia",
+      "games": 95,
+      "inference_confidence": 0.89
     },
     "1jiang": {
       "id": "29638",
       "name": "1Jiang",
       "role": "top",
-      "team": "Ultra Prime",
+      "team": "",
       "team_id": "3113",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 65,
+      "inference_confidence": 0.97
     },
     "junhao": {
       "id": "122332",
       "name": "Junhao",
       "role": "jungle",
-      "team": "Ultra Prime",
+      "team": "",
       "team_id": "3113",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 65,
+      "inference_confidence": 1.0
     },
     "saber": {
       "id": "122334",
       "name": "Saber",
       "role": "mid",
-      "team": "Ultra Prime",
+      "team": "",
       "team_id": "3113",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 65,
+      "inference_confidence": 0.95
     },
     "wako": {
       "id": "26286",
       "name": "Wako",
       "role": "bot",
-      "team": "Ultra Prime",
+      "team": "",
       "team_id": "3113",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 37,
+      "inference_confidence": 0.86
     },
     "xiaoxia": {
       "id": "26847",
       "name": "Xiaoxia",
       "role": "support",
-      "team": "Ultra Prime",
+      "team": "",
       "team_id": "3113",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 53,
+      "inference_confidence": 0.89
     },
     "odoamne": {
       "id": "24281",
       "name": "Odoamne",
       "role": "top",
-      "team": "GIANTX",
+      "team": "",
       "team_id": "53168",
-      "source": "grid"
+      "source": "leaguepedia_corrected",
+      "games": 27,
+      "inference_confidence": 0.81
     },
     "peach": {
       "id": "27440",
       "name": "Peach",
       "role": "jungle",
-      "team": "GIANTX",
+      "team": "",
       "team_id": "53168",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 27,
+      "inference_confidence": 0.81
     },
     "smash": {
       "id": "21400",
       "name": "Smash",
       "role": "bot",
-      "team": "T1",
+      "team": "",
       "team_id": "47494",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 25,
+      "inference_confidence": 0.88
     },
     "zothve": {
       "id": "26599",
       "name": "Zothve",
       "role": "top",
-      "team": "LEVIAT\u00c1N",
+      "team": "",
       "team_id": "47757",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 40,
+      "inference_confidence": 0.93
     },
     "prodelta": {
       "id": "26963",
       "name": "ProDelta",
       "role": "support",
-      "team": "LEVIAT\u00c1N",
+      "team": "",
       "team_id": "47757",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 35,
+      "inference_confidence": 0.94
     },
     "cody": {
       "id": "21778",
       "name": "cody",
       "role": "mid",
-      "team": "LEVIAT\u00c1N",
+      "team": "",
       "team_id": "47757",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 25,
+      "inference_confidence": 0.88
     },
     "ceo": {
       "id": "25790",
       "name": "ceo",
       "role": "bot",
-      "team": "LEVIAT\u00c1N",
+      "team": "",
       "team_id": "47757",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 40,
+      "inference_confidence": 0.85
     },
     "scary": {
       "id": "22669",
       "name": "SCARY",
       "role": "jungle",
-      "team": "LEVIAT\u00c1N",
+      "team": "",
       "team_id": "47757",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 40,
+      "inference_confidence": 1.0
     },
     "willer": {
       "id": "20426",
       "name": "Willer",
       "role": "jungle",
-      "team": "FearX",
+      "team": "",
       "team_id": "4035",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 43,
+      "inference_confidence": 0.81
     },
     "meech": {
       "id": "24772",
       "name": "Meech",
       "role": "bot",
-      "team": "100 Thieves",
+      "team": "",
       "team_id": "47497",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 37,
+      "inference_confidence": 0.95
     },
     "armao": {
       "id": "24900",
       "name": "Armao",
       "role": "jungle",
-      "team": "Immortals Progressive",
+      "team": "",
       "team_id": "52572",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 29,
+      "inference_confidence": 0.93
     },
     "mask": {
       "id": "21293",
       "name": "Mask",
       "role": "mid",
-      "team": "Immortals Progressive",
+      "team": "",
       "team_id": "52572",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 29,
+      "inference_confidence": 0.86
     },
     "tactical": {
       "id": "23468",
       "name": "Tactical",
       "role": "bot",
-      "team": "Immortals Progressive",
+      "team": "",
       "team_id": "52572",
-      "source": "grid"
+      "source": "leaguepedia_corrected",
+      "games": 29,
+      "inference_confidence": 0.86
     },
     "olleh": {
       "id": "24289",
       "name": "Olleh",
       "role": "support",
-      "team": "Immortals Progressive",
+      "team": "",
       "team_id": "52572",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 29,
+      "inference_confidence": 0.9
     },
     "skewmond": {
       "id": "25847",
       "name": "SkewMond",
-      "role": "mid",
-      "team": "G2 Esports",
+      "role": "jungle",
+      "team": "",
       "team_id": "47380",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 75,
+      "inference_confidence": 0.92
     },
     "tinowns": {
       "id": "23755",
       "name": "tinowns",
       "role": "mid",
-      "team": "LOUD",
+      "team": "",
       "team_id": "47960",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 38,
+      "inference_confidence": 0.97
     },
     "shini": {
       "id": "51738",
       "name": "Shini",
-      "role": "support",
-      "team": "LOUD",
+      "role": "jungle",
+      "team": "",
       "team_id": "47960",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 26,
+      "inference_confidence": 1.0
     },
     "juice": {
       "id": "92752",
       "name": "Juice",
       "role": "top",
-      "team": "Royal Never Give Up",
+      "team": "",
       "team_id": "47319",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 25,
+      "inference_confidence": 0.8
     },
     "xby": {
       "id": "112510",
       "name": "XBY",
       "role": "jungle",
-      "team": "Royal Never Give Up",
+      "team": "",
       "team_id": "47319",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 2,
+      "inference_confidence": 1.0
     },
     "huanfeng": {
       "id": "25798",
       "name": "huanfeng",
       "role": "bot",
-      "team": "Royal Never Give Up",
+      "team": "",
       "team_id": "47319",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 31,
+      "inference_confidence": 0.9
     },
     "iwandy": {
       "id": "25021",
       "name": "Iwandy",
       "role": "support",
-      "team": "Royal Never Give Up",
+      "team": "",
       "team_id": "47319",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 12,
+      "inference_confidence": 0.92
     },
     "naak nako": {
       "id": "26530",
       "name": "Naak Nako",
       "role": "top",
-      "team": "Team Vitality",
+      "team": "",
       "team_id": "47370",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 52,
+      "inference_confidence": 0.83
     },
     "czajek": {
       "id": "24513",
       "name": "Czajek",
       "role": "mid",
-      "team": "Team Vitality",
+      "team": "",
       "team_id": "47370",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 52,
+      "inference_confidence": 0.94
     },
     "hery": {
       "id": "24268",
       "name": "Hery",
       "role": "top",
-      "team": "Oh My God",
+      "team": "",
       "team_id": "369",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 63,
+      "inference_confidence": 0.87
     },
     "tianzhen": {
       "id": "20088",
       "name": "Tianzhen",
       "role": "jungle",
-      "team": "Xi'an Team WE",
-      "team_id": "52910",
-      "source": "grid"
+      "team": "",
+      "team_id": "369",
+      "source": "leaguepedia",
+      "games": 26,
+      "inference_confidence": 1.0
     },
     "parukia": {
       "id": "144466",
       "name": "Parukia",
       "role": "support",
-      "team": "SHANGHAI EDWARD GAMING HYCAN",
+      "team": "",
       "team_id": "47509",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 34,
+      "inference_confidence": 0.79
     },
     "pullbae": {
       "id": "24977",
       "name": "Pullbae",
       "role": "mid",
-      "team": "OKSavingsBank BRION",
+      "team": "",
       "team_id": "52817",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 10,
+      "inference_confidence": 0.5
     },
     "solokill": {
       "id": "25373",
       "name": "Solokill",
       "role": "top",
-      "team": "SHANGHAI EDWARD GAMING HYCAN",
-      "team_id": "47509",
-      "source": "grid"
+      "team": "",
+      "team_id": "52905",
+      "source": "leaguepedia",
+      "games": 95,
+      "inference_confidence": 0.89
     },
     "naiyou": {
       "id": "29439",
       "name": "naiyou",
       "role": "jungle",
-      "team": "Hangzhou LGD Gaming",
-      "team_id": "368",
-      "source": "grid"
+      "team": "",
+      "team_id": "52905",
+      "source": "leaguepedia",
+      "games": 51,
+      "inference_confidence": 0.92
     },
     "licorice": {
       "id": "23701",
       "name": "Licorice",
       "role": "top",
-      "team": "Dignitas",
+      "team": "",
       "team_id": "47499",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 53,
+      "inference_confidence": 0.7
     },
     "oddielan": {
       "id": "23719",
       "name": "Oddielan",
       "role": "jungle",
-      "team": "LYON",
+      "team": "",
       "team_id": "54198",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 33,
+      "inference_confidence": 1.0
     },
     "saint": {
       "id": "26878",
       "name": "Saint",
       "role": "mid",
-      "team": "LYON",
+      "team": "",
       "team_id": "54198",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 33,
+      "inference_confidence": 0.97
     },
     "lyonz": {
       "id": "26096",
       "name": "Lyonz",
       "role": "support",
-      "team": "LYON",
+      "team": "",
       "team_id": "54198",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 33,
+      "inference_confidence": 0.82
+    },
+    "execute": {
+      "id": "29553",
+      "name": "Execute",
+      "role": "support",
+      "team": "",
+      "team_id": "4035",
+      "source": "leaguepedia",
+      "games": 29,
+      "inference_confidence": 0.79
     },
     "zuian": {
       "id": "73103",
       "name": "ZUIAN",
       "role": "top",
-      "team": "Invictus Gaming",
+      "team": "",
       "team_id": "47472",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 15,
+      "inference_confidence": 0.53
     },
     "5t5": {
       "id": "122821",
       "name": "5t5",
       "role": "jungle",
-      "team": "Suzhou LNG Ninebot Esports",
+      "team": "",
       "team_id": "52726",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 5,
+      "inference_confidence": 1.0
     },
     "hauz": {
       "id": "21221",
       "name": "Hauz",
       "role": "mid",
-      "team": "LEVIAT\u00c1N",
+      "team": "",
       "team_id": "47757",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 15,
+      "inference_confidence": 1.0
     },
     "toplop": {
       "id": "23766",
       "name": "TopLop",
       "role": "support",
-      "team": "LEVIAT\u00c1N",
+      "team": "",
       "team_id": "47757",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 15,
+      "inference_confidence": 0.87
     },
     "yampi": {
       "id": "26945",
       "name": "Yampi",
       "role": "jungle",
-      "team": "Fluxo W7M",
+      "team": "",
       "team_id": "48070",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 10,
+      "inference_confidence": 1.0
     },
     "curty": {
       "id": "29547",
       "name": "curty",
       "role": "top",
-      "team": "Fluxo W7M",
+      "team": "",
       "team_id": "48070",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 10,
+      "inference_confidence": 0.7
     },
     "cabochard": {
       "id": "24058",
       "name": "Cabochard",
       "role": "top",
-      "team": "Karmine Corp",
+      "team": "",
       "team_id": "53165",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 18,
+      "inference_confidence": 1.0
     },
     "bo": {
       "id": "21746",
       "name": "Bo",
       "role": "jungle",
-      "team": "Karmine Corp",
+      "team": "",
       "team_id": "53165",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 18,
+      "inference_confidence": 0.94
     },
     "saken": {
       "id": "20458",
       "name": "SAKEN",
       "role": "mid",
-      "team": "Karmine Corp",
+      "team": "",
       "team_id": "53165",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 18,
+      "inference_confidence": 0.94
     },
     "linfeng": {
       "id": "39845",
       "name": "Linfeng",
       "role": "mid",
-      "team": "Oh My God",
+      "team": "",
       "team_id": "369",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 25,
+      "inference_confidence": 0.84
     },
     "moham": {
       "id": "22204",
       "name": "Moham",
       "role": "support",
-      "team": "Oh My God",
+      "team": "",
       "team_id": "369",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 58,
+      "inference_confidence": 0.93
     },
     "ale": {
       "id": "24008",
       "name": "Ale",
       "role": "top",
-      "team": "Anyone's Legend",
-      "team_id": "20483",
-      "source": "grid"
+      "team": "",
+      "team_id": "52796",
+      "source": "leaguepedia",
+      "games": 129,
+      "inference_confidence": 0.92
     },
     "wunder": {
       "id": "21489",
       "name": "Wunder",
       "role": "top",
-      "team": "Team Heretics",
+      "team": "",
       "team_id": "47435",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 31,
+      "inference_confidence": 0.68
     },
     "perkz": {
       "id": "21095",
       "name": "Perkz",
       "role": "mid",
-      "team": "Team Heretics",
+      "team": "",
       "team_id": "47435",
-      "source": "grid"
+      "source": "leaguepedia_corrected",
+      "games": 14,
+      "inference_confidence": 0.93
     },
     "flakked": {
       "id": "24576",
       "name": "Flakked",
       "role": "bot",
-      "team": "Team Heretics",
+      "team": "",
       "team_id": "47435",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 31,
+      "inference_confidence": 0.94
     },
     "kaiser": {
       "id": "20724",
       "name": "Kaiser",
       "role": "support",
-      "team": "Team Heretics",
+      "team": "",
       "team_id": "47435",
-      "source": "grid"
+      "source": "leaguepedia_corrected",
+      "games": 14,
+      "inference_confidence": 0.86
     },
     "rooster": {
       "id": "20249",
       "name": "Rooster",
       "role": "top",
-      "team": "Team BDS",
+      "team": "",
       "team_id": "52661",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 12,
+      "inference_confidence": 0.75
     },
     "mihile": {
       "id": "21603",
       "name": "Mihile",
       "role": "top",
-      "team": "NongShim REDFORCE",
+      "team": "",
       "team_id": "52747",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 29,
+      "inference_confidence": 0.9
     },
     "guger": {
       "id": "21470",
       "name": "GuGer",
       "role": "support",
-      "team": "NongShim REDFORCE",
+      "team": "",
       "team_id": "52747",
-      "source": "grid"
+      "source": "leaguepedia_corrected",
+      "games": 29,
+      "inference_confidence": 0.93
     },
     "qingtian": {
       "id": "24968",
       "name": "Qingtian",
       "role": "top",
-      "team": "Ultra Prime",
+      "team": "",
       "team_id": "3113",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 36,
+      "inference_confidence": 0.83
     },
     "h4cker": {
       "id": "20621",
       "name": "H4cker",
       "role": "jungle",
-      "team": "Ultra Prime",
+      "team": "",
       "team_id": "3113",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 37,
+      "inference_confidence": 0.92
     },
     "yuekai": {
       "id": "22831",
       "name": "Yuekai",
       "role": "mid",
-      "team": "Ultra Prime",
+      "team": "",
       "team_id": "3113",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 37,
+      "inference_confidence": 0.76
     },
     "doggo": {
       "id": "22545",
       "name": "Doggo",
       "role": "bot",
-      "team": "Ultra Prime",
+      "team": "",
       "team_id": "3113",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 37,
+      "inference_confidence": 0.92
     },
     "summit": {
       "id": "26315",
       "name": "Summit",
-      "role": "mid",
-      "team": "Isurus Estral",
+      "role": "top",
+      "team": "",
       "team_id": "54284",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 26,
+      "inference_confidence": 1.0
     },
     "leaper": {
       "id": "54543",
       "name": "Leaper",
       "role": "bot",
-      "team": "KWANGDONG FREECS",
+      "team": "",
       "team_id": "3483",
-      "source": "grid"
+      "source": "leaguepedia_corrected",
+      "games": 44,
+      "inference_confidence": 0.95
+    },
+    "quantum ": {
+      "id": "28728",
+      "name": "Quantum ",
+      "role": "support",
+      "team": "",
+      "team_id": "3483",
+      "source": "champion_inference",
+      "games": 17,
+      "inference_confidence": 0.59
     },
     "spica": {
       "id": "24181",
       "name": "Spica",
       "role": "jungle",
-      "team": "Dignitas",
+      "team": "",
       "team_id": "47499",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 31,
+      "inference_confidence": 0.97
     },
     "baiye": {
       "id": "21921",
       "name": "Baiye",
       "role": "bot",
-      "team": "Ultra Prime",
+      "team": "",
       "team_id": "3113",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 30,
+      "inference_confidence": 0.87
     },
     "milkyway": {
       "id": "112974",
       "name": "milkyway",
       "role": "jungle",
-      "team": "FunPlus Phoenix",
+      "team": "",
       "team_id": "47514",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 6,
+      "inference_confidence": 0.83
     },
     "gideon": {
       "id": "21032",
       "name": "GIDEON",
       "role": "jungle",
-      "team": "OKSavingsBank BRION",
+      "team": "",
       "team_id": "52817",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 37,
+      "inference_confidence": 0.89
     },
     "szygenda": {
       "id": "21045",
       "name": "Szygenda",
       "role": "top",
-      "team": "Rogue",
+      "team": "",
       "team_id": "106",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 9,
+      "inference_confidence": 0.89
     },
     "markoon": {
       "id": "23620",
       "name": "Markoon",
       "role": "jungle",
-      "team": "Rogue",
+      "team": "",
       "team_id": "106",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 19,
+      "inference_confidence": 0.89
     },
     "comp": {
       "id": "21066",
       "name": "Comp",
       "role": "bot",
-      "team": "Rogue",
+      "team": "",
       "team_id": "106",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 19,
+      "inference_confidence": 0.95
     },
     "samver": {
       "id": "28723",
       "name": "Samver",
       "role": "bot",
-      "team": "OKSavingsBank BRION",
+      "team": "",
       "team_id": "52817",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 19,
+      "inference_confidence": 0.84
     },
     "poby": {
       "id": "25221",
       "name": "Poby",
       "role": "mid",
-      "team": "Fnatic",
+      "team": "",
       "team_id": "47376",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 25,
+      "inference_confidence": 1.0
     },
     "xiaolaohu": {
       "id": "20907",
       "name": "xiaolaohu",
       "role": "top",
-      "team": "FunPlus Phoenix",
+      "team": "",
       "team_id": "47514",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 12,
+      "inference_confidence": 0.83
     },
     "casting": {
       "id": "20892",
       "name": "Casting",
       "role": "top",
-      "team": "KT Rolster",
+      "team": "",
       "team_id": "407",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 24,
+      "inference_confidence": 0.83
     },
     "rosielove": {
       "id": "122336",
       "name": "Rosielove",
       "role": "support",
-      "team": "Ultra Prime",
+      "team": "",
       "team_id": "3113",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 12,
+      "inference_confidence": 0.58
     },
     "srtty": {
       "id": "21022",
       "name": "Srtty",
-      "role": "jungle",
-      "team": "LYON",
-      "team_id": "54198",
-      "source": "grid"
+      "role": "top",
+      "team": "",
+      "team_id": "47499",
+      "source": "leaguepedia",
+      "games": 37,
+      "inference_confidence": 0.95
     },
     "sheiden": {
       "id": "22327",
       "name": "Sheiden",
       "role": "jungle",
-      "team": "Dignitas",
+      "team": "",
       "team_id": "47499",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 37,
+      "inference_confidence": 0.95
     },
     "keine": {
       "id": "24481",
       "name": "Keine",
       "role": "mid",
-      "team": "Dignitas",
+      "team": "",
       "team_id": "47499",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 39,
+      "inference_confidence": 0.92
     },
     "frog": {
       "id": "20624",
       "name": "Frog",
       "role": "top",
-      "team": "DRX",
+      "team": "",
       "team_id": "47961",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 24,
+      "inference_confidence": 0.67
     },
     "dynquedo": {
       "id": "24215",
       "name": "dyNquedo",
       "role": "mid",
-      "team": "Pain Gaming",
+      "team": "",
       "team_id": "3389",
-      "source": "grid"
+      "source": "leaguepedia_corrected",
+      "games": 12,
+      "inference_confidence": 0.92
     },
     "wiz": {
       "id": "22734",
       "name": "Wiz",
       "role": "jungle",
-      "team": "LOUD",
+      "team": "",
       "team_id": "47960",
-      "source": "grid"
+      "source": "leaguepedia_corrected",
+      "games": 12,
+      "inference_confidence": 1.0
     },
     "winsome": {
       "id": "19983",
       "name": "Winsome",
       "role": "support",
-      "team": "LOUD",
+      "team": "",
       "team_id": "47960",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 12,
+      "inference_confidence": 0.92
     },
     "geju": {
       "id": "111148",
       "name": "Geju",
       "role": "jungle",
-      "team": "Royal Never Give Up",
+      "team": "",
       "team_id": "47319",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 12,
+      "inference_confidence": 1.0
     },
     "xzz": {
       "id": "25019",
       "name": "Xzz",
       "role": "mid",
-      "team": "Royal Never Give Up",
+      "team": "",
       "team_id": "47319",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 10,
+      "inference_confidence": 0.8
     },
     "charlotte": {
       "id": "122858",
       "name": "charlotte",
       "role": "mid",
-      "team": "Oh My God",
+      "team": "",
       "team_id": "369",
-      "source": "grid"
+      "source": "leaguepedia_corrected",
+      "games": 10,
+      "inference_confidence": 1.0
     },
-    "cryin": {
-      "id": "112970",
-      "name": "Cryin",
+    "cryin ": {
+      "id": "24902",
+      "name": "Cryin ",
       "role": "mid",
-      "team": "SHANGHAI EDWARD GAMING HYCAN",
+      "team": "",
       "team_id": "47509",
-      "source": "grid"
+      "source": "champion_inference",
+      "games": 29,
+      "inference_confidence": 0.9
     },
     "theniu": {
       "id": "56779",
       "name": "TheNiu",
       "role": "top",
-      "team": "FunPlus Phoenix",
+      "team": "",
       "team_id": "47514",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 2,
+      "inference_confidence": 0.5
     },
     "hambak": {
       "id": "26275",
       "name": "HamBak",
       "role": "jungle",
-      "team": "OKSavingsBank BRION",
+      "team": "",
       "team_id": "52817",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 32,
+      "inference_confidence": 1.0
     },
     "hans samd": {
       "id": "20122",
       "name": "Hans SamD",
       "role": "bot",
-      "team": "Natus Vincere",
+      "team": "",
       "team_id": "55749",
-      "source": "grid"
+      "source": "champion_inference",
+      "games": 8,
+      "inference_confidence": 0.75
     },
     "thayger": {
       "id": "20406",
       "name": "Thayger",
       "role": "jungle",
-      "team": "Natus Vincere",
+      "team": "",
       "team_id": "55749",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 8,
+      "inference_confidence": 1.0
     },
     "drakehero": {
       "id": "27459",
       "name": "Drakehero",
       "role": "jungle",
-      "team": "Fluxo W7M",
+      "team": "",
       "team_id": "48070",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 4,
+      "inference_confidence": 1.0
     },
     "yayo": {
       "id": "138399",
       "name": "Yayo",
-      "role": "bot",
-      "team": "LYON",
+      "role": "top",
+      "team": "",
       "team_id": "54198",
-      "source": "grid"
+      "source": "champion_inference",
+      "games": 2,
+      "inference_confidence": 1.0
     },
     "vital": {
       "id": "27181",
       "name": "vital",
-      "role": "support",
-      "team": "NongShim REDFORCE",
+      "role": "coach",
+      "team": "",
       "team_id": "52747",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 16,
+      "inference_confidence": 0.56
     },
     "fleshy": {
       "id": "25933",
       "name": "Fleshy",
       "role": "support",
-      "team": "Team Vitality",
+      "team": "",
       "team_id": "47370",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 17,
+      "inference_confidence": 0.94
     },
     "ellim": {
       "id": "25459",
       "name": "Ellim",
-      "role": "mid",
-      "team": "OKSavingsBank BRION",
+      "role": "jungle",
+      "team": "",
       "team_id": "52817",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 5,
+      "inference_confidence": 1.0
     },
     "fate": {
       "id": "19923",
       "name": "FATE",
       "role": "mid",
-      "team": "OKSavingsBank BRION",
+      "team": "",
       "team_id": "52817",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 19,
+      "inference_confidence": 0.89
     },
     "scamber": {
       "id": "26577",
       "name": "Scamber",
-      "role": "top",
-      "team": "Vivo Keyd Stars",
+      "role": "support",
+      "team": "",
       "team_id": "48173",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 2,
+      "inference_confidence": 1.0
     },
     "beishang": {
       "id": "24486",
       "name": "beishang",
       "role": "jungle",
-      "team": "Oh My God",
+      "team": "",
       "team_id": "369",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 6,
+      "inference_confidence": 1.0
     },
     "paduck": {
       "id": "20760",
       "name": "Paduck",
       "role": "bot",
-      "team": "KT Rolster",
+      "team": "",
       "team_id": "407",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 10,
+      "inference_confidence": 1.0
     },
     "shtest006": {
       "id": "36399",
       "name": "SHTest006",
       "role": "top",
-      "team": "Ultra Prime",
+      "team": "",
       "team_id": "3113",
-      "source": "grid"
+      "source": "champion_inference",
+      "games": 3,
+      "inference_confidence": 1.0
     },
     "shtest007": {
       "id": "36400",
       "name": "SHTest007",
       "role": "jungle",
-      "team": "Ultra Prime",
+      "team": "",
       "team_id": "3113",
-      "source": "grid"
+      "source": "champion_inference",
+      "games": 3,
+      "inference_confidence": 1.0
     },
     "shtest008": {
       "id": "36402",
       "name": "SHTest008",
       "role": "mid",
-      "team": "Ultra Prime",
+      "team": "",
       "team_id": "3113",
-      "source": "grid"
+      "source": "champion_inference",
+      "games": 3,
+      "inference_confidence": 1.0
     },
     "shtest009": {
       "id": "36403",
       "name": "SHTest009",
       "role": "bot",
-      "team": "Ultra Prime",
+      "team": "",
       "team_id": "3113",
-      "source": "grid"
+      "source": "champion_inference",
+      "games": 3,
+      "inference_confidence": 1.0
     },
     "shtest010": {
       "id": "36405",
       "name": "SHTest010",
       "role": "support",
-      "team": "Ultra Prime",
+      "team": "",
       "team_id": "3113",
-      "source": "grid"
+      "source": "champion_inference",
+      "games": 3,
+      "inference_confidence": 1.0
     },
     "bjtest001": {
       "id": "36392",
       "name": "BJTest001",
       "role": "top",
-      "team": "Suzhou LNG Ninebot Esports",
+      "team": "",
       "team_id": "52726",
-      "source": "grid"
+      "source": "champion_inference",
+      "games": 3,
+      "inference_confidence": 0.67
     },
     "bjtest002": {
       "id": "36393",
       "name": "BJTest002",
       "role": "jungle",
-      "team": "Suzhou LNG Ninebot Esports",
+      "team": "",
       "team_id": "52726",
-      "source": "grid"
+      "source": "champion_inference",
+      "games": 3,
+      "inference_confidence": 1.0
     },
     "bjtest003": {
       "id": "36394",
       "name": "BJTest003",
       "role": "mid",
-      "team": "Suzhou LNG Ninebot Esports",
+      "team": "",
       "team_id": "52726",
-      "source": "grid"
+      "source": "champion_inference",
+      "games": 3,
+      "inference_confidence": 1.0
     },
     "bjtest004": {
       "id": "36396",
       "name": "BJTest004",
       "role": "bot",
-      "team": "Suzhou LNG Ninebot Esports",
+      "team": "",
       "team_id": "52726",
-      "source": "grid"
+      "source": "champion_inference",
+      "games": 3,
+      "inference_confidence": 1.0
     },
     "bjtest005": {
       "id": "36397",
       "name": "BJTest005",
       "role": "support",
-      "team": "Suzhou LNG Ninebot Esports",
+      "team": "",
       "team_id": "52726",
-      "source": "grid"
+      "source": "champion_inference",
+      "games": 3,
+      "inference_confidence": 1.0
     },
     "ming": {
       "id": "26691",
       "name": "Ming",
       "role": "support",
-      "team": "Royal Never Give Up",
+      "team": "",
       "team_id": "47319",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 14,
+      "inference_confidence": 0.93
     },
     "lele": {
       "id": "25203",
       "name": "Lele",
       "role": "support",
-      "team": "Royal Never Give Up",
+      "team": "",
       "team_id": "47319",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 8,
+      "inference_confidence": 0.88
+    },
+    "cryin": {
+      "id": "112970",
+      "name": "Cryin",
+      "role": "mid",
+      "team": "",
+      "team_id": "47509",
+      "source": "leaguepedia",
+      "games": 2,
+      "inference_confidence": 1.0
     },
     "wink": {
       "id": "112972",
       "name": "Wink",
       "role": "support",
-      "team": "SHANGHAI EDWARD GAMING HYCAN",
+      "team": "",
       "team_id": "47509",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 2,
+      "inference_confidence": 1.0
     },
     "guwon": {
       "id": "26261",
       "name": "Guwon",
       "role": "jungle",
-      "team": "T1",
+      "team": "",
       "team_id": "47494",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 2,
+      "inference_confidence": 1.0
     },
     "bat": {
       "id": "122448",
       "name": "bat",
       "role": "bot",
-      "team": "FunPlus Phoenix",
+      "team": "",
       "team_id": "47514",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 10,
+      "inference_confidence": 0.9
     },
     "wildturtle": {
       "id": "25294",
       "name": "WildTurtle",
       "role": "bot",
-      "team": "Shopify Rebellion",
+      "team": "",
       "team_id": "53073",
-      "source": "grid"
+      "source": "leaguepedia_corrected",
+      "games": 2,
+      "inference_confidence": 1.0
     },
     "sorrow": {
       "id": "36482",
       "name": "SORROW",
       "role": "jungle",
-      "team": "FunPlus Phoenix",
+      "team": "",
       "team_id": "47514",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 4,
+      "inference_confidence": 1.0
     },
     "yuuji": {
       "id": "23956",
       "name": "Yuuji",
-      "role": "bot",
-      "team": "Team Liquid",
+      "role": "jungle",
+      "team": "",
       "team_id": "47363",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 26,
+      "inference_confidence": 0.96
     },
     "decade": {
       "id": "20289",
       "name": "Decade",
       "role": "top",
-      "team": "Ultra Prime",
+      "team": "",
       "team_id": "3113",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 1,
+      "inference_confidence": null
     },
     "trick": {
       "id": "43084",
       "name": "Trick",
       "role": "jungle",
-      "team": "Rogue",
+      "team": "",
       "team_id": "106",
-      "source": "grid"
+      "source": "leaguepedia_corrected",
+      "games": 2,
+      "inference_confidence": 1.0
     },
     "soboro": {
       "id": "26475",
       "name": "Soboro",
       "role": "top",
-      "team": "BNK FearX",
+      "team": "",
       "team_id": "4035",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 10,
+      "inference_confidence": 1.0
     },
     "daystar": {
       "id": "27540",
       "name": "Daystar",
       "role": "mid",
-      "team": "BNK FearX",
+      "team": "",
       "team_id": "4035",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 8,
+      "inference_confidence": 1.0
     },
     "skeanz": {
       "id": "27349",
       "name": "Skeanz",
       "role": "jungle",
-      "team": "SK Gaming",
+      "team": "",
       "team_id": "353",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 9,
+      "inference_confidence": 1.0
     },
     "tomio": {
       "id": "24137",
       "name": "Tomio",
       "role": "jungle",
-      "team": "Shopify Rebellion",
+      "team": "",
       "team_id": "53073",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 6,
+      "inference_confidence": 1.0
     },
     "trigger": {
       "id": "23353",
       "name": "Trigger",
-      "role": "support",
-      "team": "NONGSHIM RED FORCE",
+      "role": "bot",
+      "team": "",
       "team_id": "52747",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 4,
+      "inference_confidence": 0.75
     },
     "sav1or": {
       "id": "144684",
       "name": "Sav1or",
-      "role": "mid",
-      "team": "Hangzhou LGD Gaming",
+      "role": "bot",
+      "team": "",
       "team_id": "368",
-      "source": "grid"
+      "source": "champion_inference",
+      "games": 2,
+      "inference_confidence": 1.0
     },
     "lira": {
       "id": "20555",
       "name": "Lira",
       "role": "jungle",
-      "team": "Dignitas",
+      "team": "",
       "team_id": "47499",
-      "source": "grid"
+      "source": "leaguepedia_corrected",
+      "games": 2,
+      "inference_confidence": 1.0
     },
     "leza": {
       "id": "23506",
       "name": "Leza",
-      "role": "bot",
-      "team": "Isurus",
+      "role": "mid",
+      "team": "",
       "team_id": "54284",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 13,
+      "inference_confidence": 0.92
     },
     "zamudo": {
       "id": "22448",
       "name": "Zamudo",
-      "role": "support",
-      "team": "Isurus",
+      "role": "top",
+      "team": "",
       "team_id": "54284",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 5,
+      "inference_confidence": 0.8
     },
     "zoen": {
       "id": "20749",
       "name": "Zoen",
-      "role": "jungle",
-      "team": "Isurus",
+      "role": "top",
+      "team": "",
       "team_id": "54284",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 8,
+      "inference_confidence": 1.0
     },
     "qiuqiu": {
       "id": "26400",
       "name": "QiuQiu",
       "role": "support",
-      "team": "THUNDER TALK GAMING",
+      "team": "",
       "team_id": "52606",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 2,
+      "inference_confidence": 1.0
+    },
+    "": {
+      "id": "c42aed31-4a60-469c-b92e-e3cd503d3bd0",
+      "name": "",
+      "role": "bot",
+      "team": "",
+      "team_id": "52817",
+      "source": "champion_inference",
+      "games": 3,
+      "inference_confidence": 0.67
     },
     "xbear": {
       "id": "105448",
       "name": "XBear",
       "role": "support",
-      "team": "WeiboGaming TapTap",
+      "team": "",
       "team_id": "52822",
-      "source": "grid"
+      "source": "leaguepedia",
+      "games": 2,
+      "inference_confidence": 1.0
     }
   }
 }
