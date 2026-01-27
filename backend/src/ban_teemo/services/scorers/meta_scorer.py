@@ -26,7 +26,8 @@ class MetaScorer:
         """Get meta strength score for a champion (0.0-1.0)."""
         if champion_name not in self._meta_stats:
             return 0.5
-        return self._meta_stats[champion_name].get("meta_score", 0.5)
+        score = self._meta_stats[champion_name].get("meta_score")
+        return score if score is not None else 0.5
 
     def get_meta_tier(self, champion_name: str) -> Optional[str]:
         """Get meta tier (S/A/B/C/D) for a champion."""
