@@ -10,6 +10,43 @@
 
 ---
 
+## Review Corrections (2026-01-27)
+
+The following corrections were made based on code review:
+
+### 1. Matchup Win Rate Direction (Critical)
+**Problem:** Original plan incorrectly stated that `counters[champ][vs_lane][role][enemy].win_rate` was the enemy's win rate and needed inversion.
+
+**Actual data:** The win_rate is from the FIRST key's perspective (our champion). `counters[Maokai][vs_lane][JUNGLE][Sejuani].win_rate = 0.739` means Maokai wins 73.9%.
+
+**Fix:** Use win_rate directly for direct lookups. Only invert when doing reverse lookups (looking up `counters[enemy][...][us]`).
+
+### 2. Role Naming Standardization (High)
+**Problem:** Plan used `JNG` but actual data uses `JUNGLE`.
+
+**Canonical roles:** `TOP`, `JUNGLE`, `MID`, `ADC`, `SUP`
+
+**Fix:** All `VALID_ROLES` constants updated to use `JUNGLE`.
+
+### 3. Counter vs Matchup Separation (Medium)
+**Problem:** Counter score was just copying matchup score, double-weighting the same signal.
+
+**Fix:**
+- `matchup` (0.25 weight) → Uses `vs_lane` data (lane-specific matchups)
+- `counter` (0.15 weight) → Uses `vs_team` data (team-level matchups)
+
+### 4. Matchup Confidence (Medium)
+**Problem:** Sample size and data confidence from `matchup_stats.json` were ignored.
+
+**Fix:** `get_lane_matchup()` now returns `{score, confidence, games, data_source}` instead of just a float.
+
+### 5. Candidate Generation Fallback (Low)
+**Problem:** Unknown players returned empty candidate list.
+
+**Fix:** Added `get_top_meta_champions()` fallback when player pool is sparse.
+
+---
+
 ## Architecture Overview
 
 ```
@@ -34,7 +71,7 @@
                                       ▼
 ┌─────────────────────────────────────────────────────────────────────────────────┐
 │                       STAGE 3: RECOMMENDATION ENGINE                             │
-│  PickRecommendationEngine (combines all scores with weights + confidence)        │
+│  PickRecommendationEngine (base score × synergy multiplier)                      │
 └─────────────────────────────────────────────────────────────────────────────────┘
                                       │
                                       ▼
@@ -52,27 +89,188 @@
 
 ## Scoring Formula (Final)
 
+Synergy acts as a **multiplier** on the base score, not an additive component. This prevents
+synergy from "rescuing" weak picks—it can only amplify or dampen already-viable champions.
+
 ```python
-score = (
-    meta_score        * 0.15 +   # MetaScorer
-    proficiency_score * 0.25 +   # ProficiencyScorer (with confidence)
-    matchup_score     * 0.15 +   # MatchupCalculator (× FlexResolver confidence)
-    synergy_score     * 0.20 +   # SynergyService (S/A/B/C multipliers)
-    counter_score     * 0.10 +   # CounterCalculator
-    archetype_fit     * 0.15     # ArchetypeService
+# Step 1: Calculate base score from core factors
+base_score = (
+    meta_score        * 0.25 +   # MetaScorer - is this champion strong right now?
+    proficiency_score * 0.35 +   # ProficiencyScorer - can this player execute?
+    matchup_score     * 0.25 +   # MatchupCalculator.vs_lane - does this champion win LANE?
+    counter_score     * 0.15     # MatchupCalculator.vs_team - does this champion counter TEAM?
 )
+
+# Step 2: Apply synergy as a multiplier (±15% swing)
+# synergy_score is 0.0-1.0, so (synergy - 0.5) ranges from -0.5 to +0.5
+# Multiplied by 0.3 gives a range of -0.15 to +0.15
+synergy_multiplier = 1.0 + (synergy_score - 0.5) * 0.3
+
+# Step 3: Final score
+final_score = base_score * synergy_multiplier
 ```
+
+**Multiplier examples:**
+- S-tier synergy (1.0) → 1.15x multiplier (15% boost)
+- No synergy (0.5) → 1.0x (neutral)
+- Anti-synergy (0.0) → 0.85x multiplier (15% penalty)
+
+**Why multiplicative?** A champion with 0.3 base score and perfect synergy gets 0.3 × 1.15 = 0.345.
+A champion with 0.7 base score and no synergy gets 0.7 × 1.0 = 0.7. Synergy enhances good picks,
+not compensates for bad ones.
 
 ## Prerequisites
 
-- [x] `knowledge/meta_stats.json` - champion meta statistics
-- [x] `knowledge/matchup_stats.json` - champion matchup data
-- [x] `knowledge/player_proficiency.json` - player performance data
-- [x] `knowledge/synergies.json` - curated synergies with S/A/B/C ratings
-- [x] `knowledge/flex_champions.json` - champion role distributions
-- [x] `knowledge/player_roles.json` - player role mappings
+- [x] `knowledge/meta_stats.json` - champion meta statistics (has pre-computed `meta_score` field)
+- [x] `knowledge/matchup_stats.json` - champion counter data (uses `counters` key with hierarchical structure)
+- [x] `knowledge/player_proficiency.json` - player performance data (uses `proficiencies` key)
+- [x] `knowledge/synergies.json` - curated synergies with S/A/B/C ratings (array format)
+- [x] `knowledge/champion_synergies.json` - computed statistical synergies (nested format with `synergy_score`)
+- [x] `knowledge/flex_champions.json` - champion role distributions (uses `flex_picks` key)
+- [x] `knowledge/player_roles.json` - player role mappings (uses `players` key)
 - [ ] `knowledge/champion_archetypes.json` - champion archetype scores (Task 2.1)
 - [ ] `knowledge/archetype_counters.json` - RPS effectiveness matrix (Task 2.1)
+
+---
+
+## Data Schema Reference
+
+> **Important:** The actual data schemas below were verified against the knowledge files. Implementations must use these exact structures.
+
+### meta_stats.json
+
+```json
+{
+  "metadata": { "generated_at": "...", "current_patch": "15.18", ... },
+  "champions": {
+    "Azir": {
+      "presence": 0.392,        // pick_rate + ban_rate
+      "win_rate": 0.543,
+      "meta_tier": "A",         // S/A/B/C/D
+      "meta_score": 0.73,       // Pre-computed, use directly (0.0-1.0)
+      "sample_sufficient": true,
+      "flags": []               // e.g., ["counter_pick_inflated"]
+    }
+  }
+}
+```
+
+**Usage:** Use pre-computed `meta_score` directly rather than recalculating.
+
+### matchup_stats.json
+
+```json
+{
+  "metadata": { ... },
+  "counters": {
+    "Corki": {                              // Champion whose matchups we're looking up
+      "vs_lane": {
+        "MID": {                            // Role (uppercase: TOP, JUNGLE, MID, ADC, SUP)
+          "Azir": {                         // Enemy champion
+            "games": 32,
+            "win_rate": 0.562,              // Corki's WR when facing Azir (OUR perspective)
+            "confidence": "HIGH"            // HIGH/MEDIUM/LOW
+          }
+        }
+      },
+      "vs_team": {
+        "Sejuani": { "games": 61, "win_rate": 0.574 }  // Corki's WR when Sejuani on enemy team
+      }
+    }
+  }
+}
+```
+
+**Usage:** `counters[our_champ][vs_lane][ROLE][enemy]` gives OUR win rate against enemy. Use directly (no inversion needed).
+When looking up reverse (enemy's data about us), invert: `1.0 - counters[enemy][vs_lane][ROLE][us]`.
+
+### player_proficiency.json
+
+```json
+{
+  "metadata": { ... },
+  "proficiencies": {
+    "Faker": {
+      "Azir": {
+        "games_raw": 36,
+        "games_weighted": 12.2,             // Recency-weighted
+        "win_rate": 0.75,
+        "win_rate_weighted": 0.779,
+        "kda_normalized": -0.02,            // Relative to role average
+        "kp_normalized": -0.49,
+        "confidence": "HIGH",               // HIGH (8+), MEDIUM (4-7), LOW (1-3)
+        "last_patch": "15.14"
+      }
+    }
+  }
+}
+```
+
+### synergies.json (Curated)
+
+```json
+[
+  {
+    "id": "orianna_nocturne",
+    "champions": ["Orianna", "Nocturne"],
+    "strength": "S",                        // S/A/B/C rating
+    "type": "ability_combo",
+    "description": "Ball delivery via Nocturne ult"
+  },
+  {
+    "id": "yasuo_knockup",
+    "champions": ["Yasuo"],
+    "partner_requirement": "knockup",
+    "best_partners": [
+      { "champion": "Malphite", "rating": "S" },
+      { "champion": "Diana", "rating": "A" }
+    ]
+  }
+]
+```
+
+**Usage:** Check `strength` field for direct pairs, or `best_partners[].rating` for requirement-based synergies.
+
+### champion_synergies.json (Statistical)
+
+```json
+{
+  "metadata": { ... },
+  "synergies": {
+    "Aatrox": {
+      "Maokai": {
+        "games_together": 30,
+        "win_rate_together": 0.567,
+        "expected_win_rate": 0.485,
+        "synergy_delta": 0.081,             // Actual - expected
+        "synergy_score": 0.581              // Normalized 0.0-1.0 (0.5 = neutral)
+      }
+    }
+  }
+}
+```
+
+**Usage:** Use `synergy_score` directly. Curated synergies take priority over statistical.
+
+### flex_champions.json
+
+```json
+{
+  "metadata": { ... },
+  "flex_picks": {
+    "Aurora": {
+      "MID": 0.696,                         // Role probability
+      "TOP": 0.304,
+      "is_flex": true,
+      "games_total": 414
+    },
+    "Jinx": {
+      "ADC": 1.0,
+      "is_flex": false
+    }
+  }
+}
+```
 
 ---
 
@@ -100,16 +298,17 @@ def scorer():
 
 
 def test_get_meta_score_high_presence(scorer):
-    """S-tier champion should have high meta score."""
-    # Aurora is typically high presence
-    score = scorer.get_meta_score("Aurora")
+    """High-tier champion should have high meta score."""
+    # Azir has meta_score=0.73 in current data
+    score = scorer.get_meta_score("Azir")
     assert 0.7 <= score <= 1.0
 
 
 def test_get_meta_score_low_presence(scorer):
     """Low presence champion should have lower score."""
-    score = scorer.get_meta_score("Teemo")
-    assert 0.0 <= score <= 0.6
+    # Aphelios has meta_score=0.312 in current data
+    score = scorer.get_meta_score("Aphelios")
+    assert 0.0 <= score <= 0.5
 
 
 def test_get_meta_score_unknown(scorer):
@@ -120,8 +319,18 @@ def test_get_meta_score_unknown(scorer):
 
 def test_get_meta_tier(scorer):
     """Test meta tier retrieval."""
-    tier = scorer.get_meta_tier("Aurora")
+    tier = scorer.get_meta_tier("Azir")
     assert tier in ["S", "A", "B", "C", "D", None]
+
+
+def test_get_top_meta_champions(scorer):
+    """Test getting top meta champions."""
+    top = scorer.get_top_meta_champions(limit=5)
+    assert len(top) <= 5
+    assert all(isinstance(name, str) for name in top)
+    # First champion should have high meta score
+    if top:
+        assert scorer.get_meta_score(top[0]) >= 0.6
 ```
 
 **Implementation:**
@@ -154,7 +363,8 @@ class MetaScorer:
     def get_meta_score(self, champion_name: str) -> float:
         """Get meta strength score for a champion.
 
-        Score based on presence (pick+ban rate) and win rate.
+        Uses pre-computed meta_score from knowledge data (already normalized 0.0-1.0).
+        The meta_score is computed during data generation using presence and win rate.
 
         Returns:
             float 0.0-1.0 where higher = stronger meta pick
@@ -162,22 +372,37 @@ class MetaScorer:
         if champion_name not in self._meta_stats:
             return 0.5  # Neutral for unknown
 
-        data = self._meta_stats[champion_name]
-        presence = data.get("presence", 0)
-        win_rate = data.get("win_rate", 0.5)
-
-        # Presence contributes 60%, win rate deviation contributes 40%
-        presence_score = min(1.0, presence)  # Cap at 100%
-        win_rate_score = (win_rate - 0.45) * 2.5  # Normalize around 50%
-        win_rate_score = max(0.0, min(1.0, win_rate_score + 0.5))
-
-        return round(presence_score * 0.6 + win_rate_score * 0.4, 3)
+        # Use pre-computed meta_score from knowledge file
+        return self._meta_stats[champion_name].get("meta_score", 0.5)
 
     def get_meta_tier(self, champion_name: str) -> Optional[str]:
         """Get meta tier (S/A/B/C/D) for a champion."""
         if champion_name not in self._meta_stats:
             return None
         return self._meta_stats[champion_name].get("meta_tier")
+
+    def get_top_meta_champions(
+        self,
+        role: Optional[str] = None,
+        limit: int = 10
+    ) -> list[str]:
+        """Get top meta champions, optionally filtered by role.
+
+        Args:
+            role: Optional role filter (TOP, JUNGLE, MID, ADC, SUP)
+            limit: Max champions to return
+
+        Returns:
+            List of champion names sorted by meta_score descending
+        """
+        # Note: Role filtering requires flex_champions.json data
+        # For now, return top meta picks regardless of role
+        ranked = sorted(
+            self._meta_stats.items(),
+            key=lambda x: x[1].get("meta_score", 0),
+            reverse=True
+        )
+        return [name for name, _ in ranked[:limit]]
 ```
 
 **Verify:** `cd backend && uv run pytest tests/test_meta_scorer.py -v`
@@ -258,7 +483,7 @@ from typing import Optional
 class FlexResolver:
     """Resolves flex pick role probabilities."""
 
-    VALID_ROLES = {"TOP", "JNG", "MID", "ADC", "SUP"}
+    VALID_ROLES = {"TOP", "JUNGLE", "MID", "ADC", "SUP"}
 
     def __init__(self, knowledge_dir: Optional[Path] = None):
         if knowledge_dir is None:
@@ -474,8 +699,8 @@ class ProficiencyScorer:
         games_factor = min(1.0, games / 10)  # Cap at 10 games
         score = win_rate * 0.6 + games_factor * 0.4
 
-        # Determine confidence
-        confidence = self.games_to_confidence(games)
+        # Use pre-computed confidence if available, else calculate
+        confidence = champ_data.get("confidence") or self.games_to_confidence(int(games))
 
         return round(score, 3), confidence
 
@@ -542,25 +767,48 @@ def calculator():
     return MatchupCalculator()
 
 
-def test_get_lane_matchup(calculator):
-    """Test lane matchup lookup."""
-    score = calculator.get_lane_matchup("Syndra", "Azir", "MID")
-    assert 0.0 <= score <= 1.0
+def test_get_lane_matchup_direct_lookup(calculator):
+    """Test lane matchup with direct data lookup.
+
+    Data structure: counters[our_champ][vs_lane][ROLE][enemy] = OUR win_rate
+    Example: counters[Maokai][vs_lane][JUNGLE][Sejuani] = 0.739 means Maokai wins 73.9%
+    """
+    result = calculator.get_lane_matchup("Maokai", "Sejuani", "JUNGLE")
+    # Maokai has 73.9% WR vs Sejuani - should be favorable
+    assert result["score"] >= 0.7
+    assert result["confidence"] in ["HIGH", "MEDIUM", "LOW", "NO_DATA"]
+    assert result["games"] >= 0
+
+
+def test_get_lane_matchup_reverse_lookup(calculator):
+    """When we only have enemy's data about us, invert it.
+
+    If counters[Maokai][vs_lane][JUNGLE][Sejuani] = 0.739 (Maokai's WR),
+    then get_lane_matchup("Sejuani", "Maokai", "JUNGLE") should invert to ~0.261
+    """
+    result = calculator.get_lane_matchup("Sejuani", "Maokai", "JUNGLE")
+    # Sejuani loses to Maokai (inverse of 0.739)
+    assert result["score"] <= 0.35
+    assert result["data_source"] == "reverse_lookup"
 
 
 def test_get_team_matchup(calculator):
-    """Test team-level matchup (regardless of lane)."""
-    score = calculator.get_team_matchup("Syndra", "Azir")
-    assert 0.0 <= score <= 1.0
+    """Test team-level matchup (regardless of lane).
+
+    Data: counters[Maokai][vs_team][Sejuani] = 0.706 means Maokai wins 70.6%
+    when Sejuani is on the enemy team.
+    """
+    result = calculator.get_team_matchup("Maokai", "Sejuani")
+    assert result["score"] >= 0.65
+    assert 0.0 <= result["score"] <= 1.0
 
 
 def test_get_matchup_with_flex_uncertainty(calculator):
     """Test matchup calculation with flex pick uncertainty."""
-    # Aurora could be MID or TOP
     role_probs = {"MID": 0.7, "TOP": 0.3}
 
     result = calculator.get_weighted_matchup(
-        our_champion="Syndra",
+        our_champion="Azir",
         our_role="MID",
         enemy_champion="Aurora",
         enemy_role_probs=role_probs
@@ -572,10 +820,12 @@ def test_get_matchup_with_flex_uncertainty(calculator):
     assert 0.0 <= result["confidence"] <= 1.0
 
 
-def test_matchup_unknown_returns_neutral(calculator):
-    """Unknown matchup returns 0.5."""
-    score = calculator.get_lane_matchup("FakeChamp1", "FakeChamp2", "MID")
-    assert score == 0.5
+def test_matchup_unknown_returns_neutral_with_no_data(calculator):
+    """Unknown matchup returns 0.5 with NO_DATA confidence."""
+    result = calculator.get_lane_matchup("FakeChamp1", "FakeChamp2", "MID")
+    assert result["score"] == 0.5
+    assert result["confidence"] == "NO_DATA"
+    assert result["games"] == 0
 ```
 
 **Implementation:**
@@ -588,69 +838,129 @@ from typing import Optional
 
 
 class MatchupCalculator:
-    """Calculates matchup scores between champions."""
+    """Calculates matchup scores between champions.
+
+    Uses matchup_stats.json which has a "counters" key with hierarchical structure:
+    {
+      "counters": {
+        "ChampionA": {
+          "vs_lane": { "ROLE": { "EnemyChamp": { "games": N, "win_rate": 0.XX } } },
+          "vs_team": { "EnemyChamp": { "games": N, "win_rate": 0.XX } }
+        }
+      }
+    }
+
+    IMPORTANT: Win rates are from the perspective of ChampionA (the first key).
+    counters[Maokai][vs_lane][JUNGLE][Sejuani].win_rate = 0.739 means MAOKAI wins 73.9%.
+    """
 
     def __init__(self, knowledge_dir: Optional[Path] = None):
         if knowledge_dir is None:
             knowledge_dir = Path(__file__).parent.parent.parent.parent.parent.parent / "knowledge"
         self.knowledge_dir = knowledge_dir
-        self._matchup_stats: dict = {}
+        self._counters: dict = {}
         self._load_data()
 
     def _load_data(self):
-        """Load matchup statistics."""
+        """Load matchup statistics from counters format."""
         matchup_path = self.knowledge_dir / "matchup_stats.json"
         if matchup_path.exists():
             with open(matchup_path) as f:
                 data = json.load(f)
-                self._matchup_stats = data.get("matchups", {})
+                self._counters = data.get("counters", {})
 
     def get_lane_matchup(
         self,
         our_champion: str,
         enemy_champion: str,
         role: str
-    ) -> float:
-        """Get lane-specific matchup score.
+    ) -> dict:
+        """Get lane-specific matchup score with confidence.
 
         Args:
             our_champion: Our champion
             enemy_champion: Enemy champion
-            role: Lane role (TOP, MID, etc.)
+            role: Lane role (TOP, JUNGLE, MID, ADC, SUP)
 
         Returns:
-            float 0.0-1.0 (0.5 = neutral, >0.5 = favorable)
+            dict with score (0.0-1.0), confidence, games, data_source
         """
-        key = f"{our_champion}_vs_{enemy_champion}"
+        role_upper = role.upper()
 
-        if key not in self._matchup_stats:
-            return 0.5
+        # Direct lookup: counters[our_champ][vs_lane][role][enemy] = OUR win_rate
+        if our_champion in self._counters:
+            vs_lane = self._counters[our_champion].get("vs_lane", {})
+            role_data = vs_lane.get(role_upper, {})
+            if enemy_champion in role_data:
+                matchup = role_data[enemy_champion]
+                return {
+                    "score": matchup.get("win_rate", 0.5),
+                    "confidence": matchup.get("confidence", "MEDIUM"),
+                    "games": matchup.get("games", 0),
+                    "data_source": "direct_lookup"
+                }
 
-        matchup = self._matchup_stats[key]
-        role_data = matchup.get("by_role", {}).get(role, {})
+        # Reverse lookup: counters[enemy][vs_lane][role][us] = ENEMY's win_rate
+        # We must INVERT this to get our perspective
+        if enemy_champion in self._counters:
+            vs_lane = self._counters[enemy_champion].get("vs_lane", {})
+            role_data = vs_lane.get(role_upper, {})
+            if our_champion in role_data:
+                matchup = role_data[our_champion]
+                enemy_wr = matchup.get("win_rate", 0.5)
+                return {
+                    "score": round(1.0 - enemy_wr, 3),  # Invert for our perspective
+                    "confidence": matchup.get("confidence", "MEDIUM"),
+                    "games": matchup.get("games", 0),
+                    "data_source": "reverse_lookup"
+                }
 
-        if not role_data:
-            # Fall back to overall matchup
-            return matchup.get("win_rate", 0.5)
-
-        return role_data.get("win_rate", 0.5)
+        # No data available
+        return {
+            "score": 0.5,
+            "confidence": "NO_DATA",
+            "games": 0,
+            "data_source": "none"
+        }
 
     def get_team_matchup(
         self,
         our_champion: str,
         enemy_champion: str
-    ) -> float:
+    ) -> dict:
         """Get team-level matchup (game outcome when both are in game).
 
         Returns:
-            float 0.0-1.0 win rate when both champions are in game
+            dict with score (0.0-1.0), games, data_source
         """
-        key = f"{our_champion}_vs_{enemy_champion}"
+        # Direct lookup: counters[our_champ][vs_team][enemy] = OUR win_rate
+        if our_champion in self._counters:
+            vs_team = self._counters[our_champion].get("vs_team", {})
+            if enemy_champion in vs_team:
+                matchup = vs_team[enemy_champion]
+                return {
+                    "score": matchup.get("win_rate", 0.5),
+                    "games": matchup.get("games", 0),
+                    "data_source": "direct_lookup"
+                }
 
-        if key not in self._matchup_stats:
-            return 0.5
+        # Reverse lookup: counters[enemy][vs_team][us] = ENEMY's win_rate
+        if enemy_champion in self._counters:
+            vs_team = self._counters[enemy_champion].get("vs_team", {})
+            if our_champion in vs_team:
+                matchup = vs_team[our_champion]
+                enemy_wr = matchup.get("win_rate", 0.5)
+                return {
+                    "score": round(1.0 - enemy_wr, 3),  # Invert for our perspective
+                    "games": matchup.get("games", 0),
+                    "data_source": "reverse_lookup"
+                }
 
-        return self._matchup_stats[key].get("team_win_rate", 0.5)
+        return {
+            "score": 0.5,
+            "games": 0,
+            "data_source": "none"
+        }
 
     def get_weighted_matchup(
         self,
@@ -665,35 +975,42 @@ class MatchupCalculator:
 
         Args:
             our_champion: Our champion
-            our_role: Our role
+            our_role: Our role (TOP, JUNGLE, MID, ADC, SUP)
             enemy_champion: Enemy champion
             enemy_role_probs: dict mapping role -> probability
 
         Returns:
-            dict with score and confidence
+            dict with score, confidence, and breakdown
         """
         if not enemy_role_probs:
-            return {"score": 0.5, "confidence": 0.0}
+            return {"score": 0.5, "confidence": 0.0, "data_source": "none"}
 
         # Check if enemy is in our lane
         enemy_in_our_lane_prob = enemy_role_probs.get(our_role, 0)
 
         if enemy_in_our_lane_prob > 0:
             # Calculate lane matchup
-            lane_score = self.get_lane_matchup(our_champion, enemy_champion, our_role)
+            lane_result = self.get_lane_matchup(our_champion, enemy_champion, our_role)
+            lane_score = lane_result["score"]
+
             # Use team matchup for when enemy is elsewhere
-            team_score = self.get_team_matchup(our_champion, enemy_champion)
+            team_result = self.get_team_matchup(our_champion, enemy_champion)
+            team_score = team_result["score"]
 
             # Weight by probability
             score = (
                 lane_score * enemy_in_our_lane_prob +
                 team_score * (1 - enemy_in_our_lane_prob)
             )
-            confidence = enemy_in_our_lane_prob
+
+            # Confidence accounts for both role certainty and data quality
+            data_confidence = 1.0 if lane_result["confidence"] != "NO_DATA" else 0.5
+            confidence = enemy_in_our_lane_prob * data_confidence
         else:
-            # Enemy not in our lane - use team matchup
-            score = self.get_team_matchup(our_champion, enemy_champion)
-            confidence = 1.0  # Confident they're NOT in our lane
+            # Enemy not in our lane - use team matchup only
+            team_result = self.get_team_matchup(our_champion, enemy_champion)
+            score = team_result["score"]
+            confidence = 1.0 if team_result["data_source"] != "none" else 0.5
 
         return {
             "score": round(score, 3),
@@ -811,7 +1128,248 @@ See Enhancement plan Task 3 for full test and implementation.
 - Create: `backend/src/ban_teemo/services/synergy_service.py`
 - Create: `backend/tests/test_synergy_service.py`
 
-See Enhancement plan Task 4 for full test and implementation.
+**Data Sources:**
+This service uses TWO different synergy files:
+1. `synergies.json` - Curated mechanical synergies (array format with `strength: "S/A/B/C"`)
+2. `champion_synergies.json` - Computed statistical synergies (nested format with `synergy_score: 0.0-1.0`)
+
+**Test first:**
+
+```python
+"""Tests for synergy service."""
+import pytest
+from ban_teemo.services.synergy_service import SynergyService
+
+
+@pytest.fixture
+def service():
+    return SynergyService()
+
+
+def test_get_rating_multiplier(service):
+    """Test rating to multiplier conversion."""
+    assert service.get_rating_multiplier("S") == 1.0
+    assert service.get_rating_multiplier("A") == 0.8
+    assert service.get_rating_multiplier("B") == 0.6
+    assert service.get_rating_multiplier("C") == 0.4
+
+
+def test_get_synergy_score_curated(service):
+    """Curated synergy (Orianna+Nocturne) should return high score."""
+    score = service.get_synergy_score("Orianna", "Nocturne")
+    # S-tier curated synergy should be 0.85 × 1.0 = 0.85
+    assert score >= 0.8
+
+
+def test_get_synergy_score_statistical(service):
+    """Statistical synergy falls back to champion_synergies.json."""
+    # Use a pair that exists in statistical data but not curated
+    score = service.get_synergy_score("Aatrox", "Maokai")
+    assert 0.0 <= score <= 1.0
+
+
+def test_get_synergy_score_unknown(service):
+    """Unknown pair returns neutral 0.5."""
+    score = service.get_synergy_score("FakeChamp1", "FakeChamp2")
+    assert score == 0.5
+
+
+def test_calculate_team_synergy(service):
+    """Test team synergy aggregation."""
+    result = service.calculate_team_synergy(["Orianna", "Nocturne", "Malphite"])
+
+    assert "total_score" in result
+    assert "pair_count" in result
+    assert "synergy_pairs" in result
+    assert 0.0 <= result["total_score"] <= 1.0
+
+
+def test_get_best_synergy_partners(service):
+    """Test finding best partners for a champion."""
+    partners = service.get_best_synergy_partners("Orianna", limit=5)
+
+    assert len(partners) <= 5
+    for p in partners:
+        assert "champion" in p
+        assert "score" in p
+```
+
+**Implementation:**
+
+```python
+"""Synergy scoring with curated ratings and statistical fallback."""
+import json
+from pathlib import Path
+from typing import Optional
+
+
+class SynergyService:
+    """Scores champion synergies using curated data with statistical fallback.
+
+    Uses two data sources:
+    1. synergies.json - Curated mechanical synergies (array with "strength" ratings)
+    2. champion_synergies.json - Statistical synergies (nested with "synergy_score")
+
+    Curated synergies take priority; statistical used as fallback.
+    """
+
+    RATING_MULTIPLIERS = {
+        "S": 1.0,
+        "A": 0.8,
+        "B": 0.6,
+        "C": 0.4,
+    }
+
+    BASE_CURATED_SCORE = 0.85  # Curated synergies start at this base
+
+    def __init__(self, knowledge_dir: Optional[Path] = None):
+        if knowledge_dir is None:
+            knowledge_dir = Path(__file__).parent.parent.parent.parent.parent.parent / "knowledge"
+        self.knowledge_dir = knowledge_dir
+        self._curated_synergies: dict[tuple[str, str], str] = {}  # (ChampA, ChampB) -> rating
+        self._stat_synergies: dict = {}  # ChampA -> {ChampB -> data}
+        self._load_data()
+
+    def _load_data(self):
+        """Load both curated and statistical synergy data."""
+        # Load curated synergies (array format)
+        curated_path = self.knowledge_dir / "synergies.json"
+        if curated_path.exists():
+            with open(curated_path) as f:
+                synergies = json.load(f)
+                for syn in synergies:
+                    champs = syn.get("champions", [])
+                    strength = syn.get("strength", "C")
+
+                    # Handle partner_requirement synergies (like Yasuo knockup)
+                    if syn.get("partner_requirement"):
+                        for partner in syn.get("best_partners", []):
+                            partner_champ = partner.get("champion")
+                            partner_rating = partner.get("rating", strength)
+                            if partner_champ and len(champs) >= 1:
+                                key = tuple(sorted([champs[0], partner_champ]))
+                                self._curated_synergies[key] = partner_rating
+
+                    # Handle direct champion pair synergies
+                    if len(champs) >= 2:
+                        key = tuple(sorted(champs[:2]))
+                        self._curated_synergies[key] = strength
+
+        # Load statistical synergies (nested format)
+        stats_path = self.knowledge_dir / "champion_synergies.json"
+        if stats_path.exists():
+            with open(stats_path) as f:
+                data = json.load(f)
+                self._stat_synergies = data.get("synergies", {})
+
+    def get_rating_multiplier(self, rating: str) -> float:
+        """Convert S/A/B/C rating to multiplier."""
+        return self.RATING_MULTIPLIERS.get(rating.upper(), 0.4)
+
+    def get_synergy_score(self, champ_a: str, champ_b: str) -> float:
+        """Get synergy score between two champions.
+
+        Priority: curated synergies > statistical synergies > neutral
+
+        Returns:
+            float 0.0-1.0 where higher = stronger synergy
+        """
+        key = tuple(sorted([champ_a, champ_b]))
+
+        # Check curated synergies first
+        if key in self._curated_synergies:
+            rating = self._curated_synergies[key]
+            multiplier = self.get_rating_multiplier(rating)
+            return round(self.BASE_CURATED_SCORE * multiplier, 3)
+
+        # Fall back to statistical synergies
+        if champ_a in self._stat_synergies:
+            if champ_b in self._stat_synergies[champ_a]:
+                return self._stat_synergies[champ_a][champ_b].get("synergy_score", 0.5)
+
+        if champ_b in self._stat_synergies:
+            if champ_a in self._stat_synergies[champ_b]:
+                return self._stat_synergies[champ_b][champ_a].get("synergy_score", 0.5)
+
+        return 0.5  # Neutral for unknown pairs
+
+    def calculate_team_synergy(self, picks: list[str]) -> dict:
+        """Calculate aggregate synergy for a team composition.
+
+        Args:
+            picks: List of champion names on the team
+
+        Returns:
+            dict with total_score, pair_count, and synergy_pairs details
+        """
+        if len(picks) < 2:
+            return {"total_score": 0.5, "pair_count": 0, "synergy_pairs": []}
+
+        synergy_pairs = []
+        scores = []
+
+        # Calculate all pairwise synergies
+        for i, champ_a in enumerate(picks):
+            for champ_b in picks[i + 1:]:
+                score = self.get_synergy_score(champ_a, champ_b)
+                scores.append(score)
+                if score != 0.5:  # Only track non-neutral
+                    synergy_pairs.append({
+                        "champions": [champ_a, champ_b],
+                        "score": score
+                    })
+
+        # Sort pairs by score descending
+        synergy_pairs.sort(key=lambda x: -x["score"])
+
+        total_score = sum(scores) / len(scores) if scores else 0.5
+
+        return {
+            "total_score": round(total_score, 3),
+            "pair_count": len(scores),
+            "synergy_pairs": synergy_pairs[:5]  # Top 5 notable pairs
+        }
+
+    def get_best_synergy_partners(
+        self,
+        champion: str,
+        limit: int = 10
+    ) -> list[dict]:
+        """Get best synergy partners for a champion.
+
+        Returns list of {champion, score, source} sorted by score.
+        """
+        partners = []
+
+        # Check curated synergies
+        for key, rating in self._curated_synergies.items():
+            if champion in key:
+                partner = key[0] if key[1] == champion else key[1]
+                score = self.BASE_CURATED_SCORE * self.get_rating_multiplier(rating)
+                partners.append({
+                    "champion": partner,
+                    "score": round(score, 3),
+                    "source": "curated",
+                    "rating": rating
+                })
+
+        # Check statistical synergies
+        if champion in self._stat_synergies:
+            for partner, data in self._stat_synergies[champion].items():
+                score = data.get("synergy_score", 0.5)
+                if score > 0.55:  # Only include positive synergies
+                    # Skip if already in curated
+                    if not any(p["champion"] == partner for p in partners):
+                        partners.append({
+                            "champion": partner,
+                            "score": score,
+                            "source": "statistical"
+                        })
+
+        # Sort by score and return top N
+        partners.sort(key=lambda x: -x["score"])
+        return partners[:limit]
+```
 
 **Key methods:**
 - `get_rating_multiplier(rating)` → S=1.0, A=0.8, B=0.6, C=0.4
@@ -819,7 +1377,12 @@ See Enhancement plan Task 4 for full test and implementation.
 - `calculate_team_synergy(picks)` → {total_score, pair_count, synergy_pairs}
 - `get_best_synergy_partners(champion)` → list of partners
 
-**Commit:** `git commit -m "feat(services): add SynergyService with rating multipliers"`
+**Note:** The `total_score` from `calculate_team_synergy()` feeds into the recommendation
+engine's synergy multiplier: `multiplier = 1.0 + (total_score - 0.5) * 0.3`
+
+**Verify:** `cd backend && uv run pytest tests/test_synergy_service.py -v`
+
+**Commit:** `git commit -m "feat(services): add SynergyService with dual data sources"`
 
 ---
 
@@ -928,7 +1491,7 @@ def test_recommendations_exclude_unavailable(engine):
 
 
 def test_recommendations_include_score_breakdown(engine):
-    """Each recommendation includes score components."""
+    """Each recommendation includes base score, synergy multiplier, and components."""
     recommendations = engine.get_recommendations(
         player_name="Faker",
         player_role="MID",
@@ -939,12 +1502,65 @@ def test_recommendations_include_score_breakdown(engine):
     )
 
     for rec in recommendations:
+        # Check multiplicative scoring structure
+        assert "base_score" in rec
+        assert "synergy_multiplier" in rec
+        assert 0.85 <= rec["synergy_multiplier"] <= 1.15  # ±15% range
+
+        # Check components
         assert "components" in rec
         components = rec["components"]
         assert "meta" in components
         assert "proficiency" in components
-        assert "synergy" in components
-        assert "archetype_fit" in components
+        assert "matchup" in components
+        assert "counter" in components
+        assert "synergy" in components  # Stored for display
+
+
+def test_matchup_and_counter_use_different_data(engine):
+    """Matchup (vs_lane) and counter (vs_team) should use different data sources.
+
+    This ensures we're not double-counting the same matchup signal.
+    """
+    # With enemy picks, matchup and counter can differ
+    recommendations = engine.get_recommendations(
+        player_name="Faker",
+        player_role="MID",
+        our_picks=[],
+        enemy_picks=["Maokai", "Sejuani"],  # Full team for team-level data
+        banned=[],
+        limit=5
+    )
+
+    # At least verify both components exist and are scored
+    for rec in recommendations:
+        components = rec["components"]
+        assert "matchup" in components
+        assert "counter" in components
+        # Both should be valid scores
+        assert 0.0 <= components["matchup"] <= 1.0
+        assert 0.0 <= components["counter"] <= 1.0
+
+
+def test_synergy_multiplier_effect(engine):
+    """Synergy should amplify good picks, not rescue bad ones."""
+    # Get recommendations with teammates that have known synergies
+    recs_with_synergy = engine.get_recommendations(
+        player_name="Faker",
+        player_role="MID",
+        our_picks=["Nocturne", "Jarvan IV"],  # Engage/dive comp
+        enemy_picks=[],
+        banned=[],
+        limit=10
+    )
+
+    # Verify multiplier is applied correctly
+    for rec in recs_with_synergy:
+        base = rec["base_score"]
+        multiplier = rec["synergy_multiplier"]
+        final = rec["score"]
+        # Final should equal base × multiplier (within rounding)
+        assert abs(final - (base * multiplier)) < 0.01
 
 
 def test_surprise_pick_detection(engine):
@@ -978,17 +1594,22 @@ from ban_teemo.services.synergy_service import SynergyService
 
 
 class PickRecommendationEngine:
-    """Generates pick recommendations using weighted multi-factor scoring."""
+    """Generates pick recommendations using weighted multi-factor scoring.
 
-    # Scoring weights
-    WEIGHTS = {
-        "meta": 0.15,
-        "proficiency": 0.25,
-        "matchup": 0.15,
-        "synergy": 0.20,
-        "counter": 0.10,
-        "archetype_fit": 0.15,
+    Synergy is applied as a multiplier on the base score, not an additive component.
+    This prevents synergy from "rescuing" weak picks.
+    """
+
+    # Base score weights (must sum to 1.0)
+    BASE_WEIGHTS = {
+        "meta": 0.25,        # Is this champion strong in the current meta?
+        "proficiency": 0.35, # Can this player execute on this champion?
+        "matchup": 0.25,     # Does this champion win its lane matchups?
+        "counter": 0.15,     # Does this champion counter enemy team comp?
     }
+
+    # Synergy multiplier range: ±15% swing
+    SYNERGY_MULTIPLIER_RANGE = 0.3  # (synergy - 0.5) * this value
 
     # Confidence thresholds
     SURPRISE_PICK_THRESHOLD = 0.65
@@ -1063,7 +1684,12 @@ class PickRecommendationEngine:
         role: str,
         unavailable: set[str]
     ) -> list[str]:
-        """Get candidate champions to consider."""
+        """Get candidate champions to consider.
+
+        Sources (in priority order):
+        1. Player's champion pool from proficiency data
+        2. Meta picks for the role (fallback for unknown players)
+        """
         candidates = set()
 
         # Add player's champion pool
@@ -1072,8 +1698,14 @@ class PickRecommendationEngine:
             if entry["champion"] not in unavailable:
                 candidates.add(entry["champion"])
 
-        # Add meta picks for the role
-        # (would need role filtering in meta_stats)
+        # Fallback: Add meta picks for unknown players or sparse pools
+        if len(candidates) < 5:
+            meta_picks = self.meta_scorer.get_top_meta_champions(role=role, limit=15)
+            for champ in meta_picks:
+                if champ not in unavailable:
+                    candidates.add(champ)
+                if len(candidates) >= 10:
+                    break
 
         return list(candidates)
 
@@ -1086,9 +1718,15 @@ class PickRecommendationEngine:
         enemy_picks: list[str],
         team_archetype: dict
     ) -> dict:
-        """Calculate weighted score for a champion."""
+        """Calculate score using base factors + synergy multiplier.
+
+        Base score = weighted sum of meta, proficiency, matchup, counter
+        Final score = base_score × synergy_multiplier
+        """
         components = {}
         confidences = {}
+
+        # === BASE SCORE COMPONENTS ===
 
         # Meta score
         components["meta"] = self.meta_scorer.get_meta_score(champion)
@@ -1101,51 +1739,58 @@ class PickRecommendationEngine:
         components["proficiency"] = prof_score
         confidences["proficiency"] = {"HIGH": 1.0, "MEDIUM": 0.8, "LOW": 0.5, "NO_DATA": 0.3}.get(prof_conf, 0.5)
 
-        # Matchup score (aggregate across enemy picks)
-        matchup_score, matchup_conf = self._calculate_matchup_aggregate(
+        # Matchup score (lane matchups against enemy laners)
+        matchup_score, matchup_conf = self._calculate_lane_matchup_aggregate(
             champion, player_role, enemy_picks
         )
         components["matchup"] = matchup_score
         confidences["matchup"] = matchup_conf
 
-        # Synergy score
+        # Counter score (team-level matchups using vs_team data)
+        # This answers: "How well does this champion perform against the enemy TEAM?"
+        counter_score, counter_conf = self._calculate_team_counter_aggregate(
+            champion, enemy_picks
+        )
+        components["counter"] = counter_score
+        confidences["counter"] = counter_conf
+
+        # === SYNERGY MULTIPLIER (not in base score) ===
+
         synergy_result = self.synergy_service.calculate_team_synergy(our_picks + [champion])
-        components["synergy"] = synergy_result["total_score"]
-        confidences["synergy"] = 1.0
+        synergy_score = synergy_result["total_score"]
+        components["synergy"] = synergy_score  # Store for display, but not in base calc
 
-        # Counter score (simplified - same as matchup for now)
-        components["counter"] = matchup_score
-        confidences["counter"] = matchup_conf
+        # Calculate synergy multiplier: 0.85x to 1.15x
+        synergy_multiplier = 1.0 + (synergy_score - 0.5) * self.SYNERGY_MULTIPLIER_RANGE
+        components["synergy_multiplier"] = synergy_multiplier
 
-        # Archetype fit
-        champ_archetypes = self.archetype_service.get_champion_archetypes(champion)
-        primary_archetype = team_archetype.get("primary")
-        if primary_archetype:
-            components["archetype_fit"] = champ_archetypes["scores"].get(primary_archetype, 0.3)
-        else:
-            components["archetype_fit"] = 0.5
-        confidences["archetype_fit"] = 1.0
+        # === CALCULATE BASE SCORE ===
 
-        # Calculate weighted total with confidence penalties
-        total = 0.0
+        base_total = 0.0
         weight_sum = 0.0
 
-        for component, weight in self.WEIGHTS.items():
+        for component, weight in self.BASE_WEIGHTS.items():
             conf = confidences.get(component, 1.0)
             effective_weight = weight * conf
-            total += components.get(component, 0.5) * effective_weight
+            base_total += components.get(component, 0.5) * effective_weight
             weight_sum += effective_weight
 
-        total_score = total / weight_sum if weight_sum > 0 else 0.5
+        base_score = base_total / weight_sum if weight_sum > 0 else 0.5
+        components["base_score"] = base_score
 
-        # Overall confidence
-        overall_conf = sum(confidences.values()) / len(confidences)
+        # === APPLY SYNERGY MULTIPLIER ===
+
+        total_score = base_score * synergy_multiplier
+
+        # Overall confidence (from base components only)
+        base_confidences = [confidences[k] for k in self.BASE_WEIGHTS.keys()]
+        overall_conf = sum(base_confidences) / len(base_confidences)
 
         # Determine flag
         flag = None
         if confidences["proficiency"] < 0.5:
-            # Low proficiency confidence
-            contextual_strength = (components["meta"] + components["synergy"] + components["matchup"]) / 3
+            # Low proficiency confidence - check if contextually strong
+            contextual_strength = (components["meta"] + components["matchup"]) / 2
             if contextual_strength >= self.SURPRISE_PICK_THRESHOLD:
                 flag = "SURPRISE_PICK"
             elif contextual_strength < self.LOW_CONFIDENCE_THRESHOLD:
@@ -1153,18 +1798,24 @@ class PickRecommendationEngine:
 
         return {
             "total_score": round(total_score, 3),
+            "base_score": round(base_score, 3),
+            "synergy_multiplier": round(synergy_multiplier, 3),
             "confidence": round(overall_conf, 3),
             "flag": flag,
             "components": {k: round(v, 3) for k, v in components.items()}
         }
 
-    def _calculate_matchup_aggregate(
+    def _calculate_lane_matchup_aggregate(
         self,
         our_champion: str,
         our_role: str,
         enemy_picks: list[str]
     ) -> tuple[float, float]:
-        """Calculate aggregate matchup score across all enemy picks."""
+        """Calculate aggregate LANE matchup score (vs_lane data).
+
+        This answers: "How well does this champion lane against enemy laners?"
+        Uses flex resolution to weight matchups by role probability.
+        """
         if not enemy_picks:
             return 0.5, 1.0
 
@@ -1172,7 +1823,7 @@ class PickRecommendationEngine:
         confidences = []
 
         for enemy in enemy_picks:
-            # Get enemy role probabilities
+            # Get enemy role probabilities for flex handling
             role_probs = self.flex_resolver.get_role_probabilities(enemy)
 
             result = self.matchup_calculator.get_weighted_matchup(
@@ -1190,6 +1841,34 @@ class PickRecommendationEngine:
 
         return avg_score, avg_conf
 
+    def _calculate_team_counter_aggregate(
+        self,
+        our_champion: str,
+        enemy_picks: list[str]
+    ) -> tuple[float, float]:
+        """Calculate aggregate TEAM counter score (vs_team data).
+
+        This answers: "How well does this champion perform against the enemy TEAM?"
+        Uses vs_team matchup data which tracks win rates regardless of role.
+        """
+        if not enemy_picks:
+            return 0.5, 1.0
+
+        scores = []
+        data_found = 0
+
+        for enemy in enemy_picks:
+            result = self.matchup_calculator.get_team_matchup(our_champion, enemy)
+            scores.append(result["score"])
+            if result.get("data_source") != "none":
+                data_found += 1
+
+        avg_score = sum(scores) / len(scores)
+        # Confidence based on how much data we found
+        confidence = data_found / len(enemy_picks) if enemy_picks else 0.5
+
+        return avg_score, confidence
+
     def _generate_reasons(self, champion: str, score_result: dict) -> list[str]:
         """Generate human-readable reasons for recommendation."""
         reasons = []
@@ -1202,14 +1881,15 @@ class PickRecommendationEngine:
         if components.get("proficiency", 0) >= 0.7:
             reasons.append("Strong player proficiency")
 
-        if components.get("synergy", 0) >= 0.65:
-            reasons.append("Good team synergy")
-
-        if components.get("archetype_fit", 0) >= 0.7:
-            reasons.append("Fits team composition direction")
-
         if components.get("matchup", 0) >= 0.55:
             reasons.append("Favorable matchups")
+
+        # Synergy multiplier feedback
+        multiplier = score_result.get("synergy_multiplier", 1.0)
+        if multiplier >= 1.10:
+            reasons.append("Strong team synergy (+10% or more)")
+        elif multiplier <= 0.90:
+            reasons.append("Warning: poor team synergy")
 
         if score_result["flag"] == "SURPRISE_PICK":
             reasons.append("Contextually strong despite low games")

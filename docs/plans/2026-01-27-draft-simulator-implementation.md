@@ -12,6 +12,11 @@
 - `docs/plans/2026-01-27-draft-simulator-design.md` - Design document
 - `docs/plans/2026-01-26-unified-recommendation-system.md` - Scoring formulas and data schemas
 
+**Key Design Decisions:**
+- **Series always start at Game 1.** There is no mid-series start. Multi-game series flow naturally as players complete each game and advance to the next. This keeps the experience realistic and avoids fabricating "previous game" picks.
+- **Fearless tracking preserves team metadata.** The `fearless_blocked` dict stores which team picked each champion and in which game, enabling UI tooltips like "Used in Game 1 by Blue".
+- **Fallback uses next valid action.** When a scripted champion is unavailable, the system finds the next valid action at or after the current sequence position, not an exact match.
+
 ---
 
 ## Stage 1: Core Scorers
@@ -1705,7 +1710,14 @@ class SimulatorSession:
 
     # Series tracking
     game_results: list[GameResult] = field(default_factory=list)
-    fearless_blocked: set[str] = field(default_factory=set)
+    # Fearless tracking - preserves team and game info for UI tooltips
+    # Structure: {"Azir": {"team": "blue", "game": 1}, ...}
+    fearless_blocked: dict[str, dict] = field(default_factory=dict)
+
+    @property
+    def fearless_blocked_set(self) -> set[str]:
+        """All fearless-blocked champion names as a set for filtering."""
+        return set(self.fearless_blocked.keys())
 
     @property
     def enemy_side(self) -> Literal["blue", "red"]:
@@ -1860,16 +1872,16 @@ class EnemySimulatorService:
         unavailable: set[str]
     ) -> tuple[str, str]:
         """Generate enemy's next pick/ban."""
-        # Step 1: Try reference script
+        # Step 1: Try reference script - find next valid action at or after sequence
         for action in strategy.draft_script:
-            if action.sequence == sequence and action.champion_name not in unavailable:
+            if action.sequence >= sequence and action.champion_name not in unavailable:
                 return action.champion_name, "reference_game"
 
-        # Step 2: Try fallback games
+        # Step 2: Try fallback games - find next valid action at or after sequence
         for fallback_id in strategy.fallback_game_ids:
             actions = self.repo.get_draft_actions(fallback_id)
             for action in actions:
-                if action.sequence == sequence and action.champion_name not in unavailable:
+                if action.sequence >= sequence and action.champion_name not in unavailable:
                     return action.champion_name, "fallback_game"
 
         # Step 3: Weighted random
@@ -1930,6 +1942,7 @@ from ban_teemo.models.draft import DraftState, DraftAction, DraftPhase
 from ban_teemo.services.enemy_simulator_service import EnemySimulatorService
 from ban_teemo.services.pick_recommendation_engine import PickRecommendationEngine
 from ban_teemo.services.ban_recommendation_service import BanRecommendationService
+from ban_teemo.services.team_evaluation_service import TeamEvaluationService
 from ban_teemo.services.draft_service import DraftService
 from ban_teemo.repositories.draft_repository import DraftRepository
 
@@ -1941,20 +1954,22 @@ _sessions: dict[str, SimulatorSession] = {}
 _enemy_service: Optional[EnemySimulatorService] = None
 _pick_engine: Optional[PickRecommendationEngine] = None
 _ban_service: Optional[BanRecommendationService] = None
+_team_eval_service: Optional[TeamEvaluationService] = None
 _draft_service: Optional[DraftService] = None
 _repository: Optional[DraftRepository] = None
 
 
 def get_services(data_path: str):
     """Initialize services lazily."""
-    global _enemy_service, _pick_engine, _ban_service, _draft_service, _repository
+    global _enemy_service, _pick_engine, _ban_service, _team_eval_service, _draft_service, _repository
     if _enemy_service is None:
         _enemy_service = EnemySimulatorService(data_path)
         _pick_engine = PickRecommendationEngine()
         _ban_service = BanRecommendationService(data_path)
+        _team_eval_service = TeamEvaluationService()
         _draft_service = DraftService(data_path)
         _repository = DraftRepository(data_path)
-    return _enemy_service, _pick_engine, _ban_service, _draft_service, _repository
+    return _enemy_service, _pick_engine, _ban_service, _team_eval_service, _draft_service, _repository
 
 
 class StartSimulatorRequest(BaseModel):
@@ -1978,7 +1993,7 @@ async def start_simulator(request: StartSimulatorRequest):
     """Create a new simulator session."""
     from ban_teemo.main import app
     data_path = app.state.data_path
-    enemy_service, pick_engine, ban_service, draft_service, repo = get_services(data_path)
+    enemy_service, pick_engine, ban_service, team_eval_service, draft_service, repo = get_services(data_path)
 
     session_id = f"sim_{uuid.uuid4().hex[:12]}"
 
@@ -2086,13 +2101,13 @@ async def trigger_enemy_action(session_id: str):
         raise HTTPException(status_code=400, detail="Not enemy's turn")
 
     from ban_teemo.main import app
-    enemy_service, _, _, _ = get_services(app.state.data_path)
+    enemy_service, _, _, _, _, _ = get_services(app.state.data_path)
 
     # Get unavailable champions
     unavailable = set(
         draft_state.blue_bans + draft_state.red_bans +
         draft_state.blue_picks + draft_state.red_picks
-    ) | session.fearless_blocked
+    ) | session.fearless_blocked_set
 
     # Generate enemy action
     champion, source = enemy_service.generate_action(
@@ -2134,10 +2149,18 @@ async def complete_game(session_id: str, request: CompleteGameRequest):
     )
     session.game_results.append(result)
 
-    # Fearless blocking
+    # Fearless blocking - store with team and game metadata for tooltips
     if session.draft_mode == "fearless":
-        session.fearless_blocked.update(draft_state.blue_picks)
-        session.fearless_blocked.update(draft_state.red_picks)
+        for champ in draft_state.blue_picks:
+            session.fearless_blocked[champ] = {
+                "team": "blue",
+                "game": session.current_game
+            }
+        for champ in draft_state.red_picks:
+            session.fearless_blocked[champ] = {
+                "team": "red",
+                "game": session.current_game
+            }
 
     return {
         "series_status": {
@@ -2146,7 +2169,7 @@ async def complete_game(session_id: str, request: CompleteGameRequest):
             "games_played": len(session.game_results),
             "series_complete": session.series_complete
         },
-        "fearless_blocked": list(session.fearless_blocked),
+        "fearless_blocked": session.fearless_blocked,  # Dict with team/game metadata
         "next_game_ready": not session.series_complete
     }
 
@@ -2163,7 +2186,7 @@ async def next_game(session_id: str):
         raise HTTPException(status_code=400, detail="Series already complete")
 
     from ban_teemo.main import app
-    enemy_service, _, _, _ = get_services(app.state.data_path)
+    enemy_service, _, _, _, _, _ = get_services(app.state.data_path)
 
     session.current_game += 1
 
@@ -2189,7 +2212,7 @@ async def next_game(session_id: str):
     return {
         "game_number": session.current_game,
         "draft_state": _serialize_draft_state(session.draft_state),
-        "fearless_blocked": list(session.fearless_blocked)
+        "fearless_blocked": session.fearless_blocked  # Dict with team/game metadata
     }
 
 
@@ -2210,7 +2233,7 @@ async def get_session(session_id: str):
             "red_wins": session.series_score[1],
             "series_complete": session.series_complete
         },
-        "fearless_blocked": list(session.fearless_blocked)
+        "fearless_blocked": session.fearless_blocked  # Dict with team/game metadata
     }
 
 
@@ -2265,18 +2288,24 @@ def _get_draft_order() -> list[tuple[str, str]]:
 
 def _build_response(session: SimulatorSession) -> dict:
     """Build standard response after an action."""
+    from ban_teemo.main import app
+    _, pick_engine, ban_service, team_eval_service, _, _ = get_services(app.state.data_path)
+
     draft_state = session.draft_state
     is_our_turn = draft_state.next_team == session.coaching_side
 
+    our_picks = draft_state.blue_picks if session.coaching_side == "blue" else draft_state.red_picks
+    enemy_picks = draft_state.red_picks if session.coaching_side == "blue" else draft_state.blue_picks
+
+    # Always compute team evaluation for composition feedback
+    team_evaluation = None
+    if our_picks or enemy_picks:
+        team_evaluation = team_eval_service.evaluate_vs_enemy(our_picks, enemy_picks)
+
     recommendations = None
     if is_our_turn and draft_state.current_phase != DraftPhase.COMPLETE:
-        from ban_teemo.main import app
-        _, pick_engine, ban_service, _, _ = get_services(app.state.data_path)
-
         our_team = session.blue_team if session.coaching_side == "blue" else session.red_team
         enemy_team = session.red_team if session.coaching_side == "blue" else session.blue_team
-        our_picks = draft_state.blue_picks if session.coaching_side == "blue" else draft_state.red_picks
-        enemy_picks = draft_state.red_picks if session.coaching_side == "blue" else draft_state.blue_picks
         banned = draft_state.blue_bans + draft_state.red_bans
 
         if draft_state.next_action == "ban":
@@ -2284,7 +2313,7 @@ def _build_response(session: SimulatorSession) -> dict:
             recommendations = ban_service.get_ban_recommendations(
                 enemy_team=enemy_team,
                 already_banned=banned,
-                fearless_blocked=session.fearless_blocked,
+                fearless_blocked=session.fearless_blocked_set,
                 limit=5
             )
         else:
@@ -2298,7 +2327,7 @@ def _build_response(session: SimulatorSession) -> dict:
                     player_role=player.role,
                     our_picks=our_picks,
                     enemy_picks=enemy_picks,
-                    banned=list(set(banned) | session.fearless_blocked),
+                    banned=list(set(banned) | session.fearless_blocked_set),
                     limit=5
                 )
 
@@ -2306,6 +2335,7 @@ def _build_response(session: SimulatorSession) -> dict:
         "action": _serialize_action(draft_state.actions[-1]) if draft_state.actions else None,
         "draft_state": _serialize_draft_state(draft_state),
         "recommendations": recommendations,
+        "team_evaluation": team_evaluation,
         "is_our_turn": is_our_turn
     }
 
@@ -2413,6 +2443,21 @@ export interface SeriesStatus {
   series_complete: boolean;
 }
 
+export interface TeamDraftEvaluation {
+  archetype: string | null;
+  synergy_score: number;
+  composition_score: number;
+  strengths: string[];
+  weaknesses: string[];
+}
+
+export interface TeamEvaluation {
+  our_evaluation: TeamDraftEvaluation;
+  enemy_evaluation: TeamDraftEvaluation;
+  matchup_advantage: number;
+  matchup_description: string;
+}
+
 export interface SimulatorStartResponse {
   session_id: string;
   game_number: number;
@@ -2420,6 +2465,7 @@ export interface SimulatorStartResponse {
   red_team: TeamContext;
   draft_state: DraftState;
   recommendations: PickRecommendation[] | null;
+  team_evaluation: TeamEvaluation | null;
   is_our_turn: boolean;
 }
 
@@ -2427,13 +2473,23 @@ export interface SimulatorActionResponse {
   action: DraftAction | null;
   draft_state: DraftState;
   recommendations: PickRecommendation[] | null;
+  team_evaluation: TeamEvaluation | null;
   is_our_turn: boolean;
   source?: "reference_game" | "fallback_game" | "weighted_random";
 }
 
+// Fearless blocked entry with team and game metadata for tooltips
+export interface FearlessBlockedEntry {
+  team: "blue" | "red";
+  game: number;
+}
+
+// Map of champion name -> blocking metadata
+export type FearlessBlocked = Record<string, FearlessBlockedEntry>;
+
 export interface CompleteGameResponse {
   series_status: SeriesStatus;
-  fearless_blocked: string[];
+  fearless_blocked: FearlessBlocked;
   next_game_ready: boolean;
 }
 
@@ -2466,10 +2522,12 @@ import type {
   SimulatorConfig,
   TeamContext,
   DraftState,
+  DraftMode,
   PickRecommendation,
   SeriesStatus,
   SimulatorStartResponse,
   SimulatorActionResponse,
+  FearlessBlocked,
 } from "../types";
 
 type SimulatorStatus = "setup" | "drafting" | "game_complete" | "series_complete";
@@ -2480,13 +2538,14 @@ interface SimulatorState {
   blueTeam: TeamContext | null;
   redTeam: TeamContext | null;
   coachingSide: "blue" | "red" | null;
+  draftMode: DraftMode;
   draftState: DraftState | null;
   recommendations: PickRecommendation[] | null;
   isOurTurn: boolean;
   isEnemyThinking: boolean;
   gameNumber: number;
   seriesStatus: SeriesStatus | null;
-  fearlessBlocked: string[];
+  fearlessBlocked: FearlessBlocked;
   error: string | null;
 }
 
@@ -2499,13 +2558,14 @@ export function useSimulatorSession() {
     blueTeam: null,
     redTeam: null,
     coachingSide: null,
+    draftMode: "normal",
     draftState: null,
     recommendations: null,
     isOurTurn: false,
     isEnemyThinking: false,
     gameNumber: 1,
     seriesStatus: null,
-    fearlessBlocked: [],
+    fearlessBlocked: {},
     error: null,
   });
 
@@ -2534,6 +2594,7 @@ export function useSimulatorSession() {
         blueTeam: data.blue_team,
         redTeam: data.red_team,
         coachingSide: config.coachingSide,
+        draftMode: config.draftMode,
         draftState: data.draft_state,
         recommendations: data.recommendations,
         isOurTurn: data.is_our_turn,
@@ -2682,13 +2743,14 @@ export function useSimulatorSession() {
       blueTeam: null,
       redTeam: null,
       coachingSide: null,
+      draftMode: "normal",
       draftState: null,
       recommendations: null,
       isOurTurn: false,
       isEnemyThinking: false,
       gameNumber: 1,
       seriesStatus: null,
-      fearlessBlocked: [],
+      fearlessBlocked: {},
       error: null,
     });
   }, [state.sessionId]);
@@ -2739,11 +2801,12 @@ Build the simulator UI components.
 // deepdraft/src/components/ChampionPool/index.tsx
 import { useState, useMemo } from "react";
 import { ChampionPortrait } from "../shared/ChampionPortrait";
+import type { FearlessBlocked } from "../../types";
 
 interface ChampionPoolProps {
   allChampions: string[];
   unavailable: Set<string>;
-  fearlessBlocked: Set<string>;
+  fearlessBlocked: FearlessBlocked;  // Dict with team/game metadata for tooltips
   onSelect: (champion: string) => void;
   disabled: boolean;
 }
@@ -2757,6 +2820,11 @@ export function ChampionPool({
   onSelect,
   disabled,
 }: ChampionPoolProps) {
+  // Create Set for quick lookups
+  const fearlessBlockedSet = useMemo(
+    () => new Set(Object.keys(fearlessBlocked)),
+    [fearlessBlocked]
+  );
   const [search, setSearch] = useState("");
   const [selectedRole, setSelectedRole] = useState<string>("All");
 
@@ -2807,7 +2875,8 @@ export function ChampionPool({
         <div className="grid grid-cols-6 gap-1">
           {filteredChampions.map((champion) => {
             const isUnavailable = unavailable.has(champion);
-            const isFearlessBlocked = fearlessBlocked.has(champion);
+            const isFearlessBlocked = fearlessBlockedSet.has(champion);
+            const fearlessInfo = fearlessBlocked[champion];  // For tooltip
             const isDisabled = disabled || isUnavailable || isFearlessBlocked;
 
             return (
@@ -2819,8 +2888,8 @@ export function ChampionPool({
                   isDisabled ? "opacity-40 cursor-not-allowed" : "hover:ring-2 hover:ring-gold-bright cursor-pointer"
                 }`}
                 title={
-                  isFearlessBlocked
-                    ? `${champion} - Blocked (Fearless)`
+                  isFearlessBlocked && fearlessInfo
+                    ? `${champion} - Used in Game ${fearlessInfo.game} by ${fearlessInfo.team === "blue" ? "Blue" : "Red"}`
                     : isUnavailable
                     ? `${champion} - Unavailable`
                     : champion
@@ -3137,7 +3206,7 @@ import { useMemo } from "react";
 import { PhaseIndicator, TeamPanel, BanRow } from "../draft";
 import { ChampionPool } from "../ChampionPool";
 import { RecommendationPanel } from "../RecommendationPanel";
-import type { TeamContext, DraftState, PickRecommendation } from "../../types";
+import type { TeamContext, DraftState, PickRecommendation, FearlessBlocked } from "../../types";
 
 // Static champion list - in production, fetch from API
 const ALL_CHAMPIONS = [
@@ -3173,7 +3242,7 @@ interface SimulatorViewProps {
   isEnemyThinking: boolean;
   gameNumber: number;
   seriesScore: [number, number];
-  fearlessBlocked: string[];
+  fearlessBlocked: FearlessBlocked;
   draftMode: "normal" | "fearless";
   onChampionSelect: (champion: string) => void;
 }
@@ -3201,7 +3270,7 @@ export function SimulatorView({
     ]);
   }, [draftState]);
 
-  const fearlessSet = useMemo(() => new Set(fearlessBlocked), [fearlessBlocked]);
+  const fearlessCount = Object.keys(fearlessBlocked).length;
 
   return (
     <div className="space-y-4">
@@ -3212,7 +3281,7 @@ export function SimulatorView({
           {blueTeam.name} {seriesScore[0]} - {seriesScore[1]} {redTeam.name}
         </span>
         {draftMode === "fearless" && (
-          <span className="text-red-400">Fearless: {fearlessBlocked.length} blocked</span>
+          <span className="text-red-400">Fearless: {fearlessCount} blocked</span>
         )}
       </div>
 
@@ -3247,7 +3316,7 @@ export function SimulatorView({
         <ChampionPool
           allChampions={ALL_CHAMPIONS}
           unavailable={unavailable}
-          fearlessBlocked={fearlessSet}
+          fearlessBlocked={fearlessBlocked}
           onSelect={onChampionSelect}
           disabled={!isOurTurn}
         />
@@ -3433,7 +3502,7 @@ export default function App() {
                 gameNumber={simulator.gameNumber}
                 seriesScore={simulator.seriesStatus ? [simulator.seriesStatus.blue_wins, simulator.seriesStatus.red_wins] : [0, 0]}
                 fearlessBlocked={simulator.fearlessBlocked}
-                draftMode="normal"
+                draftMode={simulator.draftMode}
                 onChampionSelect={simulator.submitAction}
               />
             )}

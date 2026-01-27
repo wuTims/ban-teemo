@@ -123,11 +123,13 @@ On enemy turn:
 
 For each remaining game in fallback queue:
 - Load that game's draft script
-- Find action at same sequence position
+- Find next valid action **at or after** current sequence position
 - If champion is **available** → use it ✓
 - If **unavailable** → try next fallback
 
 If all fallbacks exhausted → go to Step 3
+
+> **Note:** Using "at or after" rather than exact sequence match makes the fallback more robust when draft orders differ slightly between games.
 
 ### Step 3: Weighted Random
 
@@ -235,7 +237,9 @@ Response:
   "blue_team": { "id", "name", "logo_url", "players": [...] },
   "red_team": { "id", "name", "logo_url", "players": [...] },
   "draft_state": { "phase": "BAN_PHASE_1", "next_team": "blue", ... },
-  "recommendations": { "picks": [...], "bans": [...] }
+  "recommendations": { "picks": [...], "bans": [...] },
+  "team_evaluation": { "our": {...}, "enemy": {...}, "matchup_advantage": 1.1 },
+  "is_our_turn": true
 }
 ```
 
@@ -253,7 +257,8 @@ Response:
 {
   "action": { "sequence": 1, "action_type": "ban", "team_side": "blue", "champion": "Azir" },
   "draft_state": { ... },
-  "recommendations": { ... },
+  "recommendations": { "picks": [...], "bans": [...] },
+  "team_evaluation": { "our": {...}, "enemy": {...}, "matchup_advantage": 1.1 },
   "is_our_turn": false
 }
 ```
@@ -267,7 +272,8 @@ Response:
 {
   "action": { "sequence": 2, "action_type": "ban", "team_side": "red", "champion": "Yone" },
   "draft_state": { ... },
-  "recommendations": { ... },
+  "recommendations": { "picks": [...], "bans": [...] },
+  "team_evaluation": { "our": {...}, "enemy": {...}, "matchup_advantage": 1.1 },
   "is_our_turn": true,
   "source": "reference_game" | "fallback_game" | "weighted_random"
 }
@@ -501,6 +507,21 @@ The simulator integrates with `docs/plans/2026-01-26-unified-recommendation-syst
 | Team data | Pro teams only | Have historical data, player proficiency |
 | Fearless tracking | Server-side | Single source of truth |
 | Mode switching | Toggle in header | Keep replay mode accessible |
+
+### Recommendation Model Simplifications
+
+Compared to the full unified recommendation system, the simulator simplifies:
+
+| Feature | Unified Plan | Simulator |
+|---------|-------------|-----------|
+| Pick recommendations | Full with scoring breakdown | ✅ Included |
+| Ban recommendations | Full with target player | ✅ Included |
+| Team evaluation | Archetype, synergy, strengths/weaknesses | ✅ Included |
+| Enemy analysis | Per-role threat pools | ❌ Omitted (enemy is AI-controlled) |
+| Coach-mode turn logic | Our turn vs enemy turn panels | ❌ Simplified (always show recs on our turn) |
+| Communication | WebSocket streaming | REST polling |
+
+**Rationale:** Since the simulator controls the enemy team via AI, detailed enemy analysis (what they *might* pick) is less useful than in replay mode where you're analyzing a real opponent's tendencies. Team evaluation is retained for composition feedback.
 
 ---
 
