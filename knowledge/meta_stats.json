@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated_at": "2026-01-26T09:42:52.667933",
+    "generated_at": "2026-01-27T10:14:52.813860",
     "current_patch": "15.18",
     "patches_included": 3,
     "games_analyzed": 404,
@@ -200,27 +200,6 @@
       "sample_sufficient": true,
       "flags": []
     },
-    "Rumble": {
-      "games_picked": 102,
-      "games_banned": 86,
-      "pick_rate": 0.126,
-      "ban_rate": 0.106,
-      "presence": 0.233,
-      "win_rate": 0.539,
-      "games": 102,
-      "pick_context": {
-        "blind_early_games": 89,
-        "counter_games": 13,
-        "blind_early_win_rate": 0.528,
-        "counter_win_rate": 0.615,
-        "counter_pick_bias": 0.087,
-        "is_counter_pick_dependent": false
-      },
-      "meta_tier": "B",
-      "meta_score": 0.566,
-      "sample_sufficient": true,
-      "flags": []
-    },
     "Aurora": {
       "games_picked": 84,
       "games_banned": 104,
@@ -235,6 +214,27 @@
         "blind_early_win_rate": 0.59,
         "counter_win_rate": 0.435,
         "counter_pick_bias": -0.155,
+        "is_counter_pick_dependent": false
+      },
+      "meta_tier": "B",
+      "meta_score": 0.566,
+      "sample_sufficient": true,
+      "flags": []
+    },
+    "Rumble": {
+      "games_picked": 102,
+      "games_banned": 86,
+      "pick_rate": 0.126,
+      "ban_rate": 0.106,
+      "presence": 0.233,
+      "win_rate": 0.539,
+      "games": 102,
+      "pick_context": {
+        "blind_early_games": 89,
+        "counter_games": 13,
+        "blind_early_win_rate": 0.528,
+        "counter_win_rate": 0.615,
+        "counter_pick_bias": 0.087,
         "is_counter_pick_dependent": false
       },
       "meta_tier": "B",
@@ -580,29 +580,6 @@
       "sample_sufficient": true,
       "flags": []
     },
-    "Rell": {
-      "games_picked": 91,
-      "games_banned": 33,
-      "pick_rate": 0.113,
-      "ban_rate": 0.041,
-      "presence": 0.153,
-      "win_rate": 0.44,
-      "games": 91,
-      "pick_context": {
-        "blind_early_games": 10,
-        "counter_games": 81,
-        "blind_early_win_rate": 0.3,
-        "counter_win_rate": 0.457,
-        "counter_pick_bias": 0.157,
-        "is_counter_pick_dependent": true
-      },
-      "meta_tier": "C",
-      "meta_score": 0.377,
-      "sample_sufficient": true,
-      "flags": [
-        "counter_pick_inflated"
-      ]
-    },
     "Braum": {
       "games_picked": 78,
       "games_banned": 46,
@@ -644,6 +621,29 @@
       "meta_score": 0.377,
       "sample_sufficient": true,
       "flags": []
+    },
+    "Rell": {
+      "games_picked": 91,
+      "games_banned": 33,
+      "pick_rate": 0.113,
+      "ban_rate": 0.041,
+      "presence": 0.153,
+      "win_rate": 0.44,
+      "games": 91,
+      "pick_context": {
+        "blind_early_games": 10,
+        "counter_games": 81,
+        "blind_early_win_rate": 0.3,
+        "counter_win_rate": 0.457,
+        "counter_pick_bias": 0.157,
+        "is_counter_pick_dependent": true
+      },
+      "meta_tier": "C",
+      "meta_score": 0.377,
+      "sample_sufficient": true,
+      "flags": [
+        "counter_pick_inflated"
+      ]
     },
     "Lucian": {
       "games_picked": 68,
@@ -752,27 +752,6 @@
       "sample_sufficient": true,
       "flags": []
     },
-    "Jhin": {
-      "games_picked": 66,
-      "games_banned": 18,
-      "pick_rate": 0.082,
-      "ban_rate": 0.022,
-      "presence": 0.104,
-      "win_rate": 0.364,
-      "games": 66,
-      "pick_context": {
-        "blind_early_games": 18,
-        "counter_games": 47,
-        "blind_early_win_rate": 0.278,
-        "counter_win_rate": 0.404,
-        "counter_pick_bias": 0.126,
-        "is_counter_pick_dependent": false
-      },
-      "meta_tier": "C",
-      "meta_score": 0.352,
-      "sample_sufficient": true,
-      "flags": []
-    },
     "Ezreal": {
       "games_picked": 48,
       "games_banned": 36,
@@ -791,6 +770,27 @@
       },
       "meta_tier": "B",
       "meta_score": 0.502,
+      "sample_sufficient": true,
+      "flags": []
+    },
+    "Jhin": {
+      "games_picked": 66,
+      "games_banned": 18,
+      "pick_rate": 0.082,
+      "ban_rate": 0.022,
+      "presence": 0.104,
+      "win_rate": 0.364,
+      "games": 66,
+      "pick_context": {
+        "blind_early_games": 18,
+        "counter_games": 47,
+        "blind_early_win_rate": 0.278,
+        "counter_win_rate": 0.404,
+        "counter_pick_bias": 0.126,
+        "is_counter_pick_dependent": false
+      },
+      "meta_tier": "C",
+      "meta_score": 0.352,
       "sample_sufficient": true,
       "flags": []
     },
@@ -838,27 +838,6 @@
       "sample_sufficient": true,
       "flags": []
     },
-    "Sylas": {
-      "games_picked": 25,
-      "games_banned": 51,
-      "pick_rate": 0.031,
-      "ban_rate": 0.063,
-      "presence": 0.094,
-      "win_rate": 0.64,
-      "games": 25,
-      "pick_context": {
-        "blind_early_games": 11,
-        "counter_games": 14,
-        "blind_early_win_rate": 0.727,
-        "counter_win_rate": 0.571,
-        "counter_pick_bias": -0.156,
-        "is_counter_pick_dependent": false
-      },
-      "meta_tier": "C",
-      "meta_score": 0.347,
-      "sample_sufficient": true,
-      "flags": []
-    },
     "Akali": {
       "games_picked": 39,
       "games_banned": 37,
@@ -873,6 +852,27 @@
         "blind_early_win_rate": 0.4,
         "counter_win_rate": 0.458,
         "counter_pick_bias": 0.058,
+        "is_counter_pick_dependent": false
+      },
+      "meta_tier": "C",
+      "meta_score": 0.347,
+      "sample_sufficient": true,
+      "flags": []
+    },
+    "Sylas": {
+      "games_picked": 25,
+      "games_banned": 51,
+      "pick_rate": 0.031,
+      "ban_rate": 0.063,
+      "presence": 0.094,
+      "win_rate": 0.64,
+      "games": 25,
+      "pick_context": {
+        "blind_early_games": 11,
+        "counter_games": 14,
+        "blind_early_win_rate": 0.727,
+        "counter_win_rate": 0.571,
+        "counter_pick_bias": -0.156,
         "is_counter_pick_dependent": false
       },
       "meta_tier": "C",
@@ -926,6 +926,27 @@
         "counter_pick_inflated"
       ]
     },
+    "Skarner": {
+      "games_picked": 41,
+      "games_banned": 29,
+      "pick_rate": 0.051,
+      "ban_rate": 0.036,
+      "presence": 0.087,
+      "win_rate": 0.366,
+      "games": 41,
+      "pick_context": {
+        "blind_early_games": 22,
+        "counter_games": 19,
+        "blind_early_win_rate": 0.364,
+        "counter_win_rate": 0.368,
+        "counter_pick_bias": 0.005,
+        "is_counter_pick_dependent": false
+      },
+      "meta_tier": "C",
+      "meta_score": 0.343,
+      "sample_sufficient": true,
+      "flags": []
+    },
     "Nocturne": {
       "games_picked": 27,
       "games_banned": 43,
@@ -948,27 +969,6 @@
       "flags": [
         "counter_pick_inflated"
       ]
-    },
-    "Skarner": {
-      "games_picked": 41,
-      "games_banned": 29,
-      "pick_rate": 0.051,
-      "ban_rate": 0.036,
-      "presence": 0.087,
-      "win_rate": 0.366,
-      "games": 41,
-      "pick_context": {
-        "blind_early_games": 22,
-        "counter_games": 19,
-        "blind_early_win_rate": 0.364,
-        "counter_win_rate": 0.368,
-        "counter_pick_bias": 0.005,
-        "is_counter_pick_dependent": false
-      },
-      "meta_tier": "C",
-      "meta_score": 0.343,
-      "sample_sufficient": true,
-      "flags": []
     },
     "Maokai": {
       "games_picked": 35,
@@ -1014,27 +1014,6 @@
         "counter_pick_inflated"
       ]
     },
-    "Renata Glasc": {
-      "games_picked": 28,
-      "games_banned": 34,
-      "pick_rate": 0.035,
-      "ban_rate": 0.042,
-      "presence": 0.077,
-      "win_rate": 0.571,
-      "games": 28,
-      "pick_context": {
-        "blind_early_games": 10,
-        "counter_games": 18,
-        "blind_early_win_rate": 0.6,
-        "counter_win_rate": 0.556,
-        "counter_pick_bias": -0.044,
-        "is_counter_pick_dependent": false
-      },
-      "meta_tier": "C",
-      "meta_score": 0.338,
-      "sample_sufficient": true,
-      "flags": []
-    },
     "Aatrox": {
       "games_picked": 48,
       "games_banned": 14,
@@ -1056,24 +1035,24 @@
       "sample_sufficient": true,
       "flags": []
     },
-    "Ornn": {
+    "Renata Glasc": {
       "games_picked": 28,
-      "games_banned": 30,
+      "games_banned": 34,
       "pick_rate": 0.035,
-      "ban_rate": 0.037,
-      "presence": 0.072,
-      "win_rate": 0.5,
+      "ban_rate": 0.042,
+      "presence": 0.077,
+      "win_rate": 0.571,
       "games": 28,
       "pick_context": {
         "blind_early_games": 10,
         "counter_games": 18,
         "blind_early_win_rate": 0.6,
-        "counter_win_rate": 0.444,
-        "counter_pick_bias": -0.156,
+        "counter_win_rate": 0.556,
+        "counter_pick_bias": -0.044,
         "is_counter_pick_dependent": false
       },
       "meta_tier": "C",
-      "meta_score": 0.336,
+      "meta_score": 0.338,
       "sample_sufficient": true,
       "flags": []
     },
@@ -1091,6 +1070,27 @@
         "blind_early_win_rate": 0.478,
         "counter_win_rate": 0.357,
         "counter_pick_bias": -0.121,
+        "is_counter_pick_dependent": false
+      },
+      "meta_tier": "C",
+      "meta_score": 0.336,
+      "sample_sufficient": true,
+      "flags": []
+    },
+    "Ornn": {
+      "games_picked": 28,
+      "games_banned": 30,
+      "pick_rate": 0.035,
+      "ban_rate": 0.037,
+      "presence": 0.072,
+      "win_rate": 0.5,
+      "games": 28,
+      "pick_context": {
+        "blind_early_games": 10,
+        "counter_games": 18,
+        "blind_early_win_rate": 0.6,
+        "counter_win_rate": 0.444,
+        "counter_pick_bias": -0.156,
         "is_counter_pick_dependent": false
       },
       "meta_tier": "C",
@@ -1505,27 +1505,6 @@
         "insufficient_data"
       ]
     },
-    "Aphelios": {
-      "games_picked": 15,
-      "games_banned": 4,
-      "pick_rate": 0.019,
-      "ban_rate": 0.005,
-      "presence": 0.024,
-      "win_rate": 0.6,
-      "games": 15,
-      "pick_context": {
-        "blind_early_games": 1,
-        "counter_games": 14,
-        "blind_early_win_rate": null,
-        "counter_win_rate": 0.571,
-        "counter_pick_bias": null,
-        "is_counter_pick_dependent": false
-      },
-      "meta_tier": "C",
-      "meta_score": 0.312,
-      "sample_sufficient": true,
-      "flags": []
-    },
     "Blitzcrank": {
       "games_picked": 11,
       "games_banned": 8,
@@ -1549,19 +1528,40 @@
         "insufficient_data"
       ]
     },
-    "Caitlyn": {
+    "Aphelios": {
+      "games_picked": 15,
+      "games_banned": 4,
+      "pick_rate": 0.019,
+      "ban_rate": 0.005,
+      "presence": 0.024,
+      "win_rate": 0.6,
+      "games": 15,
+      "pick_context": {
+        "blind_early_games": 1,
+        "counter_games": 14,
+        "blind_early_win_rate": null,
+        "counter_win_rate": 0.571,
+        "counter_pick_bias": null,
+        "is_counter_pick_dependent": false
+      },
+      "meta_tier": "C",
+      "meta_score": 0.312,
+      "sample_sufficient": true,
+      "flags": []
+    },
+    "Gragas": {
       "games_picked": 8,
       "games_banned": 7,
       "pick_rate": 0.01,
       "ban_rate": 0.009,
       "presence": 0.019,
-      "win_rate": 0.875,
+      "win_rate": 0.25,
       "games": 8,
       "pick_context": {
-        "blind_early_games": 3,
-        "counter_games": 5,
+        "blind_early_games": 1,
+        "counter_games": 7,
         "blind_early_win_rate": null,
-        "counter_win_rate": 0.8,
+        "counter_win_rate": 0.286,
         "counter_pick_bias": null,
         "is_counter_pick_dependent": false
       },
@@ -1595,42 +1595,19 @@
         "insufficient_data"
       ]
     },
-    "Gragas": {
+    "Caitlyn": {
       "games_picked": 8,
       "games_banned": 7,
       "pick_rate": 0.01,
       "ban_rate": 0.009,
       "presence": 0.019,
-      "win_rate": 0.25,
+      "win_rate": 0.875,
       "games": 8,
       "pick_context": {
-        "blind_early_games": 1,
-        "counter_games": 7,
+        "blind_early_games": 3,
+        "counter_games": 5,
         "blind_early_win_rate": null,
-        "counter_win_rate": 0.286,
-        "counter_pick_bias": null,
-        "is_counter_pick_dependent": false
-      },
-      "meta_tier": null,
-      "meta_score": null,
-      "sample_sufficient": false,
-      "flags": [
-        "insufficient_data"
-      ]
-    },
-    "Morgana": {
-      "games_picked": 8,
-      "games_banned": 6,
-      "pick_rate": 0.01,
-      "ban_rate": 0.007,
-      "presence": 0.017,
-      "win_rate": 0.375,
-      "games": 8,
-      "pick_context": {
-        "blind_early_games": 2,
-        "counter_games": 6,
-        "blind_early_win_rate": null,
-        "counter_win_rate": 0.5,
+        "counter_win_rate": 0.8,
         "counter_pick_bias": null,
         "is_counter_pick_dependent": false
       },
@@ -1687,19 +1664,42 @@
         "insufficient_data"
       ]
     },
-    "Camille": {
-      "games_picked": 9,
-      "games_banned": 3,
-      "pick_rate": 0.011,
-      "ban_rate": 0.004,
-      "presence": 0.015,
-      "win_rate": 0.444,
-      "games": 9,
+    "Morgana": {
+      "games_picked": 8,
+      "games_banned": 6,
+      "pick_rate": 0.01,
+      "ban_rate": 0.007,
+      "presence": 0.017,
+      "win_rate": 0.375,
+      "games": 8,
       "pick_context": {
-        "blind_early_games": 1,
-        "counter_games": 8,
+        "blind_early_games": 2,
+        "counter_games": 6,
         "blind_early_win_rate": null,
         "counter_win_rate": 0.5,
+        "counter_pick_bias": null,
+        "is_counter_pick_dependent": false
+      },
+      "meta_tier": null,
+      "meta_score": null,
+      "sample_sufficient": false,
+      "flags": [
+        "insufficient_data"
+      ]
+    },
+    "Volibear": {
+      "games_picked": 4,
+      "games_banned": 8,
+      "pick_rate": 0.005,
+      "ban_rate": 0.01,
+      "presence": 0.015,
+      "win_rate": 0.8,
+      "games": 5,
+      "pick_context": {
+        "blind_early_games": 2,
+        "counter_games": 2,
+        "blind_early_win_rate": null,
+        "counter_win_rate": null,
         "counter_pick_bias": null,
         "is_counter_pick_dependent": false
       },
@@ -1733,19 +1733,19 @@
         "insufficient_data"
       ]
     },
-    "Volibear": {
-      "games_picked": 4,
-      "games_banned": 8,
-      "pick_rate": 0.005,
-      "ban_rate": 0.01,
+    "Camille": {
+      "games_picked": 9,
+      "games_banned": 3,
+      "pick_rate": 0.011,
+      "ban_rate": 0.004,
       "presence": 0.015,
-      "win_rate": 0.8,
-      "games": 5,
+      "win_rate": 0.444,
+      "games": 9,
       "pick_context": {
-        "blind_early_games": 2,
-        "counter_games": 2,
+        "blind_early_games": 1,
+        "counter_games": 8,
         "blind_early_win_rate": null,
-        "counter_win_rate": null,
+        "counter_win_rate": 0.5,
         "counter_pick_bias": null,
         "is_counter_pick_dependent": false
       },
@@ -1825,29 +1825,6 @@
         "insufficient_data"
       ]
     },
-    "Lissandra": {
-      "games_picked": 5,
-      "games_banned": 5,
-      "pick_rate": 0.006,
-      "ban_rate": 0.006,
-      "presence": 0.012,
-      "win_rate": 0.6,
-      "games": 5,
-      "pick_context": {
-        "blind_early_games": 0,
-        "counter_games": 5,
-        "blind_early_win_rate": null,
-        "counter_win_rate": 0.6,
-        "counter_pick_bias": null,
-        "is_counter_pick_dependent": false
-      },
-      "meta_tier": null,
-      "meta_score": null,
-      "sample_sufficient": false,
-      "flags": [
-        "insufficient_data"
-      ]
-    },
     "LeBlanc": {
       "games_picked": 6,
       "games_banned": 4,
@@ -1861,6 +1838,29 @@
         "counter_games": 5,
         "blind_early_win_rate": null,
         "counter_win_rate": 0.2,
+        "counter_pick_bias": null,
+        "is_counter_pick_dependent": false
+      },
+      "meta_tier": null,
+      "meta_score": null,
+      "sample_sufficient": false,
+      "flags": [
+        "insufficient_data"
+      ]
+    },
+    "Lissandra": {
+      "games_picked": 5,
+      "games_banned": 5,
+      "pick_rate": 0.006,
+      "ban_rate": 0.006,
+      "presence": 0.012,
+      "win_rate": 0.6,
+      "games": 5,
+      "pick_context": {
+        "blind_early_games": 0,
+        "counter_games": 5,
+        "blind_early_win_rate": null,
+        "counter_win_rate": 0.6,
         "counter_pick_bias": null,
         "is_counter_pick_dependent": false
       },
@@ -1917,6 +1917,29 @@
         "insufficient_data"
       ]
     },
+    "Nidalee": {
+      "games_picked": 4,
+      "games_banned": 4,
+      "pick_rate": 0.005,
+      "ban_rate": 0.005,
+      "presence": 0.01,
+      "win_rate": 0.5,
+      "games": 4,
+      "pick_context": {
+        "blind_early_games": 1,
+        "counter_games": 3,
+        "blind_early_win_rate": null,
+        "counter_win_rate": null,
+        "counter_pick_bias": null,
+        "is_counter_pick_dependent": false
+      },
+      "meta_tier": null,
+      "meta_score": null,
+      "sample_sufficient": false,
+      "flags": [
+        "insufficient_data"
+      ]
+    },
     "Nami": {
       "games_picked": 7,
       "games_banned": 1,
@@ -1940,17 +1963,17 @@
         "insufficient_data"
       ]
     },
-    "Nidalee": {
-      "games_picked": 4,
-      "games_banned": 4,
-      "pick_rate": 0.005,
-      "ban_rate": 0.005,
+    "Syndra": {
+      "games_picked": 5,
+      "games_banned": 3,
+      "pick_rate": 0.006,
+      "ban_rate": 0.004,
       "presence": 0.01,
-      "win_rate": 0.5,
-      "games": 4,
+      "win_rate": 1.0,
+      "games": 5,
       "pick_context": {
         "blind_early_games": 1,
-        "counter_games": 3,
+        "counter_games": 4,
         "blind_early_win_rate": null,
         "counter_win_rate": null,
         "counter_pick_bias": null,
@@ -1976,29 +1999,6 @@
         "counter_games": 6,
         "blind_early_win_rate": null,
         "counter_win_rate": 0.667,
-        "counter_pick_bias": null,
-        "is_counter_pick_dependent": false
-      },
-      "meta_tier": null,
-      "meta_score": null,
-      "sample_sufficient": false,
-      "flags": [
-        "insufficient_data"
-      ]
-    },
-    "Syndra": {
-      "games_picked": 5,
-      "games_banned": 3,
-      "pick_rate": 0.006,
-      "ban_rate": 0.004,
-      "presence": 0.01,
-      "win_rate": 1.0,
-      "games": 5,
-      "pick_context": {
-        "blind_early_games": 1,
-        "counter_games": 4,
-        "blind_early_win_rate": null,
-        "counter_win_rate": null,
         "counter_pick_bias": null,
         "is_counter_pick_dependent": false
       },
@@ -2147,17 +2147,17 @@
         "insufficient_data"
       ]
     },
-    "Ashe": {
-      "games_picked": 2,
-      "games_banned": 3,
-      "pick_rate": 0.002,
-      "ban_rate": 0.004,
+    "Dr. Mundo": {
+      "games_picked": 4,
+      "games_banned": 1,
+      "pick_rate": 0.005,
+      "ban_rate": 0.001,
       "presence": 0.006,
-      "win_rate": 0.5,
-      "games": 2,
+      "win_rate": 0.75,
+      "games": 4,
       "pick_context": {
         "blind_early_games": 0,
-        "counter_games": 2,
+        "counter_games": 4,
         "blind_early_win_rate": null,
         "counter_win_rate": null,
         "counter_pick_bias": null,
@@ -2193,17 +2193,17 @@
         "insufficient_data"
       ]
     },
-    "Dr. Mundo": {
-      "games_picked": 4,
-      "games_banned": 1,
-      "pick_rate": 0.005,
-      "ban_rate": 0.001,
+    "Ashe": {
+      "games_picked": 2,
+      "games_banned": 3,
+      "pick_rate": 0.002,
+      "ban_rate": 0.004,
       "presence": 0.006,
-      "win_rate": 0.75,
-      "games": 4,
+      "win_rate": 0.5,
+      "games": 2,
       "pick_context": {
         "blind_early_games": 0,
-        "counter_games": 4,
+        "counter_games": 2,
         "blind_early_win_rate": null,
         "counter_win_rate": null,
         "counter_pick_bias": null,
@@ -2216,17 +2216,17 @@
         "insufficient_data"
       ]
     },
-    "Brand": {
-      "games_picked": 4,
-      "games_banned": 0,
-      "pick_rate": 0.005,
-      "ban_rate": 0.0,
+    "Sett": {
+      "games_picked": 2,
+      "games_banned": 2,
+      "pick_rate": 0.002,
+      "ban_rate": 0.002,
       "presence": 0.005,
-      "win_rate": 0.25,
-      "games": 4,
+      "win_rate": 1.0,
+      "games": 2,
       "pick_context": {
-        "blind_early_games": 1,
-        "counter_games": 3,
+        "blind_early_games": 0,
+        "counter_games": 2,
         "blind_early_win_rate": null,
         "counter_win_rate": null,
         "counter_pick_bias": null,
@@ -2262,52 +2262,6 @@
         "insufficient_data"
       ]
     },
-    "Milio": {
-      "games_picked": 2,
-      "games_banned": 2,
-      "pick_rate": 0.002,
-      "ban_rate": 0.002,
-      "presence": 0.005,
-      "win_rate": 0.0,
-      "games": 2,
-      "pick_context": {
-        "blind_early_games": 0,
-        "counter_games": 2,
-        "blind_early_win_rate": null,
-        "counter_win_rate": null,
-        "counter_pick_bias": null,
-        "is_counter_pick_dependent": false
-      },
-      "meta_tier": null,
-      "meta_score": null,
-      "sample_sufficient": false,
-      "flags": [
-        "insufficient_data"
-      ]
-    },
-    "Mel": {
-      "games_picked": 2,
-      "games_banned": 2,
-      "pick_rate": 0.002,
-      "ban_rate": 0.002,
-      "presence": 0.005,
-      "win_rate": 0.5,
-      "games": 2,
-      "pick_context": {
-        "blind_early_games": 0,
-        "counter_games": 2,
-        "blind_early_win_rate": null,
-        "counter_win_rate": null,
-        "counter_pick_bias": null,
-        "is_counter_pick_dependent": false
-      },
-      "meta_tier": null,
-      "meta_score": null,
-      "sample_sufficient": false,
-      "flags": [
-        "insufficient_data"
-      ]
-    },
     "Zoe": {
       "games_picked": 3,
       "games_banned": 1,
@@ -2331,16 +2285,16 @@
         "insufficient_data"
       ]
     },
-    "Udyr": {
-      "games_picked": 4,
-      "games_banned": 0,
-      "pick_rate": 0.005,
-      "ban_rate": 0.0,
+    "Vayne": {
+      "games_picked": 3,
+      "games_banned": 1,
+      "pick_rate": 0.004,
+      "ban_rate": 0.001,
       "presence": 0.005,
-      "win_rate": 0.75,
-      "games": 4,
+      "win_rate": 0.333,
+      "games": 3,
       "pick_context": {
-        "blind_early_games": 1,
+        "blind_early_games": 0,
         "counter_games": 3,
         "blind_early_win_rate": null,
         "counter_win_rate": null,
@@ -2377,16 +2331,39 @@
         "insufficient_data"
       ]
     },
-    "Vayne": {
-      "games_picked": 3,
-      "games_banned": 1,
-      "pick_rate": 0.004,
-      "ban_rate": 0.001,
+    "Mel": {
+      "games_picked": 2,
+      "games_banned": 2,
+      "pick_rate": 0.002,
+      "ban_rate": 0.002,
       "presence": 0.005,
-      "win_rate": 0.333,
-      "games": 3,
+      "win_rate": 0.5,
+      "games": 2,
       "pick_context": {
         "blind_early_games": 0,
+        "counter_games": 2,
+        "blind_early_win_rate": null,
+        "counter_win_rate": null,
+        "counter_pick_bias": null,
+        "is_counter_pick_dependent": false
+      },
+      "meta_tier": null,
+      "meta_score": null,
+      "sample_sufficient": false,
+      "flags": [
+        "insufficient_data"
+      ]
+    },
+    "Udyr": {
+      "games_picked": 4,
+      "games_banned": 0,
+      "pick_rate": 0.005,
+      "ban_rate": 0.0,
+      "presence": 0.005,
+      "win_rate": 0.75,
+      "games": 4,
+      "pick_context": {
+        "blind_early_games": 1,
         "counter_games": 3,
         "blind_early_win_rate": null,
         "counter_win_rate": null,
@@ -2400,17 +2377,17 @@
         "insufficient_data"
       ]
     },
-    "Sett": {
-      "games_picked": 2,
-      "games_banned": 2,
-      "pick_rate": 0.002,
-      "ban_rate": 0.002,
+    "Brand": {
+      "games_picked": 4,
+      "games_banned": 0,
+      "pick_rate": 0.005,
+      "ban_rate": 0.0,
       "presence": 0.005,
-      "win_rate": 1.0,
-      "games": 2,
+      "win_rate": 0.25,
+      "games": 4,
       "pick_context": {
-        "blind_early_games": 0,
-        "counter_games": 2,
+        "blind_early_games": 1,
+        "counter_games": 3,
         "blind_early_win_rate": null,
         "counter_win_rate": null,
         "counter_pick_bias": null,
@@ -2434,6 +2411,52 @@
       "pick_context": {
         "blind_early_games": 0,
         "counter_games": 4,
+        "blind_early_win_rate": null,
+        "counter_win_rate": null,
+        "counter_pick_bias": null,
+        "is_counter_pick_dependent": false
+      },
+      "meta_tier": null,
+      "meta_score": null,
+      "sample_sufficient": false,
+      "flags": [
+        "insufficient_data"
+      ]
+    },
+    "Milio": {
+      "games_picked": 2,
+      "games_banned": 2,
+      "pick_rate": 0.002,
+      "ban_rate": 0.002,
+      "presence": 0.005,
+      "win_rate": 0.0,
+      "games": 2,
+      "pick_context": {
+        "blind_early_games": 0,
+        "counter_games": 2,
+        "blind_early_win_rate": null,
+        "counter_win_rate": null,
+        "counter_pick_bias": null,
+        "is_counter_pick_dependent": false
+      },
+      "meta_tier": null,
+      "meta_score": null,
+      "sample_sufficient": false,
+      "flags": [
+        "insufficient_data"
+      ]
+    },
+    "Tryndamere": {
+      "games_picked": 2,
+      "games_banned": 1,
+      "pick_rate": 0.002,
+      "ban_rate": 0.001,
+      "presence": 0.004,
+      "win_rate": 0.5,
+      "games": 2,
+      "pick_context": {
+        "blind_early_games": 0,
+        "counter_games": 2,
         "blind_early_win_rate": null,
         "counter_win_rate": null,
         "counter_pick_bias": null,
@@ -2492,29 +2515,6 @@
         "insufficient_data"
       ]
     },
-    "Tryndamere": {
-      "games_picked": 2,
-      "games_banned": 1,
-      "pick_rate": 0.002,
-      "ban_rate": 0.001,
-      "presence": 0.004,
-      "win_rate": 0.5,
-      "games": 2,
-      "pick_context": {
-        "blind_early_games": 0,
-        "counter_games": 2,
-        "blind_early_win_rate": null,
-        "counter_win_rate": null,
-        "counter_pick_bias": null,
-        "is_counter_pick_dependent": false
-      },
-      "meta_tier": null,
-      "meta_score": null,
-      "sample_sufficient": false,
-      "flags": [
-        "insufficient_data"
-      ]
-    },
     "Twitch": {
       "games_picked": 1,
       "games_banned": 1,
@@ -2522,29 +2522,6 @@
       "ban_rate": 0.001,
       "presence": 0.002,
       "win_rate": 1.0,
-      "games": 1,
-      "pick_context": {
-        "blind_early_games": 0,
-        "counter_games": 1,
-        "blind_early_win_rate": null,
-        "counter_win_rate": null,
-        "counter_pick_bias": null,
-        "is_counter_pick_dependent": false
-      },
-      "meta_tier": null,
-      "meta_score": null,
-      "sample_sufficient": false,
-      "flags": [
-        "insufficient_data"
-      ]
-    },
-    "Garen": {
-      "games_picked": 1,
-      "games_banned": 1,
-      "pick_rate": 0.001,
-      "ban_rate": 0.001,
-      "presence": 0.002,
-      "win_rate": 0.0,
       "games": 1,
       "pick_context": {
         "blind_early_games": 0,
@@ -2607,7 +2584,53 @@
         "insufficient_data"
       ]
     },
-    "Singed": {
+    "Garen": {
+      "games_picked": 1,
+      "games_banned": 1,
+      "pick_rate": 0.001,
+      "ban_rate": 0.001,
+      "presence": 0.002,
+      "win_rate": 0.0,
+      "games": 1,
+      "pick_context": {
+        "blind_early_games": 0,
+        "counter_games": 1,
+        "blind_early_win_rate": null,
+        "counter_win_rate": null,
+        "counter_pick_bias": null,
+        "is_counter_pick_dependent": false
+      },
+      "meta_tier": null,
+      "meta_score": null,
+      "sample_sufficient": false,
+      "flags": [
+        "insufficient_data"
+      ]
+    },
+    "Janna": {
+      "games_picked": 1,
+      "games_banned": 0,
+      "pick_rate": 0.001,
+      "ban_rate": 0.0,
+      "presence": 0.001,
+      "win_rate": 0.0,
+      "games": 1,
+      "pick_context": {
+        "blind_early_games": 0,
+        "counter_games": 1,
+        "blind_early_win_rate": null,
+        "counter_win_rate": null,
+        "counter_pick_bias": null,
+        "is_counter_pick_dependent": false
+      },
+      "meta_tier": null,
+      "meta_score": null,
+      "sample_sufficient": false,
+      "flags": [
+        "insufficient_data"
+      ]
+    },
+    "Vex": {
       "games_picked": 1,
       "games_banned": 0,
       "pick_rate": 0.001,
@@ -2637,29 +2660,6 @@
       "ban_rate": 0.0,
       "presence": 0.001,
       "win_rate": 1.0,
-      "games": 1,
-      "pick_context": {
-        "blind_early_games": 0,
-        "counter_games": 1,
-        "blind_early_win_rate": null,
-        "counter_win_rate": null,
-        "counter_pick_bias": null,
-        "is_counter_pick_dependent": false
-      },
-      "meta_tier": null,
-      "meta_score": null,
-      "sample_sufficient": false,
-      "flags": [
-        "insufficient_data"
-      ]
-    },
-    "Amumu": {
-      "games_picked": 1,
-      "games_banned": 0,
-      "pick_rate": 0.001,
-      "ban_rate": 0.0,
-      "presence": 0.001,
-      "win_rate": 0.0,
       "games": 1,
       "pick_context": {
         "blind_early_games": 0,
@@ -2722,30 +2722,7 @@
         "insufficient_data"
       ]
     },
-    "Darius": {
-      "games_picked": 0,
-      "games_banned": 1,
-      "pick_rate": 0.0,
-      "ban_rate": 0.001,
-      "presence": 0.001,
-      "win_rate": 0.5,
-      "games": 0,
-      "pick_context": {
-        "blind_early_games": 0,
-        "counter_games": 0,
-        "blind_early_win_rate": null,
-        "counter_win_rate": null,
-        "counter_pick_bias": null,
-        "is_counter_pick_dependent": false
-      },
-      "meta_tier": null,
-      "meta_score": null,
-      "sample_sufficient": false,
-      "flags": [
-        "insufficient_data"
-      ]
-    },
-    "Zac": {
+    "Rammus": {
       "games_picked": 1,
       "games_banned": 0,
       "pick_rate": 0.001,
@@ -2768,7 +2745,7 @@
         "insufficient_data"
       ]
     },
-    "Janna": {
+    "Amumu": {
       "games_picked": 1,
       "games_banned": 0,
       "pick_rate": 0.001,
@@ -2791,30 +2768,7 @@
         "insufficient_data"
       ]
     },
-    "Ekko": {
-      "games_picked": 1,
-      "games_banned": 0,
-      "pick_rate": 0.001,
-      "ban_rate": 0.0,
-      "presence": 0.001,
-      "win_rate": 0.0,
-      "games": 1,
-      "pick_context": {
-        "blind_early_games": 0,
-        "counter_games": 1,
-        "blind_early_win_rate": null,
-        "counter_win_rate": null,
-        "counter_pick_bias": null,
-        "is_counter_pick_dependent": false
-      },
-      "meta_tier": null,
-      "meta_score": null,
-      "sample_sufficient": false,
-      "flags": [
-        "insufficient_data"
-      ]
-    },
-    "Vex": {
+    "Urgot": {
       "games_picked": 1,
       "games_banned": 0,
       "pick_rate": 0.001,
@@ -2860,7 +2814,30 @@
         "insufficient_data"
       ]
     },
-    "Rammus": {
+    "Singed": {
+      "games_picked": 1,
+      "games_banned": 0,
+      "pick_rate": 0.001,
+      "ban_rate": 0.0,
+      "presence": 0.001,
+      "win_rate": 1.0,
+      "games": 1,
+      "pick_context": {
+        "blind_early_games": 0,
+        "counter_games": 1,
+        "blind_early_win_rate": null,
+        "counter_win_rate": null,
+        "counter_pick_bias": null,
+        "is_counter_pick_dependent": false
+      },
+      "meta_tier": null,
+      "meta_score": null,
+      "sample_sufficient": false,
+      "flags": [
+        "insufficient_data"
+      ]
+    },
+    "Ekko": {
       "games_picked": 1,
       "games_banned": 0,
       "pick_rate": 0.001,
@@ -2883,17 +2860,40 @@
         "insufficient_data"
       ]
     },
-    "Urgot": {
+    "Zac": {
       "games_picked": 1,
       "games_banned": 0,
       "pick_rate": 0.001,
       "ban_rate": 0.0,
       "presence": 0.001,
-      "win_rate": 1.0,
+      "win_rate": 0.0,
       "games": 1,
       "pick_context": {
         "blind_early_games": 0,
         "counter_games": 1,
+        "blind_early_win_rate": null,
+        "counter_win_rate": null,
+        "counter_pick_bias": null,
+        "is_counter_pick_dependent": false
+      },
+      "meta_tier": null,
+      "meta_score": null,
+      "sample_sufficient": false,
+      "flags": [
+        "insufficient_data"
+      ]
+    },
+    "Darius": {
+      "games_picked": 0,
+      "games_banned": 1,
+      "pick_rate": 0.0,
+      "ban_rate": 0.001,
+      "presence": 0.001,
+      "win_rate": 0.5,
+      "games": 0,
+      "pick_context": {
+        "blind_early_games": 0,
+        "counter_games": 0,
         "blind_early_win_rate": null,
         "counter_win_rate": null,
         "counter_pick_bias": null,
