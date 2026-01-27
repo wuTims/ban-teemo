@@ -1,0 +1,26 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "description": "RPS effectiveness matrix for team composition archetypes"
+  },
+  "archetypes": ["engage", "split", "teamfight", "protect", "pick"],
+  "effectiveness_matrix": {
+    "engage": {"vs_engage": 1.0, "vs_split": 1.2, "vs_teamfight": 1.2, "vs_protect": 0.8, "vs_pick": 0.8},
+    "split": {"vs_engage": 0.8, "vs_split": 1.0, "vs_teamfight": 1.2, "vs_protect": 1.2, "vs_pick": 0.8},
+    "teamfight": {"vs_engage": 0.8, "vs_split": 0.8, "vs_teamfight": 1.0, "vs_protect": 1.2, "vs_pick": 1.2},
+    "protect": {"vs_engage": 1.2, "vs_split": 0.8, "vs_teamfight": 0.8, "vs_protect": 1.0, "vs_pick": 1.2},
+    "pick": {"vs_engage": 1.2, "vs_split": 1.2, "vs_teamfight": 0.8, "vs_protect": 0.8, "vs_pick": 1.0}
+  },
+  "champion_archetypes": {
+    "Malphite": {"engage": 0.9, "teamfight": 0.7},
+    "Orianna": {"teamfight": 0.8, "protect": 0.5},
+    "Nocturne": {"pick": 0.8, "engage": 0.5},
+    "Fiora": {"split": 0.9, "pick": 0.4},
+    "Lulu": {"protect": 0.9, "teamfight": 0.4},
+    "Thresh": {"pick": 0.7, "engage": 0.6},
+    "Jarvan IV": {"engage": 0.8, "teamfight": 0.6},
+    "Jinx": {"teamfight": 0.7, "protect": 0.3},
+    "Azir": {"teamfight": 0.8, "split": 0.4},
+    "Camille": {"split": 0.7, "pick": 0.6}
+  }
+}
