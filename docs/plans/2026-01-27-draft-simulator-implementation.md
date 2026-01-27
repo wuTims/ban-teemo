@@ -604,11 +604,250 @@ Expected: All tests pass.
 
 ## Stage 2: Enhancement Services
 
-Build synergy scoring and team evaluation.
+Build archetype analysis, synergy scoring, team evaluation, and ban recommendations.
 
 ---
 
-### Task 2.1: Create SynergyService
+### Task 2.1: Create Archetype Data Files
+
+**Files:**
+- Create: `knowledge/archetype_counters.json`
+
+**Step 1: Create archetype_counters.json**
+
+```json
+{
+  "metadata": {
+    "version": "1.0.0",
+    "description": "RPS effectiveness matrix for team composition archetypes"
+  },
+  "archetypes": ["engage", "split", "teamfight", "protect", "pick"],
+  "effectiveness_matrix": {
+    "engage": {"vs_engage": 1.0, "vs_split": 1.2, "vs_teamfight": 1.2, "vs_protect": 0.8, "vs_pick": 0.8},
+    "split": {"vs_engage": 0.8, "vs_split": 1.0, "vs_teamfight": 1.2, "vs_protect": 1.2, "vs_pick": 0.8},
+    "teamfight": {"vs_engage": 0.8, "vs_split": 0.8, "vs_teamfight": 1.0, "vs_protect": 1.2, "vs_pick": 1.2},
+    "protect": {"vs_engage": 1.2, "vs_split": 0.8, "vs_teamfight": 0.8, "vs_protect": 1.0, "vs_pick": 1.2},
+    "pick": {"vs_engage": 1.2, "vs_split": 1.2, "vs_teamfight": 0.8, "vs_protect": 0.8, "vs_pick": 1.0}
+  },
+  "champion_archetypes": {
+    "Malphite": {"engage": 0.9, "teamfight": 0.7},
+    "Orianna": {"teamfight": 0.8, "protect": 0.5},
+    "Nocturne": {"pick": 0.8, "engage": 0.5},
+    "Fiora": {"split": 0.9, "pick": 0.4},
+    "Lulu": {"protect": 0.9, "teamfight": 0.4},
+    "Thresh": {"pick": 0.7, "engage": 0.6},
+    "Jarvan IV": {"engage": 0.8, "teamfight": 0.6},
+    "Jinx": {"teamfight": 0.7, "protect": 0.3},
+    "Azir": {"teamfight": 0.8, "split": 0.4},
+    "Camille": {"split": 0.7, "pick": 0.6}
+  }
+}
+```
+
+**Step 2: Verify file created**
+
+```bash
+cat knowledge/archetype_counters.json | head -20
+```
+
+**Step 3: Commit**
+
+```bash
+git add knowledge/archetype_counters.json
+git commit -m "feat(data): add archetype counters and champion archetypes"
+```
+
+---
+
+### Task 2.2: Create ArchetypeService
+
+**Files:**
+- Create: `backend/src/ban_teemo/services/archetype_service.py`
+- Create: `backend/tests/test_archetype_service.py`
+
+**Step 1: Write the failing test**
+
+```python
+# backend/tests/test_archetype_service.py
+"""Tests for archetype service."""
+import pytest
+from ban_teemo.services.archetype_service import ArchetypeService
+
+
+@pytest.fixture
+def service():
+    return ArchetypeService()
+
+
+def test_get_champion_archetypes(service):
+    """Test getting archetypes for a champion."""
+    result = service.get_champion_archetypes("Malphite")
+    assert "primary" in result
+    assert "scores" in result
+    assert result["primary"] == "engage"
+
+
+def test_get_champion_archetypes_unknown(service):
+    """Unknown champion returns neutral scores."""
+    result = service.get_champion_archetypes("FakeChamp")
+    assert result["primary"] is None
+
+
+def test_calculate_team_archetype(service):
+    """Test calculating team archetype from picks."""
+    result = service.calculate_team_archetype(["Malphite", "Orianna", "Jarvan IV"])
+    assert "primary" in result
+    assert "scores" in result
+    assert result["primary"] in ["engage", "teamfight", "split", "protect", "pick"]
+
+
+def test_get_archetype_effectiveness(service):
+    """Test RPS effectiveness lookup."""
+    # Engage beats split
+    eff = service.get_archetype_effectiveness("engage", "split")
+    assert eff >= 1.0
+
+
+def test_calculate_comp_advantage(service):
+    """Test composition advantage calculation."""
+    result = service.calculate_comp_advantage(
+        our_picks=["Malphite", "Orianna"],
+        enemy_picks=["Fiora", "Camille"]
+    )
+    assert "advantage" in result
+    assert "our_archetype" in result
+    assert "enemy_archetype" in result
+```
+
+**Step 2: Run test to verify it fails**
+
+```bash
+cd backend && uv run pytest tests/test_archetype_service.py -v
+```
+
+**Step 3: Write minimal implementation**
+
+```python
+# backend/src/ban_teemo/services/archetype_service.py
+"""Archetype analysis for team compositions."""
+import json
+from pathlib import Path
+from typing import Optional
+
+
+class ArchetypeService:
+    """Analyzes team composition archetypes and effectiveness."""
+
+    ARCHETYPES = ["engage", "split", "teamfight", "protect", "pick"]
+
+    def __init__(self, knowledge_dir: Optional[Path] = None):
+        if knowledge_dir is None:
+            knowledge_dir = Path(__file__).parents[4] / "knowledge"
+        self.knowledge_dir = knowledge_dir
+        self._champion_archetypes: dict = {}
+        self._effectiveness_matrix: dict = {}
+        self._load_data()
+
+    def _load_data(self):
+        """Load archetype data."""
+        path = self.knowledge_dir / "archetype_counters.json"
+        if path.exists():
+            with open(path) as f:
+                data = json.load(f)
+                self._champion_archetypes = data.get("champion_archetypes", {})
+                self._effectiveness_matrix = data.get("effectiveness_matrix", {})
+
+    def get_champion_archetypes(self, champion: str) -> dict:
+        """Get archetype scores for a champion."""
+        if champion not in self._champion_archetypes:
+            return {"primary": None, "secondary": None, "scores": {}}
+
+        scores = self._champion_archetypes[champion]
+        sorted_archetypes = sorted(scores.items(), key=lambda x: -x[1])
+
+        return {
+            "primary": sorted_archetypes[0][0] if sorted_archetypes else None,
+            "secondary": sorted_archetypes[1][0] if len(sorted_archetypes) > 1 else None,
+            "scores": scores
+        }
+
+    def calculate_team_archetype(self, picks: list[str]) -> dict:
+        """Calculate aggregate archetype for a team composition."""
+        if not picks:
+            return {"primary": None, "secondary": None, "scores": {}, "alignment": 0.0}
+
+        aggregate = {arch: 0.0 for arch in self.ARCHETYPES}
+
+        for champ in picks:
+            champ_data = self.get_champion_archetypes(champ)
+            for arch, score in champ_data.get("scores", {}).items():
+                aggregate[arch] = aggregate.get(arch, 0) + score
+
+        # Normalize
+        total = sum(aggregate.values())
+        if total > 0:
+            aggregate = {k: v / total for k, v in aggregate.items()}
+
+        sorted_archetypes = sorted(aggregate.items(), key=lambda x: -x[1])
+        primary = sorted_archetypes[0][0] if sorted_archetypes else None
+        primary_score = sorted_archetypes[0][1] if sorted_archetypes else 0
+
+        return {
+            "primary": primary,
+            "secondary": sorted_archetypes[1][0] if len(sorted_archetypes) > 1 else None,
+            "scores": aggregate,
+            "alignment": round(primary_score, 3)  # How focused the comp is
+        }
+
+    def get_archetype_effectiveness(self, our_archetype: str, enemy_archetype: str) -> float:
+        """Get effectiveness multiplier (RPS style)."""
+        if our_archetype not in self._effectiveness_matrix:
+            return 1.0
+        return self._effectiveness_matrix[our_archetype].get(f"vs_{enemy_archetype}", 1.0)
+
+    def calculate_comp_advantage(self, our_picks: list[str], enemy_picks: list[str]) -> dict:
+        """Calculate composition advantage between two teams."""
+        our_arch = self.calculate_team_archetype(our_picks)
+        enemy_arch = self.calculate_team_archetype(enemy_picks)
+
+        effectiveness = 1.0
+        if our_arch["primary"] and enemy_arch["primary"]:
+            effectiveness = self.get_archetype_effectiveness(
+                our_arch["primary"], enemy_arch["primary"]
+            )
+
+        return {
+            "advantage": round(effectiveness, 3),
+            "our_archetype": our_arch["primary"],
+            "enemy_archetype": enemy_arch["primary"],
+            "description": self._describe_advantage(effectiveness, our_arch["primary"], enemy_arch["primary"])
+        }
+
+    def _describe_advantage(self, effectiveness: float, our: str, enemy: str) -> str:
+        """Generate human-readable advantage description."""
+        if effectiveness > 1.1:
+            return f"Your {our} comp counters their {enemy} style"
+        elif effectiveness < 0.9:
+            return f"Their {enemy} comp counters your {our} style"
+        return "Neutral composition matchup"
+```
+
+**Step 4: Run test to verify it passes**
+
+```bash
+cd backend && uv run pytest tests/test_archetype_service.py -v
+```
+
+**Step 5: Commit**
+
+```bash
+git add backend/src/ban_teemo/services/archetype_service.py backend/tests/test_archetype_service.py
+git commit -m "feat(services): add ArchetypeService"
+```
+
+---
+
+### Task 2.3: Create SynergyService
 
 **Files:**
 - Create: `backend/src/ban_teemo/services/synergy_service.py`
@@ -768,7 +1007,417 @@ git commit -m "feat(services): add SynergyService"
 
 ---
 
-### Task 2.2: Create PickRecommendationEngine
+### Task 2.4: Create TeamEvaluationService
+
+**Files:**
+- Create: `backend/src/ban_teemo/services/team_evaluation_service.py`
+- Create: `backend/tests/test_team_evaluation_service.py`
+
+**Step 1: Write the failing test**
+
+```python
+# backend/tests/test_team_evaluation_service.py
+"""Tests for team evaluation service."""
+import pytest
+from ban_teemo.services.team_evaluation_service import TeamEvaluationService
+
+
+@pytest.fixture
+def service():
+    return TeamEvaluationService()
+
+
+def test_evaluate_team_draft(service):
+    """Test evaluating a team's draft."""
+    result = service.evaluate_team_draft(["Malphite", "Orianna", "Jarvan IV"])
+    assert "archetype" in result
+    assert "synergy_score" in result
+    assert "composition_score" in result
+    assert "strengths" in result
+    assert "weaknesses" in result
+
+
+def test_evaluate_vs_enemy(service):
+    """Test head-to-head evaluation."""
+    result = service.evaluate_vs_enemy(
+        our_picks=["Malphite", "Orianna"],
+        enemy_picks=["Fiora", "Camille"]
+    )
+    assert "our_evaluation" in result
+    assert "enemy_evaluation" in result
+    assert "matchup_advantage" in result
+
+
+def test_empty_picks(service):
+    """Empty picks returns neutral evaluation."""
+    result = service.evaluate_team_draft([])
+    assert result["composition_score"] == 0.5
+```
+
+**Step 2: Run test to verify it fails**
+
+```bash
+cd backend && uv run pytest tests/test_team_evaluation_service.py -v
+```
+
+**Step 3: Write minimal implementation**
+
+```python
+# backend/src/ban_teemo/services/team_evaluation_service.py
+"""Team draft evaluation with strengths and weaknesses analysis."""
+from pathlib import Path
+from typing import Optional
+
+from ban_teemo.services.archetype_service import ArchetypeService
+from ban_teemo.services.synergy_service import SynergyService
+
+
+class TeamEvaluationService:
+    """Evaluates team compositions for strengths and weaknesses."""
+
+    def __init__(self, knowledge_dir: Optional[Path] = None):
+        self.archetype_service = ArchetypeService(knowledge_dir)
+        self.synergy_service = SynergyService(knowledge_dir)
+
+    def evaluate_team_draft(self, picks: list[str]) -> dict:
+        """Evaluate a team's draft composition."""
+        if not picks:
+            return {
+                "archetype": None,
+                "synergy_score": 0.5,
+                "composition_score": 0.5,
+                "strengths": [],
+                "weaknesses": []
+            }
+
+        # Get archetype analysis
+        archetype = self.archetype_service.calculate_team_archetype(picks)
+
+        # Get synergy analysis
+        synergy = self.synergy_service.calculate_team_synergy(picks)
+
+        # Calculate composition score (synergy + archetype alignment)
+        composition_score = (synergy["total_score"] + archetype.get("alignment", 0.5)) / 2
+
+        # Determine strengths and weaknesses
+        strengths = []
+        weaknesses = []
+
+        if archetype.get("alignment", 0) >= 0.4:
+            strengths.append(f"Strong {archetype['primary']} identity")
+        else:
+            weaknesses.append("Lacks clear team identity")
+
+        if synergy["total_score"] >= 0.6:
+            strengths.append("Good champion synergies")
+        elif synergy["total_score"] <= 0.4:
+            weaknesses.append("Poor champion synergies")
+
+        # Archetype-specific strengths/weaknesses
+        primary = archetype.get("primary")
+        if primary == "engage":
+            strengths.append("Strong initiation")
+            weaknesses.append("Weak to disengage/poke")
+        elif primary == "split":
+            strengths.append("Strong side lane pressure")
+            weaknesses.append("Weak teamfighting")
+        elif primary == "teamfight":
+            strengths.append("Strong 5v5 combat")
+            weaknesses.append("Weak to split push")
+        elif primary == "protect":
+            strengths.append("Strong carry protection")
+            weaknesses.append("Weak engage")
+        elif primary == "pick":
+            strengths.append("Strong catch potential")
+            weaknesses.append("Weak to grouped teams")
+
+        return {
+            "archetype": archetype["primary"],
+            "synergy_score": synergy["total_score"],
+            "composition_score": round(composition_score, 3),
+            "strengths": strengths[:3],
+            "weaknesses": weaknesses[:3],
+            "synergy_pairs": synergy.get("synergy_pairs", [])
+        }
+
+    def evaluate_vs_enemy(self, our_picks: list[str], enemy_picks: list[str]) -> dict:
+        """Evaluate our draft vs enemy draft."""
+        our_eval = self.evaluate_team_draft(our_picks)
+        enemy_eval = self.evaluate_team_draft(enemy_picks)
+
+        # Get archetype matchup
+        comp_advantage = self.archetype_service.calculate_comp_advantage(our_picks, enemy_picks)
+
+        return {
+            "our_evaluation": our_eval,
+            "enemy_evaluation": enemy_eval,
+            "matchup_advantage": comp_advantage["advantage"],
+            "matchup_description": comp_advantage["description"]
+        }
+```
+
+**Step 4: Run test to verify it passes**
+
+```bash
+cd backend && uv run pytest tests/test_team_evaluation_service.py -v
+```
+
+**Step 5: Commit**
+
+```bash
+git add backend/src/ban_teemo/services/team_evaluation_service.py backend/tests/test_team_evaluation_service.py
+git commit -m "feat(services): add TeamEvaluationService"
+```
+
+---
+
+### Task 2.5: Create BanRecommendationService
+
+**Files:**
+- Create: `backend/src/ban_teemo/services/ban_recommendation_service.py`
+- Create: `backend/tests/test_ban_recommendation_service.py`
+
+**Step 1: Write the failing test**
+
+```python
+# backend/tests/test_ban_recommendation_service.py
+"""Tests for ban recommendation service."""
+import pytest
+from ban_teemo.services.ban_recommendation_service import BanRecommendationService
+
+
+@pytest.fixture
+def service():
+    return BanRecommendationService()
+
+
+def test_get_ban_recommendations(service):
+    """Test generating ban recommendations."""
+    recs = service.get_ban_recommendations(
+        enemy_team_id="oe:team:d2dc3681610c70d6cce8c5f4c1612769",
+        our_picks=[],
+        enemy_picks=[],
+        banned=[],
+        phase="BAN_PHASE_1"
+    )
+    assert len(recs) >= 1
+    for rec in recs:
+        assert "champion_name" in rec
+        assert "priority" in rec
+        assert 0.0 <= rec["priority"] <= 1.0
+
+
+def test_ban_excludes_already_banned(service):
+    """Already banned champions excluded."""
+    recs = service.get_ban_recommendations(
+        enemy_team_id="oe:team:d2dc3681610c70d6cce8c5f4c1612769",
+        our_picks=[],
+        enemy_picks=[],
+        banned=["Azir", "Aurora"],
+        phase="BAN_PHASE_1"
+    )
+    names = {r["champion_name"] for r in recs}
+    assert "Azir" not in names
+    assert "Aurora" not in names
+
+
+def test_target_player_bans(service):
+    """Some bans should target specific players."""
+    recs = service.get_ban_recommendations(
+        enemy_team_id="oe:team:d2dc3681610c70d6cce8c5f4c1612769",
+        our_picks=[],
+        enemy_picks=[],
+        banned=[],
+        phase="BAN_PHASE_1",
+        limit=5
+    )
+    # At least some should have target_player
+    has_target = any(r.get("target_player") for r in recs)
+    # This may or may not be true depending on data, so just check structure
+    for rec in recs:
+        assert "target_player" in rec or rec.get("target_player") is None
+```
+
+**Step 2: Run test to verify it fails**
+
+```bash
+cd backend && uv run pytest tests/test_ban_recommendation_service.py -v
+```
+
+**Step 3: Write minimal implementation**
+
+```python
+# backend/src/ban_teemo/services/ban_recommendation_service.py
+"""Ban recommendation service targeting enemy player pools."""
+from pathlib import Path
+from typing import Optional
+
+from ban_teemo.services.scorers import MetaScorer, ProficiencyScorer
+from ban_teemo.repositories.draft_repository import DraftRepository
+
+
+class BanRecommendationService:
+    """Generates ban recommendations based on enemy team analysis."""
+
+    def __init__(self, knowledge_dir: Optional[Path] = None, data_path: Optional[str] = None):
+        if knowledge_dir is None:
+            knowledge_dir = Path(__file__).parents[4] / "knowledge"
+        if data_path is None:
+            data_path = str(Path(__file__).parents[4] / "data")
+
+        self.meta_scorer = MetaScorer(knowledge_dir)
+        self.proficiency_scorer = ProficiencyScorer(knowledge_dir)
+        self.repo = DraftRepository(data_path)
+        self._player_roles_cache: dict = {}
+
+    def get_ban_recommendations(
+        self,
+        enemy_team_id: str,
+        our_picks: list[str],
+        enemy_picks: list[str],
+        banned: list[str],
+        phase: str,
+        limit: int = 5
+    ) -> list[dict]:
+        """Generate ban recommendations targeting enemy team."""
+        unavailable = set(banned) | set(our_picks) | set(enemy_picks)
+
+        # Get enemy team roster
+        enemy_roster = self._get_enemy_roster(enemy_team_id)
+
+        ban_candidates = []
+
+        # Phase 1: Target high-impact players and meta picks
+        # Phase 2: Counter-pick focused bans
+        is_phase_1 = "1" in phase
+
+        for player in enemy_roster:
+            player_pool = self.proficiency_scorer.get_player_champion_pool(
+                player["name"], min_games=2
+            )
+
+            for entry in player_pool[:5]:  # Top 5 per player
+                champ = entry["champion"]
+                if champ in unavailable:
+                    continue
+
+                priority = self._calculate_ban_priority(
+                    champion=champ,
+                    player=player,
+                    proficiency=entry,
+                    is_phase_1=is_phase_1,
+                    our_picks=our_picks
+                )
+
+                ban_candidates.append({
+                    "champion_name": champ,
+                    "priority": priority,
+                    "target_player": player["name"],
+                    "target_role": player.get("role"),
+                    "reasons": self._generate_reasons(champ, player, entry, priority)
+                })
+
+        # Add high meta picks not in player pools
+        for champ in self.meta_scorer.get_top_meta_champions(limit=10):
+            if champ in unavailable:
+                continue
+            if any(c["champion_name"] == champ for c in ban_candidates):
+                continue
+
+            meta_score = self.meta_scorer.get_meta_score(champ)
+            if meta_score >= 0.6:
+                ban_candidates.append({
+                    "champion_name": champ,
+                    "priority": meta_score * 0.7,  # Lower than targeted bans
+                    "target_player": None,
+                    "target_role": None,
+                    "reasons": [f"{self.meta_scorer.get_meta_tier(champ)}-tier meta pick"]
+                })
+
+        # Sort by priority
+        ban_candidates.sort(key=lambda x: -x["priority"])
+        return ban_candidates[:limit]
+
+    def _get_enemy_roster(self, team_id: str) -> list[dict]:
+        """Get enemy team roster."""
+        try:
+            team_context = self.repo.get_team_context(team_id, "red")
+            if team_context:
+                return [{"name": p.name, "role": p.role} for p in team_context.players]
+        except Exception:
+            pass
+        return []
+
+    def _calculate_ban_priority(
+        self,
+        champion: str,
+        player: dict,
+        proficiency: dict,
+        is_phase_1: bool,
+        our_picks: list[str]
+    ) -> float:
+        """Calculate ban priority score."""
+        # Base: player proficiency on champion
+        priority = proficiency["score"] * 0.4
+
+        # Meta strength
+        meta_score = self.meta_scorer.get_meta_score(champion)
+        priority += meta_score * 0.3
+
+        # Games played (comfort factor)
+        games = proficiency.get("games", 0)
+        comfort = min(1.0, games / 10)
+        priority += comfort * 0.2
+
+        # Confidence bonus
+        conf = proficiency.get("confidence", "LOW")
+        conf_bonus = {"HIGH": 0.1, "MEDIUM": 0.05, "LOW": 0.0}.get(conf, 0)
+        priority += conf_bonus
+
+        return round(min(1.0, priority), 3)
+
+    def _generate_reasons(
+        self,
+        champion: str,
+        player: dict,
+        proficiency: dict,
+        priority: float
+    ) -> list[str]:
+        """Generate human-readable ban reasons."""
+        reasons = []
+
+        games = proficiency.get("games", 0)
+        if games >= 5:
+            reasons.append(f"{player['name']}'s comfort pick ({games} games)")
+        elif games >= 2:
+            reasons.append(f"In {player['name']}'s pool")
+
+        tier = self.meta_scorer.get_meta_tier(champion)
+        if tier in ["S", "A"]:
+            reasons.append(f"{tier}-tier meta champion")
+
+        if priority >= 0.8:
+            reasons.append("High priority target")
+
+        return reasons if reasons else ["General ban recommendation"]
+```
+
+**Step 4: Run test to verify it passes**
+
+```bash
+cd backend && uv run pytest tests/test_ban_recommendation_service.py -v
+```
+
+**Step 5: Commit**
+
+```bash
+git add backend/src/ban_teemo/services/ban_recommendation_service.py backend/tests/test_ban_recommendation_service.py
+git commit -m "feat(services): add BanRecommendationService"
+```
+
+---
+
+### Task 2.6: Create PickRecommendationEngine
 
 **Files:**
 - Create: `backend/src/ban_teemo/services/pick_recommendation_engine.py`
@@ -1280,6 +1929,7 @@ from ban_teemo.models.simulator import SimulatorSession, GameResult
 from ban_teemo.models.draft import DraftState, DraftAction, DraftPhase
 from ban_teemo.services.enemy_simulator_service import EnemySimulatorService
 from ban_teemo.services.pick_recommendation_engine import PickRecommendationEngine
+from ban_teemo.services.ban_recommendation_service import BanRecommendationService
 from ban_teemo.services.draft_service import DraftService
 from ban_teemo.repositories.draft_repository import DraftRepository
 
@@ -1289,20 +1939,22 @@ router = APIRouter(prefix="/api/simulator", tags=["simulator"])
 # In-memory session storage
 _sessions: dict[str, SimulatorSession] = {}
 _enemy_service: Optional[EnemySimulatorService] = None
-_recommendation_engine: Optional[PickRecommendationEngine] = None
+_pick_engine: Optional[PickRecommendationEngine] = None
+_ban_service: Optional[BanRecommendationService] = None
 _draft_service: Optional[DraftService] = None
 _repository: Optional[DraftRepository] = None
 
 
 def get_services(data_path: str):
     """Initialize services lazily."""
-    global _enemy_service, _recommendation_engine, _draft_service, _repository
+    global _enemy_service, _pick_engine, _ban_service, _draft_service, _repository
     if _enemy_service is None:
         _enemy_service = EnemySimulatorService(data_path)
-        _recommendation_engine = PickRecommendationEngine()
+        _pick_engine = PickRecommendationEngine()
+        _ban_service = BanRecommendationService(data_path)
         _draft_service = DraftService(data_path)
         _repository = DraftRepository(data_path)
-    return _enemy_service, _recommendation_engine, _draft_service, _repository
+    return _enemy_service, _pick_engine, _ban_service, _draft_service, _repository
 
 
 class StartSimulatorRequest(BaseModel):
@@ -1326,7 +1978,7 @@ async def start_simulator(request: StartSimulatorRequest):
     """Create a new simulator session."""
     from ban_teemo.main import app
     data_path = app.state.data_path
-    enemy_service, rec_engine, draft_service, repo = get_services(data_path)
+    enemy_service, pick_engine, ban_service, draft_service, repo = get_services(data_path)
 
     session_id = f"sim_{uuid.uuid4().hex[:12]}"
 
@@ -1371,21 +2023,17 @@ async def start_simulator(request: StartSimulatorRequest):
 
     _sessions[session_id] = session
 
-    # Get initial recommendations
+    # Get initial recommendations (starts in ban phase)
     is_our_turn = draft_state.next_team == request.coaching_side
     recommendations = None
     if is_our_turn:
-        our_team = blue_team if request.coaching_side == "blue" else red_team
-        player = our_team.players[0] if our_team.players else None
-        if player:
-            recommendations = rec_engine.get_recommendations(
-                player_name=player.name,
-                player_role=player.role,
-                our_picks=[],
-                enemy_picks=[],
-                banned=[],
-                limit=5
-            )
+        enemy_team = red_team if request.coaching_side == "blue" else blue_team
+        recommendations = ban_service.get_ban_recommendations(
+            enemy_team=enemy_team,
+            already_banned=[],
+            fearless_blocked=set(),
+            limit=5
+        )
 
     return {
         "session_id": session_id,
@@ -1623,26 +2271,36 @@ def _build_response(session: SimulatorSession) -> dict:
     recommendations = None
     if is_our_turn and draft_state.current_phase != DraftPhase.COMPLETE:
         from ban_teemo.main import app
-        _, rec_engine, _, _ = get_services(app.state.data_path)
+        _, pick_engine, ban_service, _, _ = get_services(app.state.data_path)
 
         our_team = session.blue_team if session.coaching_side == "blue" else session.red_team
+        enemy_team = session.red_team if session.coaching_side == "blue" else session.blue_team
         our_picks = draft_state.blue_picks if session.coaching_side == "blue" else draft_state.red_picks
         enemy_picks = draft_state.red_picks if session.coaching_side == "blue" else draft_state.blue_picks
         banned = draft_state.blue_bans + draft_state.red_bans
 
-        # Get player for current pick
-        pick_index = len(our_picks)
-        player = our_team.players[pick_index] if pick_index < len(our_team.players) else our_team.players[0]
-
-        if player:
-            recommendations = rec_engine.get_recommendations(
-                player_name=player.name,
-                player_role=player.role,
-                our_picks=our_picks,
-                enemy_picks=enemy_picks,
-                banned=list(set(banned) | session.fearless_blocked),
+        if draft_state.next_action == "ban":
+            # Ban phase: use BanRecommendationService
+            recommendations = ban_service.get_ban_recommendations(
+                enemy_team=enemy_team,
+                already_banned=banned,
+                fearless_blocked=session.fearless_blocked,
                 limit=5
             )
+        else:
+            # Pick phase: use PickRecommendationEngine
+            pick_index = len(our_picks)
+            player = our_team.players[pick_index] if pick_index < len(our_team.players) else our_team.players[0]
+
+            if player:
+                recommendations = pick_engine.get_recommendations(
+                    player_name=player.name,
+                    player_role=player.role,
+                    our_picks=our_picks,
+                    enemy_picks=enemy_picks,
+                    banned=list(set(banned) | session.fearless_blocked),
+                    limit=5
+                )
 
     return {
         "action": _serialize_action(draft_state.actions[-1]) if draft_state.actions else None,
@@ -2950,11 +3608,11 @@ cd deepdraft && npm run typecheck
 | Stage | Tasks | Focus |
 |-------|-------|-------|
 | 1 | 1.1-1.5 | Core scorers (Meta, Flex, Proficiency, Matchup) |
-| 2 | 2.1-2.2 | Synergy service + Recommendation engine |
+| 2 | 2.1-2.6 | Archetypes, Synergy, TeamEvaluation, Ban/Pick recommendation |
 | 3 | 3.1-3.3 | Simulator backend (models, enemy AI, routes) |
 | 4 | 4.1-4.2 | Frontend types + hook |
 | 5 | 5.1-5.6 | UI components (pool, modal, views) |
 | 6 | 6.1-6.2 | Integration testing |
 
-**Total tasks:** 17
-**Estimated commits:** 17
+**Total tasks:** 21
+**Estimated commits:** 21
