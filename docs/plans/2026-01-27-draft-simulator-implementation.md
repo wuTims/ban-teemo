@@ -19,6 +19,110 @@
 
 ---
 
+## Implementation Progress
+
+> **For Claude:** Check this section first to understand current state before executing tasks.
+
+### Status Overview
+
+| Stage | Status | Notes |
+|-------|--------|-------|
+| Stage 1: Core Scorers | ✅ Complete | MetaScorer, FlexResolver, ProficiencyScorer, MatchupCalculator |
+| Stage 2: Enhancement Services | ⚠️ Incomplete | Services exist but have gaps (see below) |
+| Stage 3: Simulator Backend | 🔲 Not Started | Blocked by Stage 2 fixes |
+| Stage 4: Frontend Types/Hook | 🔲 Not Started | |
+| Stage 5: Frontend UI | 🔲 Not Started | |
+
+### Stage 2 Gaps (Must Fix Before Stage 3)
+
+Code review identified these issues in the Stage 2 implementation:
+
+#### Fix 2.1: Add roster lookup methods to DraftRepository
+**Status:** 🔲 Pending
+**Files:** `backend/src/ban_teemo/repositories/draft_repository.py`
+
+Add missing repository methods needed for automatic roster lookups:
+- `get_team_games(team_id, limit)` - Get recent games for a team
+- `get_team_context(team_id, side)` - Build TeamContext with players from most recent game
+- `get_team_roster(team_id)` - Get current roster for a team
+
+**Blocks:** Fix 2.2, Task 3.1, Task 3.2
+
+#### Fix 2.2: BanRecommendationService auto-lookup roster
+**Status:** 🔲 Pending (blocked by Fix 2.1)
+**Files:** `backend/src/ban_teemo/services/ban_recommendation_service.py`
+
+**Problem:** Service only targets player pools if `enemy_players` is explicitly provided. Otherwise falls back to meta-only bans.
+
+**Fix:** Use DraftRepository to lookup roster from `enemy_team_id`, then target player pools automatically.
+
+**Blocks:** Task 3.3
+
+#### Fix 2.3: Implement Phase 2 counter-pick ban logic
+**Status:** 🔲 Pending
+**Files:** `backend/src/ban_teemo/services/ban_recommendation_service.py`
+
+**Problem:** `is_phase_1` is computed but never changes scoring behavior. BAN_PHASE_1 and BAN_PHASE_2 behave identically.
+
+**Fix:** In BAN_PHASE_2, use `MatchupCalculator.get_lane_matchup()` to identify champions that counter our picks. Prioritize banning those counters.
+
+**Blocks:** Task 3.3
+
+#### Fix 2.4: MetaScorer role filtering
+**Status:** 🔲 Pending
+**Files:** `backend/src/ban_teemo/services/scorers/meta_scorer.py`
+
+**Problem:** `get_top_meta_champions(role=...)` accepts role parameter but ignores it, causing off-role champions in candidate pool.
+
+**Fix:** Filter champions by role when parameter provided. Requires `meta_stats.json` to include role data.
+
+#### Fix 2.5: Add test coverage
+**Status:** 🔲 Pending (blocked by Fix 2.2, 2.3, 2.4)
+**Files:** `backend/tests/test_ban_recommendation_service.py`, `backend/tests/test_meta_scorer.py`
+
+Add tests for:
+- `test_ban_with_enemy_players_targets_pools`
+- `test_ban_phase_2_prioritizes_counters`
+- `test_get_top_meta_champions_filters_by_role`
+
+### Task Dependency Graph
+
+```
+Stage 2 Fixes (must complete first):
+├── Fix 2.1: Repository methods ←── START HERE
+│   └── Fix 2.2: BanRecommendationService roster lookup
+├── Fix 2.3: Phase 2 counter-pick logic ←── CAN PARALLELIZE
+├── Fix 2.4: MetaScorer role filtering ←── CAN PARALLELIZE
+└── Fix 2.5: Test coverage (blocked by 2.2, 2.3, 2.4)
+
+Stage 3 (blocked until fixes complete):
+├── Task 3.1: Simulator Models (blocked by Fix 2.1)
+├── Task 3.2: EnemySimulatorService (blocked by Fix 2.1)
+└── Task 3.3: Simulator Routes (blocked by Fix 2.2, 2.3)
+```
+
+### Execution Order
+
+**Batch 1 (parallel):**
+- Fix 2.1: Add roster lookup methods
+- Fix 2.3: Phase 2 counter-pick logic
+- Fix 2.4: MetaScorer role filtering
+
+**Batch 2 (after Batch 1):**
+- Fix 2.2: BanRecommendationService roster lookup
+
+**Batch 3 (after Batch 2):**
+- Fix 2.5: Test coverage
+- Task 3.1: Simulator Models
+- Task 3.2: EnemySimulatorService
+
+**Batch 4 (after Batch 3):**
+- Task 3.3: Simulator Routes
+
+**Batch 5+:** Stage 4 and 5 (frontend)
+
+---
+
 ## Stage 1: Core Scorers
 
 Build the foundational scoring components that power recommendations.
