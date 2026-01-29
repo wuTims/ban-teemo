@@ -10,13 +10,13 @@ def engine():
 
 @pytest.fixture
 def sample_team_players():
-    """Sample team roster."""
+    """Sample team roster with lowercase canonical roles."""
     return [
-        {"name": "Zeus", "role": "TOP"},
-        {"name": "Oner", "role": "JNG"},
-        {"name": "Faker", "role": "MID"},
-        {"name": "Gumayusi", "role": "ADC"},
-        {"name": "Keria", "role": "SUP"},
+        {"name": "Zeus", "role": "top"},
+        {"name": "Oner", "role": "jungle"},
+        {"name": "Faker", "role": "mid"},
+        {"name": "Gumayusi", "role": "bot"},
+        {"name": "Keria", "role": "support"},
     ]
 
 
@@ -84,8 +84,8 @@ def test_unavailable_champions_excluded(engine, sample_team_players):
     assert "Jinx" not in recommended_champs
 
 
-def test_suggested_role_uses_jng_not_jungle(engine, sample_team_players):
-    """Suggested role should use JNG format, not JUNGLE."""
+def test_suggested_role_uses_lowercase_canonical(engine, sample_team_players):
+    """Suggested role should use lowercase canonical format."""
     recs = engine.get_recommendations(
         team_players=sample_team_players,
         our_picks=[],
@@ -95,29 +95,29 @@ def test_suggested_role_uses_jng_not_jungle(engine, sample_team_players):
     )
     for rec in recs:
         role = rec["suggested_role"]
-        assert role in {"TOP", "JNG", "MID", "ADC", "SUP"}, f"Got unexpected role: {role}"
-        assert role != "JUNGLE", "Should use JNG, not JUNGLE"
+        assert role in {"top", "jungle", "mid", "bot", "support"}, f"Got unexpected role: {role}"
+        assert role.islower(), "Role should be lowercase"
 
 
 def test_suggested_role_prefers_unfilled(engine, sample_team_players):
     """Suggested role should prefer unfilled roles."""
-    # Pick a TOP champion first
+    # Pick a top champion first
     recs = engine.get_recommendations(
         team_players=sample_team_players,
-        our_picks=["Rumble"],  # TOP is filled
+        our_picks=["Rumble"],  # top is filled
         enemy_picks=[],
         banned=[],
         limit=5
     )
-    # Most recommendations should not suggest TOP
-    top_suggestions = sum(1 for r in recs if r["suggested_role"] == "TOP")
-    assert top_suggestions < len(recs)  # Not all should be TOP
+    # Most recommendations should not suggest top
+    top_suggestions = sum(1 for r in recs if r["suggested_role"] == "top")
+    assert top_suggestions < len(recs)  # Not all should be top
 
 
 def test_flag_low_confidence_reachable(engine):
     """LOW_CONFIDENCE flag should be reachable with unknown players."""
     # Use players with no proficiency data
-    unknown_players = [{"name": "CompletelyUnknownPlayer12345", "role": "MID"}]
+    unknown_players = [{"name": "CompletelyUnknownPlayer12345", "role": "mid"}]
     recs = engine.get_recommendations(
         team_players=unknown_players,
         our_picks=[],
@@ -178,18 +178,18 @@ def test_excludes_champions_with_only_filled_roles(engine, sample_team_players):
 
 def test_flex_champions_remain_when_one_role_filled(engine, sample_team_players):
     """Flex champions should still be recommended when only one of their roles is filled."""
-    # Aurora is MID/TOP flex - should be recommended when TOP is filled (can play MID)
+    # Aurora is mid/top flex - should be recommended when top is filled (can play mid)
     recs = engine.get_recommendations(
         team_players=sample_team_players,
-        our_picks=["Gnar"],  # TOP is filled (Gnar is TOP-only)
+        our_picks=["Gnar"],  # top is filled (Gnar is top-only)
         enemy_picks=[],
         banned=[],
         limit=50
     )
 
     # Check that Aurora can appear (if in player pools or meta picks)
-    # and if she does, her suggested_role should be MID (not TOP)
+    # and if she does, her suggested_role should be mid (not top)
     aurora_rec = next((r for r in recs if r["champion_name"] == "Aurora"), None)
     if aurora_rec:
-        assert aurora_rec["suggested_role"] == "MID", \
-            f"Aurora should suggest MID when TOP is filled, got {aurora_rec['suggested_role']}"
+        assert aurora_rec["suggested_role"] == "mid", \
+            f"Aurora should suggest mid when top is filled, got {aurora_rec['suggested_role']}"

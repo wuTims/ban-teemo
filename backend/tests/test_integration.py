@@ -185,9 +185,9 @@ class TestRepositoryIntegration:
         assert context.side == "blue"
         assert len(context.players) == 5
 
-        # Verify players have correct roles
+        # Verify players have correct roles (lowercase canonical)
         roles = {p.role for p in context.players}
-        assert roles == {"TOP", "JNG", "MID", "ADC", "SUP"}
+        assert roles == {"top", "jungle", "mid", "bot", "support"}
 
     def test_get_team_games_returns_game_data(self, repository):
         """Repository should return games for a team."""
@@ -415,11 +415,11 @@ class TestCompleteDraftScenario:
         """Engine should adapt recommendations as draft progresses."""
         engine = PickRecommendationEngine()
         team_players = [
-            {"name": "Zeus", "role": "TOP"},
-            {"name": "Oner", "role": "JNG"},
-            {"name": "Faker", "role": "MID"},
-            {"name": "Gumayusi", "role": "ADC"},
-            {"name": "Keria", "role": "SUP"},
+            {"name": "Zeus", "role": "top"},
+            {"name": "Oner", "role": "jungle"},
+            {"name": "Faker", "role": "mid"},
+            {"name": "Gumayusi", "role": "bot"},
+            {"name": "Keria", "role": "support"},
         ]
 
         # Early draft - all roles open
@@ -437,26 +437,26 @@ class TestCompleteDraftScenario:
         # Mid draft - some roles filled
         mid_recs = engine.get_recommendations(
             team_players=team_players,
-            our_picks=["Jax", "Vi", "Orianna"],  # TOP, JNG, MID filled
+            our_picks=["Jax", "Vi", "Orianna"],  # top, jungle, mid filled
             enemy_picks=["Rell", "Varus"],
             banned=["Aurora", "Yone"],
             limit=10
         )
         mid_roles = {r["suggested_role"] for r in mid_recs}
-        # Should only suggest ADC and SUP
-        assert mid_roles.issubset({"ADC", "SUP"})
+        # Should only suggest bot and support (lowercase canonical)
+        assert mid_roles.issubset({"bot", "support"})
 
         # Late draft - only one role left
         late_recs = engine.get_recommendations(
             team_players=team_players,
-            our_picks=["Jax", "Vi", "Orianna", "Ashe"],  # Only SUP open
+            our_picks=["Jax", "Vi", "Orianna", "Ashe"],  # Only support open
             enemy_picks=["Rell", "Varus", "Jayce", "Sejuani"],
             banned=["Aurora", "Yone", "K'Sante", "Azir", "Rumble"],
             limit=5
         )
         late_roles = {r["suggested_role"] for r in late_recs}
-        # Should only suggest SUP
-        assert late_roles == {"SUP"}
+        # Should only suggest support (lowercase canonical)
+        assert late_roles == {"support"}
 
 
 # =============================================================================
