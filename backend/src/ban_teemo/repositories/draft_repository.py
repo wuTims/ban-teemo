@@ -2,28 +2,45 @@
 
 import duckdb
 import pandas as pd
+from pathlib import Path
+
+from ban_teemo.models.team import Player, TeamContext
 
 
 class DraftRepository:
-    """Data access layer - DuckDB queries against CSV files."""
+    """Data access layer - DuckDB queries against pre-built database file."""
 
     def __init__(self, data_path: str):
-        """Initialize with path to CSV directory.
+        """Initialize with path to DuckDB database.
 
         Args:
-            data_path: Path to directory containing CSV files
-                      (teams.csv, players.csv, series.csv, etc.)
+            data_path: Path to directory containing draft_data.duckdb
+                      (built from CSV files by scripts/build_duckdb.py)
+
+        Raises:
+            FileNotFoundError: If draft_data.duckdb doesn't exist
         """
-        self.data_path = data_path
+        self.data_path = Path(data_path) if isinstance(data_path, str) else data_path
+        self._db_path = self.data_path / "draft_data.duckdb"
+
+        if not self._db_path.exists():
+            raise FileNotFoundError(
+                f"DuckDB database not found: {self._db_path}\n"
+                f"Run: cd backend && uv run python scripts/build_duckdb.py"
+            )
+
+        # Verify we can connect
+        with duckdb.connect(str(self._db_path), read_only=True) as conn:
+            tables = conn.execute("SHOW TABLES").fetchall()
+        print(f"DraftRepository: Using {self._db_path} ({len(tables)} tables)")
 
     def _query(self, sql: str) -> list[dict]:
         """Execute query and return list of dicts with proper type conversion."""
-        # Use a fresh connection per query to avoid race conditions
-        conn = duckdb.connect(":memory:")
-        df = conn.execute(sql).df()
-        conn.close()
+        # Read-only connection per query - no locks needed, thread-safe
+        with duckdb.connect(str(self._db_path), read_only=True) as conn:
+            df = conn.execute(sql).df()
 
-        # Convert all columns to JSON-serializable types
+        # Convert all columns to JSON-serializable types (preserve existing behavior)
         for col in df.columns:
             if pd.api.types.is_datetime64_any_dtype(df[col]):
                 # Convert datetime to ISO string
@@ -52,9 +69,9 @@ class DraftRepository:
                 t1.name as blue_team_name,
                 s.red_team_id,
                 t2.name as red_team_name
-            FROM '{self.data_path}/series.csv' s
-            JOIN '{self.data_path}/teams.csv' t1 ON s.blue_team_id = t1.id
-            JOIN '{self.data_path}/teams.csv' t2 ON s.red_team_id = t2.id
+            FROM series s
+            JOIN teams t1 ON s.blue_team_id = t1.id
+            JOIN teams t2 ON s.red_team_id = t2.id
             ORDER BY s.match_date DESC
             LIMIT {limit}
         """)
@@ -71,9 +88,9 @@ class DraftRepository:
                 patch_version,
                 winner_team_id,
                 duration_seconds
-            FROM '{self.data_path}/games.csv'
+            FROM games
             WHERE series_id = '{series_id}'
-            ORDER BY game_number
+            ORDER BY CAST(game_number AS INTEGER)
         """)
 
     def get_game_info(self, series_id: str, game_number: int) -> dict | None:
@@ -92,8 +109,8 @@ class DraftRepository:
                 s.match_date,
                 s.blue_team_id,
                 s.red_team_id
-            FROM read_csv('{self.data_path}/games.csv', all_varchar=true) g
-            JOIN read_csv('{self.data_path}/series.csv', all_varchar=true) s ON g.series_id = s.id
+            FROM games g
+            JOIN series s ON g.series_id = s.id
             WHERE g.series_id = '{series_id}'
               AND CAST(g.game_number AS INTEGER) = {game_number}
         """)
@@ -106,7 +123,7 @@ class DraftRepository:
         """
         results = self._query(f"""
             SELECT id, name
-            FROM '{self.data_path}/teams.csv'
+            FROM teams
             WHERE id = '{team_id}'
         """)
         return results[0] if results else None
@@ -119,11 +136,11 @@ class DraftRepository:
         """
         return self._query(f"""
             SELECT DISTINCT
-                CAST(player_id AS VARCHAR) as id,
+                player_id as id,
                 player_name as name,
                 role,
                 team_side
-            FROM read_csv('{self.data_path}/player_game_stats.csv', all_varchar=true)
+            FROM player_game_stats
             WHERE game_id = '{game_id}'
               AND team_id = '{team_id}'
             ORDER BY
@@ -149,11 +166,11 @@ class DraftRepository:
         """
         return self._query(f"""
             SELECT DISTINCT
-                CAST(player_id AS VARCHAR) as id,
+                player_id as id,
                 player_name as name,
                 role,
                 team_id
-            FROM read_csv('{self.data_path}/player_game_stats.csv', all_varchar=true)
+            FROM player_game_stats
             WHERE game_id = '{game_id}'
               AND team_side = '{team_side}'
             ORDER BY
@@ -180,8 +197,8 @@ class DraftRepository:
             SELECT DISTINCT
                 pgs.team_id as id,
                 t.name
-            FROM read_csv('{self.data_path}/player_game_stats.csv', all_varchar=true) pgs
-            JOIN read_csv('{self.data_path}/teams.csv', all_varchar=true) t ON pgs.team_id = t.id
+            FROM player_game_stats pgs
+            JOIN teams t ON pgs.team_id = t.id
             WHERE pgs.game_id = '{game_id}'
               AND pgs.team_side = '{team_side}'
             LIMIT 1
@@ -205,9 +222,110 @@ class DraftRepository:
                     WHEN da.team_id = s.blue_team_id THEN 'blue'
                     ELSE 'red'
                 END as team_side
-            FROM read_csv('{self.data_path}/draft_actions.csv', all_varchar=true) da
-            JOIN read_csv('{self.data_path}/games.csv', all_varchar=true) g ON da.game_id = g.id
-            JOIN read_csv('{self.data_path}/series.csv', all_varchar=true) s ON g.series_id = s.id
+            FROM draft_actions da
+            JOIN games g ON da.game_id = g.id
+            JOIN series s ON g.series_id = s.id
             WHERE da.game_id = '{game_id}'
             ORDER BY CAST(da.sequence_number AS INTEGER)
         """)
+
+    def get_team_games(self, team_id: str, limit: int = 10) -> list[dict]:
+        """Get recent games for a team.
+
+        Returns list of dicts with: game_id, series_id, game_number, match_date,
+        team_side, opponent_team_id, opponent_team_name, winner_team_id
+        """
+        return self._query(f"""
+            WITH team_games AS (
+                SELECT DISTINCT
+                    pgs.game_id,
+                    g.series_id,
+                    CAST(g.game_number AS INTEGER) as game_number,
+                    s.match_date,
+                    pgs.team_side,
+                    g.winner_team_id,
+                    CASE
+                        WHEN pgs.team_side = 'blue' THEN s.red_team_id
+                        ELSE s.blue_team_id
+                    END as opponent_team_id
+                FROM player_game_stats pgs
+                JOIN games g ON pgs.game_id = g.id
+                JOIN series s ON g.series_id = s.id
+                WHERE pgs.team_id = '{team_id}'
+            )
+            SELECT
+                tg.game_id,
+                tg.series_id,
+                tg.game_number,
+                tg.match_date,
+                tg.team_side,
+                tg.opponent_team_id,
+                t.name as opponent_team_name,
+                tg.winner_team_id
+            FROM team_games tg
+            JOIN teams t ON tg.opponent_team_id = t.id
+            ORDER BY tg.match_date DESC, tg.game_number DESC
+            LIMIT {limit}
+        """)
+
+    def get_team_roster(self, team_id: str) -> list[dict]:
+        """Get current roster for a team based on most recent game.
+
+        Returns list of dicts with: player_id, player_name, role
+        Ordered by role (TOP, JNG, MID, ADC, SUP)
+        """
+        # Get the most recent game for the team
+        recent_games = self.get_team_games(team_id, limit=1)
+        if not recent_games:
+            return []
+
+        game_id = recent_games[0]["game_id"]
+        return self._query(f"""
+            SELECT DISTINCT
+                player_id,
+                player_name,
+                role
+            FROM player_game_stats
+            WHERE game_id = '{game_id}'
+              AND team_id = '{team_id}'
+            ORDER BY
+                CASE role
+                    WHEN 'TOP' THEN 1
+                    WHEN 'JNG' THEN 2
+                    WHEN 'MID' THEN 3
+                    WHEN 'ADC' THEN 4
+                    WHEN 'SUP' THEN 5
+                    ELSE 6
+                END
+        """)
+
+    def get_team_context(self, team_id: str, side: str) -> TeamContext | None:
+        """Build TeamContext for a team with its current roster.
+
+        Args:
+            team_id: The team ID
+            side: "blue" or "red" - the side the team will play on
+
+        Returns:
+            TeamContext with team info and players, or None if team not found
+        """
+        team_info = self.get_team_with_name(team_id)
+        if not team_info:
+            return None
+
+        roster = self.get_team_roster(team_id)
+        players = [
+            Player(
+                id=p["player_id"],
+                name=p["player_name"],
+                role=p["role"],
+            )
+            for p in roster
+        ]
+
+        return TeamContext(
+            id=team_id,
+            name=team_info["name"],
+            side=side,
+            players=players,
+        )
