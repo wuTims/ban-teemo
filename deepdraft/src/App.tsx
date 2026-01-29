@@ -6,6 +6,7 @@ import { RecommendationPanel } from "./components/RecommendationPanel";
 import { ReplayControls } from "./components/ReplayControls";
 import { SimulatorSetupModal } from "./components/SimulatorSetupModal";
 import { SimulatorView } from "./components/SimulatorView";
+import { DraftCompletePanel } from "./components/DraftCompletePanel";
 import { useReplaySession, useSimulatorSession } from "./hooks";
 import type { SimulatorConfig } from "./types";
 
@@ -124,70 +125,58 @@ export default function App() {
               </div>
             )}
 
-            {simulator.status === "drafting" && simulator.blueTeam && simulator.redTeam && simulator.draftState && (
-              <SimulatorView
-                blueTeam={simulator.blueTeam}
-                redTeam={simulator.redTeam}
-                coachingSide={simulator.coachingSide!}
-                draftState={simulator.draftState}
-                recommendations={simulator.recommendations}
-                isOurTurn={simulator.isOurTurn}
-                isEnemyThinking={simulator.isEnemyThinking}
-                gameNumber={simulator.gameNumber}
-                seriesScore={simulator.seriesStatus ? [simulator.seriesStatus.blue_wins, simulator.seriesStatus.red_wins] : [0, 0]}
-                fearlessBlocked={simulator.fearlessBlocked}
-                draftMode={simulator.draftMode}
-                onChampionSelect={simulator.submitAction}
-              />
-            )}
+            {/* Show drafting view OR game complete with panel */}
+            {(simulator.status === "drafting" || simulator.status === "game_complete") &&
+              simulator.blueTeam && simulator.redTeam && simulator.draftState && (
+              <>
+                <SimulatorView
+                  blueTeam={simulator.blueTeam}
+                  redTeam={simulator.redTeam}
+                  coachingSide={simulator.coachingSide!}
+                  draftState={simulator.draftState}
+                  recommendations={simulator.recommendations}
+                  isOurTurn={simulator.isOurTurn}
+                  isEnemyThinking={simulator.isEnemyThinking}
+                  gameNumber={simulator.gameNumber}
+                  seriesScore={simulator.seriesStatus ? [simulator.seriesStatus.blue_wins, simulator.seriesStatus.red_wins] : [0, 0]}
+                  fearlessBlocked={simulator.fearlessBlocked}
+                  draftMode={simulator.draftMode}
+                  onChampionSelect={simulator.submitAction}
+                />
 
-            {simulator.status === "game_complete" && (
-              <div className="text-center py-12 space-y-6">
-                <h2 className="text-2xl font-bold text-gold-bright uppercase tracking-wide">
-                  Draft Complete!
-                </h2>
-
-                {/* Show winner selection if no series status yet */}
-                {!simulator.seriesStatus?.games_played ||
-                 simulator.seriesStatus.games_played < simulator.gameNumber ? (
-                  <>
-                    <p className="text-text-secondary">Who won this game?</p>
-                    <div className="flex justify-center gap-4">
-                      <button
-                        onClick={() => simulator.recordWinner("blue")}
-                        disabled={simulator.isRecordingWinner}
-                        className="px-6 py-2 bg-blue-team/80 text-white rounded font-semibold hover:bg-blue-team transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {simulator.isRecordingWinner ? "Recording..." : `${simulator.blueTeam?.name || "Blue"} Won`}
-                      </button>
-                      <button
-                        onClick={() => simulator.recordWinner("red")}
-                        disabled={simulator.isRecordingWinner}
-                        className="px-6 py-2 bg-red-team/80 text-white rounded font-semibold hover:bg-red-team transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {simulator.isRecordingWinner ? "Recording..." : `${simulator.redTeam?.name || "Red"} Won`}
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    {/* Winner recorded, show score and next game button */}
-                    <div className="text-lg text-text-primary">
-                      <span className="text-blue-team">{simulator.blueTeam?.name}</span>
-                      <span className="mx-4 text-gold-bright font-bold">
-                        {simulator.seriesStatus?.blue_wins} - {simulator.seriesStatus?.red_wins}
-                      </span>
-                      <span className="text-red-team">{simulator.redTeam?.name}</span>
-                    </div>
-                    <button
-                      onClick={() => simulator.nextGame()}
-                      className="px-6 py-3 bg-magic text-lol-darkest rounded-lg font-semibold hover:bg-magic-bright transition-colors"
-                    >
-                      Continue to Game {simulator.gameNumber + 1}
-                    </button>
-                  </>
+                {/* Draft Complete Panel - shown when game is complete */}
+                {simulator.status === "game_complete" && (
+                  <div className="mt-4">
+                    {!simulator.seriesStatus?.games_played ||
+                     simulator.seriesStatus.games_played < simulator.gameNumber ? (
+                      <DraftCompletePanel
+                        blueTeam={simulator.blueTeam}
+                        redTeam={simulator.redTeam}
+                        evaluation={simulator.teamEvaluation}
+                        onSelectWinner={simulator.recordWinner}
+                        isRecordingWinner={simulator.isRecordingWinner}
+                      />
+                    ) : (
+                      /* Winner recorded, show continue button */
+                      <div className="bg-lol-dark rounded-lg p-6 text-center">
+                        <div className="text-lg text-text-primary mb-4">
+                          <span className="text-blue-team">{simulator.blueTeam.name}</span>
+                          <span className="mx-4 text-gold-bright font-bold">
+                            {simulator.seriesStatus?.blue_wins} - {simulator.seriesStatus?.red_wins}
+                          </span>
+                          <span className="text-red-team">{simulator.redTeam.name}</span>
+                        </div>
+                        <button
+                          onClick={() => simulator.nextGame()}
+                          className="px-6 py-3 bg-magic text-lol-darkest rounded-lg font-semibold hover:bg-magic-bright transition-colors"
+                        >
+                          Continue to Game {simulator.gameNumber + 1}
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 )}
-              </div>
+              </>
             )}
 
             {simulator.status === "series_complete" && (
