@@ -1,6 +1,7 @@
 // deepdraft/src/components/ChampionPool/index.tsx
 import { useState, useMemo } from "react";
 import { ChampionPortrait } from "../shared/ChampionPortrait";
+import { championPlaysRole } from "../../data/championRoles";
 import type { FearlessBlocked } from "../../types";
 
 interface ChampionPoolProps {
@@ -12,6 +13,16 @@ interface ChampionPoolProps {
 }
 
 const ROLES = ["All", "Top", "Jungle", "Mid", "ADC", "Support"] as const;
+
+// Map display names to backend role codes
+const ROLE_MAP: Record<string, string> = {
+  "All": "All",
+  "Top": "TOP",
+  "Jungle": "JNG",
+  "Mid": "MID",
+  "ADC": "ADC",
+  "Support": "SUP",
+};
 
 export function ChampionPool({
   allChampions,
@@ -27,22 +38,30 @@ export function ChampionPool({
   const [search, setSearch] = useState("");
   const [selectedRole, setSelectedRole] = useState<string>("All");
 
-  const filteredChampions = useMemo(() => {
+  // Track which champions pass the filter (but render all to keep images mounted)
+  const filteredSet = useMemo(() => {
     let filtered = allChampions;
 
+    // Search filter
     if (search) {
       const query = search.toLowerCase();
       filtered = filtered.filter((c) => c.toLowerCase().includes(query));
     }
 
-    // Note: Role filtering would need champion role data
-    // For now, just filter by search
+    // Role filter
+    const roleKey = ROLE_MAP[selectedRole];
+    if (roleKey && roleKey !== "All") {
+      filtered = filtered.filter((c) => championPlaysRole(c, roleKey));
+    }
 
-    return filtered.sort();
+    return new Set(filtered);
   }, [allChampions, search, selectedRole]);
 
+  // Sort all champions once
+  const sortedChampions = useMemo(() => [...allChampions].sort(), [allChampions]);
+
   return (
-    <div className="bg-lol-dark rounded-lg p-4 flex flex-col h-full">
+    <div className="bg-lol-dark rounded-lg p-4 flex flex-col h-[400px] lg:h-[550px] xl:h-[650px]">
       {/* Search */}
       <input
         type="text"
@@ -69,10 +88,11 @@ export function ChampionPool({
         ))}
       </div>
 
-      {/* Champion Grid */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="grid grid-cols-6 gap-1">
-          {filteredChampions.map((champion) => {
+      {/* Champion Grid - renders all champions, hides filtered ones to prevent flash */}
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-none p-1 lg:p-1.5">
+        <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-[repeat(auto-fill,minmax(88px,1fr))] 2xl:grid-cols-[repeat(auto-fill,minmax(104px,1fr))] gap-1 lg:gap-2 content-start auto-rows-max">
+          {sortedChampions.map((champion) => {
+            const isVisible = filteredSet.has(champion);
             const isUnavailable = unavailable.has(champion);
             const isFearlessBlocked = fearlessBlockedSet.has(champion);
             const fearlessInfo = fearlessBlocked[champion];
@@ -82,11 +102,13 @@ export function ChampionPool({
               <button
                 key={champion}
                 onClick={() => !isDisabled && onSelect(champion)}
-                disabled={isDisabled}
-                className={`relative aspect-square rounded overflow-hidden transition-all ${
-                  isDisabled
-                    ? "opacity-40 cursor-not-allowed"
-                    : "hover:ring-2 hover:ring-gold-bright cursor-pointer hover:scale-105"
+                disabled={isDisabled || !isVisible}
+                className={`appearance-none bg-transparent p-0 border-0 focus:outline-none relative w-full aspect-square rounded overflow-hidden ${
+                  !isVisible
+                    ? "hidden"
+                    : isDisabled
+                      ? "opacity-40 cursor-not-allowed"
+                      : "group cursor-pointer transition-shadow hover:ring-2 hover:ring-gold-bright"
                 }`}
                 title={
                   isFearlessBlocked && fearlessInfo
@@ -98,8 +120,9 @@ export function ChampionPool({
               >
                 <ChampionPortrait
                   championName={champion}
-                  size="sm"
                   state={isUnavailable || isFearlessBlocked ? "banned" : "picked"}
+                  className="w-full h-full"
+                  imageClassName="transition-transform duration-200 ease-out group-hover:scale-[1.06]"
                 />
                 {(isUnavailable || isFearlessBlocked) && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/50">
@@ -118,11 +141,9 @@ export function ChampionPool({
       </div>
 
       {/* Status footer */}
-      {disabled && (
-        <div className="mt-2 text-center text-xs text-text-tertiary">
-          Waiting for your turn...
-        </div>
-      )}
+      <div className="mt-2 text-center text-xs text-text-tertiary">
+        {disabled ? "Waiting for your turn..." : `${filteredSet.size} champions`}
+      </div>
     </div>
   );
 }
