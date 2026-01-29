@@ -75,6 +75,9 @@ class PickRecommendationEngine:
                 "reasons": self._generate_reasons(champ, result)
             })
 
+        # Safety filter: ensure no recommendations for already-filled roles
+        recommendations = [r for r in recommendations if r["suggested_role"] not in filled_roles]
+
         recommendations.sort(key=lambda x: -x["score"])
         return recommendations[:limit]
 
