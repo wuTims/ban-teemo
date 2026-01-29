@@ -35,7 +35,7 @@ export function ActionLog({ actions, blueTeam, redTeam }: ActionLogProps) {
       {/* Action list */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto p-3 space-y-2 max-h-[500px]"
+        className="flex-1 overflow-y-auto p-3 space-y-2 max-h-[750px]"
       >
         {actions.length === 0 ? (
           <p className="text-text-tertiary text-sm text-center py-4">

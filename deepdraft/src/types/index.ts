@@ -53,8 +53,14 @@ export type RecommendationFlag = "SURPRISE_PICK" | "LOW_CONFIDENCE" | null;
 export interface PickRecommendation {
   champion_name: string;
   confidence: number;
+  suggested_role?: string | null;
   flag: RecommendationFlag;
   reasons: string[];
+  // Score breakdown fields
+  score?: number;
+  base_score?: number | null;
+  synergy_multiplier?: number | null;
+  components?: Record<string, number>;
 }
 
 export interface BanRecommendation {
@@ -62,6 +68,8 @@ export interface BanRecommendation {
   priority: number;
   target_player: string | null;
   reasons: string[];
+  // Score breakdown fields
+  components?: Record<string, number>;
 }
 
 export interface Recommendations {
@@ -189,6 +197,7 @@ export interface ScoreComponents {
   matchup: number;
   counter: number;
   synergy: number;
+  [key: string]: number; // Allow additional dynamic components
 }
 
 export interface SimulatorPickRecommendation {

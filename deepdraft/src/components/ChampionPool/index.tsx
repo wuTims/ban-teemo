@@ -12,7 +12,7 @@ interface ChampionPoolProps {
   disabled: boolean;
 }
 
-const ROLES = ["All", "Top", "Jungle", "Mid", "ADC", "Support"] as const;
+const ROLES = ["All", "Top", "Jungle", "Mid", "Bot", "Support"] as const;
 
 // Map display names to backend role codes
 const ROLE_MAP: Record<string, string> = {
@@ -20,7 +20,7 @@ const ROLE_MAP: Record<string, string> = {
   "Top": "TOP",
   "Jungle": "JNG",
   "Mid": "MID",
-  "ADC": "ADC",
+  "Bot": "ADC",
   "Support": "SUP",
 };
 

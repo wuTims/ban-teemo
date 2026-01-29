@@ -1,11 +1,6 @@
 // deepdraft/src/components/InsightsLog/index.tsx
 import { useEffect, useRef } from "react";
-import type { Recommendations, DraftAction } from "../../types";
-
-interface InsightEntry {
-  action: DraftAction;
-  recommendations: Recommendations;
-}
+import type { InsightEntry } from "../../types";
 
 interface InsightsLogProps {
   entries: InsightEntry[];
@@ -15,10 +10,10 @@ interface InsightsLogProps {
 export function InsightsLog({ entries, isLive }: InsightsLogProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom when new entries arrive
+  // Auto-scroll to top when new entries arrive (most recent is on top)
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      scrollRef.current.scrollTop = 0;
     }
   }, [entries.length]);
 
@@ -32,6 +27,9 @@ export function InsightsLog({ entries, isLive }: InsightsLogProps) {
     );
   }
 
+  // Reverse entries so most recent is on top
+  const reversedEntries = [...entries].reverse();
+
   return (
     <div className="bg-lol-dark rounded-lg p-4">
       {/* Header */}
@@ -44,31 +42,82 @@ export function InsightsLog({ entries, isLive }: InsightsLogProps) {
         )}
       </div>
 
-      {/* Scrollable log */}
+      {/* Scrollable log - most recent on top */}
       <div
         ref={scrollRef}
         className="space-y-3 max-h-[500px] overflow-y-auto pr-2"
       >
-        {entries.map((entry, idx) => {
-          const isLatest = idx === entries.length - 1;
+        {reversedEntries.map((entry, idx) => {
+          const isLatest = idx === 0; // First item is now the latest
           const isBan = entry.action.action_type === "ban";
-          const teamColor = entry.action.team_side === "blue" ? "blue-team" : "red-team";
-          const teamLabel = entry.action.team_side === "blue" ? "Blue" : "Red";
 
-          // Get recommendations based on action type (may be null at draft end)
-          const recs = isBan
+          // Team for the RECOMMENDATIONS (next team to act), not the action that just happened
+          const recTeam = entry.recommendations?.for_team ?? entry.action.team_side;
+          const teamColor = recTeam === "blue" ? "blue-team" : "red-team";
+          const teamLabel = recTeam === "blue" ? "Blue" : "Red";
+
+          // Get recommendations - prefer whichever array has data
+          // (recommendations are for NEXT action, not based on previous action type)
+          const hasBanRecs = (entry.recommendations?.bans?.length ?? 0) > 0;
+          const hasPickRecs = (entry.recommendations?.picks?.length ?? 0) > 0;
+          const recs = hasBanRecs
             ? entry.recommendations?.bans ?? []
             : entry.recommendations?.picks ?? [];
+          const isRecsForBan = hasBanRecs;
           const top3 = recs.slice(0, 3);
 
-          // Calculate action number within type
-          const actionNum = isBan
-            ? Math.ceil(entry.action.sequence / 2) <= 3
-              ? Math.ceil((entry.action.sequence + 1) / 2)
-              : Math.ceil((entry.action.sequence - 5) / 2)
-            : entry.action.sequence <= 6
-              ? entry.action.sequence - 6
-              : entry.action.sequence - 12;
+          // STEAL/DENY DETECTION: Check if this action took something from the OTHER team's recommendations
+          // Look at the PREVIOUS entry (which has recommendations for the team that just acted)
+          const prevEntry = reversedEntries[idx + 1]; // Next in reversed = previous chronologically
+          const prevRecs = prevEntry?.recommendations;
+          const prevForTeam = prevRecs?.for_team;
+          const actionTeam = entry.action.team_side;
+
+          // If the previous recommendations were for a DIFFERENT team than who just acted,
+          // check if the action champion was in those recommendations (steal scenario)
+          let stealInfo: { rank: number; score: number; reasons: string[] } | null = null;
+          if (prevRecs && prevForTeam && prevForTeam !== actionTeam) {
+            const prevPickRecs = prevRecs.picks ?? [];
+            const prevBanRecs = prevRecs.bans ?? [];
+            const allPrevRecs = isBan ? prevBanRecs : prevPickRecs;
+
+            const stolenRec = allPrevRecs.find(r => r.champion_name === entry.action.champion_name);
+            if (stolenRec) {
+              const recIndex = allPrevRecs.indexOf(stolenRec);
+              const score = "priority" in stolenRec ? stolenRec.priority : stolenRec.confidence;
+              stealInfo = {
+                rank: recIndex + 1,
+                score: score,
+                reasons: stolenRec.reasons ?? [],
+              };
+            }
+          }
+
+          // Calculate action number for the NEXT action (what recommendations are for)
+          // LoL Draft (1-indexed sequence):
+          //   Seq 1-6: Ban Phase 1 (3 per team, alternating)
+          //   Seq 7-12: Pick Phase 1 (6 picks)
+          //   Seq 13-16: Ban Phase 2 (2 per team)
+          //   Seq 17-20: Pick Phase 2 (4 picks)
+          const nextSeq = entry.action.sequence + 1;
+          let actionNum: number;
+          if (isRecsForBan) {
+            if (nextSeq <= 6) {
+              actionNum = Math.ceil(nextSeq / 2);
+            } else if (nextSeq >= 13 && nextSeq <= 16) {
+              actionNum = 3 + Math.ceil((nextSeq - 12) / 2);
+            } else {
+              actionNum = 1;
+            }
+          } else {
+            if (nextSeq >= 7 && nextSeq <= 12) {
+              actionNum = Math.ceil((nextSeq - 6) / 2);
+            } else if (nextSeq >= 17 && nextSeq <= 20) {
+              actionNum = 3 + Math.ceil((nextSeq - 16) / 2);
+            } else {
+              actionNum = 1;
+            }
+          }
 
           return (
             <div
@@ -88,7 +137,7 @@ export function InsightsLog({ entries, isLive }: InsightsLogProps) {
                     {teamLabel}
                   </span>
                   <span className="text-sm text-text-primary font-medium">
-                    {isBan ? "Ban" : "Pick"} #{Math.abs(actionNum) || 1}
+                    {isRecsForBan ? "Ban" : "Pick"} #{actionNum}
                   </span>
                 </div>
                 {isLatest && isLive && (
@@ -101,7 +150,25 @@ export function InsightsLog({ entries, isLive }: InsightsLogProps) {
               {/* What actually happened */}
               <div className="text-xs text-text-tertiary mb-2">
                 Actual: <span className="text-gold-bright font-medium">{entry.action.champion_name}</span>
+                {stealInfo && (
+                  <span className="ml-2 text-warning font-medium">
+                    ⚠️ DENY (was #{stealInfo.rank} for {prevForTeam === "blue" ? "Blue" : "Red"})
+                  </span>
+                )}
               </div>
+
+              {/* Steal context - show why the other team wanted this pick */}
+              {stealInfo && (
+                <div className="text-xs bg-warning/10 border border-warning/30 rounded px-2 py-1.5 mb-2">
+                  <div className="text-warning font-medium mb-1">
+                    Denied from {prevForTeam === "blue" ? "Blue" : "Red"} Team
+                  </div>
+                  <div className="text-text-secondary">
+                    Score: {Math.round(stealInfo.score * 100)}%
+                    {stealInfo.reasons[0] && ` • ${stealInfo.reasons[0]}`}
+                  </div>
+                </div>
+              )}
 
               {/* Top 3 recommendations */}
               <div className="space-y-1.5">

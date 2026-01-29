@@ -2,6 +2,7 @@
 import { ChampionPortrait } from "../shared";
 import type { TeamContext, Team } from "../../types";
 import { getTeamLogoUrl, getTeamInitials } from "../../utils/teamLogos";
+import { getTeamAbbreviation } from "../../data/teamAbbreviations";
 
 interface TeamPanelProps {
   team: TeamContext | null;
@@ -71,8 +72,8 @@ export function TeamPanel({
       <div className="flex items-center gap-3 mb-4">
         <TeamLogo team={team} borderClass={sideColors.border} textClass={sideColors.text} />
         <div>
-          <h2 className={`font-semibold uppercase tracking-wide ${sideColors.text}`}>
-            {team?.name || "Unknown Team"}
+          <h2 className={`font-semibold uppercase tracking-wide ${sideColors.text}`} title={team?.name}>
+            {team?.name ? getTeamAbbreviation(team.name) : "???"}
           </h2>
           <span className="text-xs text-text-tertiary uppercase">
             {side} side
