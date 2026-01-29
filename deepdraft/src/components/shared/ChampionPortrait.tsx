@@ -1,39 +1,26 @@
 // deepdraft/src/components/shared/ChampionPortrait.tsx
-import { getChampionIconUrl } from "../../utils";
+import { getCachedChampionIconUrl } from "../../utils";
 import type { Team } from "../../types";
 
 type PortraitState = "empty" | "picking" | "picked" | "banned";
-type PortraitSize = "sm" | "md" | "lg";
 
 interface ChampionPortraitProps {
   championName?: string | null;
   state?: PortraitState;
   team?: Team | null;
-  size?: PortraitSize;
   className?: string;
+  imageClassName?: string;
 }
-
-const SIZE_CLASSES: Record<PortraitSize, string> = {
-  sm: "w-10 h-10",
-  md: "w-14 h-14",
-  lg: "w-20 h-20",
-};
 
 export function ChampionPortrait({
   championName,
   state = "empty",
   team = null,
-  size = "md",
   className = "",
+  imageClassName = "",
 }: ChampionPortraitProps) {
-  const sizeClass = SIZE_CLASSES[size];
-
-  // Base styles
-  const baseClasses = `
-    relative rounded-sm overflow-hidden
-    ${sizeClass}
-    transition-all duration-200
-  `;
+  // bg-lol-dark provides a dark placeholder matching icon colors to reduce flash
+  const baseClasses = "relative rounded-sm overflow-hidden bg-lol-dark";
 
   // State-specific styles
   const stateClasses: Record<PortraitState, string> = {
@@ -58,9 +45,11 @@ export function ChampionPortrait({
   return (
     <div className={`${baseClasses} ${stateClasses[state]} ${className}`}>
       <img
-        src={getChampionIconUrl(championName)}
+        src={getCachedChampionIconUrl(championName)}
         alt={championName}
-        className="w-full h-full object-cover"
+        loading="eager"
+        decoding="sync"
+        className={`w-full h-full object-cover ${imageClassName}`}
       />
       {state === "banned" && (
         <div className="absolute inset-0 flex items-center justify-center bg-lol-darkest/40">
