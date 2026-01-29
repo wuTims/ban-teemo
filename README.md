@@ -100,6 +100,9 @@ The pro match data is stored in GitHub releases to keep the repo lightweight:
 #   - 1,482 series
 #   - 445 players
 #   - 57 teams
+
+# Build the DuckDB database (required for backend)
+cd backend && uv run python scripts/build_duckdb.py
 ```
 
 ### Run the Demo

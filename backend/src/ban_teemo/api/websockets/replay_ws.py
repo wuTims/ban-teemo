@@ -174,7 +174,7 @@ def _serialize_recommendations(recs: Recommendations | None) -> dict | None:
         "for_team": recs.for_team,
         "picks": [
             {
-                "champion": p.champion_name,
+                "champion_name": p.champion_name,
                 "confidence": p.confidence,
                 "flag": p.flag,
                 "reasons": p.reasons,
@@ -183,7 +183,7 @@ def _serialize_recommendations(recs: Recommendations | None) -> dict | None:
         ],
         "bans": [
             {
-                "champion": b.champion_name,
+                "champion_name": b.champion_name,
                 "priority": b.priority,
                 "target_player": b.target_player,
                 "reasons": b.reasons,
