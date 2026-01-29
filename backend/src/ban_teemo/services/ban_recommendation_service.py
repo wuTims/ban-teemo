@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 from ban_teemo.services.scorers import MatchupCalculator, MetaScorer, ProficiencyScorer
+from ban_teemo.utils.role_normalizer import normalize_role
 
 if TYPE_CHECKING:
     from ban_teemo.repositories.draft_repository import DraftRepository
@@ -10,20 +11,6 @@ if TYPE_CHECKING:
 
 class BanRecommendationService:
     """Generates ban recommendations based on enemy team analysis."""
-
-    # Normalize role names from database format to standard format
-    ROLE_NORMALIZER = {
-        "top": "TOP",
-        "jungle": "JNG",
-        "jng": "JNG",
-        "mid": "MID",
-        "middle": "MID",
-        "bot": "ADC",
-        "adc": "ADC",
-        "bottom": "ADC",
-        "support": "SUP",
-        "sup": "SUP",
-    }
 
     def __init__(
         self,
@@ -84,7 +71,7 @@ class BanRecommendationService:
                     if champ in unavailable:
                         continue
 
-                    priority = self._calculate_ban_priority(
+                    priority, components = self._calculate_ban_priority(
                         champion=champ,
                         player=player,
                         proficiency=entry,
@@ -96,7 +83,8 @@ class BanRecommendationService:
                         "priority": priority,
                         "target_player": player["name"],
                         "target_role": player.get("role"),
-                        "reasons": self._generate_reasons(champ, player, entry, priority)
+                        "reasons": self._generate_reasons(champ, player, entry, priority),
+                        "components": components,
                     })
 
         # Phase 2: Add counter-pick bans (champions that counter our picks)
@@ -124,12 +112,14 @@ class BanRecommendationService:
 
             meta_score = self.meta_scorer.get_meta_score(champ)
             if meta_score >= 0.5:
+                priority = meta_score * 0.8  # Slightly lower than targeted bans
                 ban_candidates.append({
                     "champion_name": champ,
-                    "priority": meta_score * 0.8,  # Slightly lower than targeted bans
+                    "priority": round(priority, 3),
                     "target_player": None,
                     "target_role": None,
-                    "reasons": [f"{self.meta_scorer.get_meta_tier(champ) or 'High'}-tier meta pick"]
+                    "reasons": [f"{self.meta_scorer.get_meta_tier(champ) or 'High'}-tier meta pick"],
+                    "components": {"meta": round(priority, 3)},
                 })
 
         # Sort by priority
@@ -142,7 +132,7 @@ class BanRecommendationService:
         player: dict,
         proficiency: dict,
         pool_size: int = 0,
-    ) -> float:
+    ) -> tuple[float, dict[str, float]]:
         """Calculate ban priority score for a player's champion pool entry.
 
         Args:
@@ -150,34 +140,51 @@ class BanRecommendationService:
             player: Player dict with 'name' and 'role'
             proficiency: Proficiency entry with 'score', 'games', 'confidence'
             pool_size: Pre-computed size of player's champion pool (min_games=2)
+
+        Returns:
+            Tuple of (priority_score, components_dict)
         """
+        components: dict[str, float] = {}
+
         # Base: player proficiency on champion
-        priority = proficiency["score"] * 0.4
+        proficiency_component = proficiency["score"] * 0.4
+        components["proficiency"] = round(proficiency_component, 3)
 
         # Meta strength
         meta_score = self.meta_scorer.get_meta_score(champion)
-        priority += meta_score * 0.3
+        meta_component = meta_score * 0.3
+        components["meta"] = round(meta_component, 3)
 
         # Games played (comfort factor)
         games = proficiency.get("games", 0)
         comfort = min(1.0, games / 10)
-        priority += comfort * 0.2
+        comfort_component = comfort * 0.2
+        components["comfort"] = round(comfort_component, 3)
 
         # Confidence bonus
         conf = proficiency.get("confidence", "LOW")
         conf_bonus = {"HIGH": 0.1, "MEDIUM": 0.05, "LOW": 0.0}.get(conf, 0)
-        priority += conf_bonus
+        components["confidence_bonus"] = round(conf_bonus, 3)
 
         # Pool depth exploitation - bans hurt more against shallow pools
-        # Gate on pool_size >= 1 to avoid biasing toward players with missing data
+        pool_bonus = 0.0
         if pool_size >= 1:  # Only boost if we have actual data
             if pool_size <= 3:
-                priority += 0.20  # High impact - shallow pool
+                pool_bonus = 0.20  # High impact - shallow pool
             elif pool_size <= 5:
-                priority += 0.10  # Medium impact
+                pool_bonus = 0.10  # Medium impact
             # Deep pools (6+) get no bonus
+        components["pool_depth_bonus"] = round(pool_bonus, 3)
 
-        return round(min(1.0, priority), 3)
+        priority = (
+            proficiency_component
+            + meta_component
+            + comfort_component
+            + conf_bonus
+            + pool_bonus
+        )
+
+        return (round(min(1.0, priority), 3), components)
 
     def _generate_reasons(
         self,
@@ -260,7 +267,9 @@ class BanRecommendationService:
             avg_counter = sum(c["score"] for c in data["counters"]) / len(data["counters"])
             meta_score = self.meta_scorer.get_meta_score(champ)
 
-            priority = avg_counter * 0.6 + meta_score * 0.4
+            counter_component = avg_counter * 0.6
+            meta_component = meta_score * 0.4
+            priority = counter_component + meta_component
             countered_champs = [c["vs"] for c in data["counters"]]
 
             result.append({
@@ -268,7 +277,11 @@ class BanRecommendationService:
                 "priority": round(priority, 3),
                 "target_player": None,
                 "target_role": None,
-                "reasons": [f"Counters {', '.join(countered_champs)}"]
+                "reasons": [f"Counters {', '.join(countered_champs)}"],
+                "components": {
+                    "counter": round(counter_component, 3),
+                    "meta": round(meta_component, 3),
+                },
             })
 
         return sorted(result, key=lambda x: -x["priority"])[:5]
@@ -293,12 +306,12 @@ class BanRecommendationService:
 
         players = []
         for player in roster:
-            role = (player.get("role") or "").lower()
-            normalized_role = self.ROLE_NORMALIZER.get(role, role.upper())
+            # Role is already normalized by repository, but ensure consistency
+            role = normalize_role(player.get("role"))
 
             players.append({
                 "name": player.get("player_name", ""),
-                "role": normalized_role,
+                "role": role,
                 "player_id": player.get("player_id")
             })
 

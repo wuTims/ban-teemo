@@ -3,17 +3,19 @@ import json
 from pathlib import Path
 from typing import Optional
 
+from ban_teemo.utils.role_normalizer import normalize_role
+
 
 class MatchupCalculator:
     """Calculates matchup scores between champions."""
 
-    # Translate canonical app roles to data file roles
+    # Translate canonical lowercase roles to data file roles
     ROLE_TO_DATA = {
-        "JNG": "JUNGLE",
-        "TOP": "TOP",
-        "MID": "MID",
-        "ADC": "ADC",
-        "SUP": "SUP",
+        "top": "TOP",
+        "jungle": "JUNGLE",
+        "mid": "MID",
+        "bot": "ADC",
+        "support": "SUP",
     }
 
     def __init__(self, knowledge_dir: Optional[Path] = None):
@@ -33,8 +35,9 @@ class MatchupCalculator:
 
     def get_lane_matchup(self, our_champion: str, enemy_champion: str, role: str) -> dict:
         """Get lane-specific matchup score."""
-        # Translate canonical role (JNG) to data role (JUNGLE)
-        data_role = self.ROLE_TO_DATA.get(role.upper(), role.upper())
+        # Normalize role and translate to data format
+        normalized_role = normalize_role(role) or role.lower()
+        data_role = self.ROLE_TO_DATA.get(normalized_role, role.upper())
 
         # Direct lookup
         if our_champion in self._counters:

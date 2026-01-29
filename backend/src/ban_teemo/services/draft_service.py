@@ -1,24 +1,31 @@
 """Draft business logic service."""
 
+from pathlib import Path
+from typing import Optional
+
 from ban_teemo.models.draft import DraftAction, DraftPhase, DraftState
 from ban_teemo.models.recommendations import (
     BanRecommendation,
     PickRecommendation,
     Recommendations,
 )
+from ban_teemo.services.pick_recommendation_engine import PickRecommendationEngine
+from ban_teemo.services.ban_recommendation_service import BanRecommendationService
 
 
 class DraftService:
     """Core business logic for draft state and recommendations."""
 
-    def __init__(self, data_path: str):
+    def __init__(self, data_path: str, knowledge_dir: Optional[Path] = None):
         """Initialize the draft service.
 
         Args:
             data_path: Path to CSV data directory (for future analytics)
+            knowledge_dir: Optional path to knowledge directory for recommendation engines
         """
         self.data_path = data_path
-        # Future: self.analytics = DraftAnalytics(data_path)
+        self.pick_engine = PickRecommendationEngine(knowledge_dir)
+        self.ban_service = BanRecommendationService(knowledge_dir)
 
     def compute_phase(self, action_count: int) -> DraftPhase:
         """Compute draft phase from action count.
@@ -92,9 +99,6 @@ class DraftService:
     ) -> Recommendations:
         """Generate pick/ban recommendations for a team.
 
-        STUB: Returns placeholder recommendations.
-        Future: Use DraftAnalytics for real 4-layer analysis.
-
         Args:
             draft_state: Current state of the draft
             for_team: Which team to generate recommendations for ("blue" or "red")
@@ -105,84 +109,80 @@ class DraftService:
         if draft_state.current_phase == DraftPhase.COMPLETE:
             return Recommendations(for_team=for_team, picks=[], bans=[])
 
-        # Get unavailable champions (already picked or banned)
-        unavailable = set(
-            draft_state.blue_bans
-            + draft_state.red_bans
-            + draft_state.blue_picks
-            + draft_state.red_picks
-        )
-
-        # Stub data - replace with real analytics later
-        if draft_state.next_action == "pick":
-            return Recommendations(
-                for_team=for_team,
-                picks=[
-                    PickRecommendation(
-                        champion_name="Azir",
-                        confidence=0.78,
-                        flag=None,
-                        reasons=[
-                            "High meta presence (25%)",
-                            "Strong team fight potential",
-                            "TODO: Implement analytics layer",
-                        ],
-                    ),
-                    PickRecommendation(
-                        champion_name="Vi",
-                        confidence=0.72,
-                        flag=None,
-                        reasons=[
-                            "S-tier jungler",
-                            "Good engage synergy",
-                            "TODO: Implement analytics layer",
-                        ],
-                    ),
-                    PickRecommendation(
-                        champion_name="Aurora",
-                        confidence=0.55,
-                        flag="SURPRISE_PICK",
-                        reasons=[
-                            "Low stage games (3)",
-                            "Strong meta pick",
-                            "TODO: Implement analytics layer",
-                        ],
-                    ),
-                ],
-                bans=[],
-            )
+        # Determine our team and enemy team based on for_team
+        if for_team == "blue":
+            our_team = draft_state.blue_team
+            enemy_team = draft_state.red_team
+            our_picks = draft_state.blue_picks
+            enemy_picks = draft_state.red_picks
         else:
-            return Recommendations(
-                for_team=for_team,
-                picks=[],
-                bans=[
-                    BanRecommendation(
-                        champion_name="Rumble",
-                        priority=0.85,
-                        target_player=None,
-                        reasons=[
-                            "Highest presence (31%)",
-                            "TODO: Implement analytics layer",
-                        ],
-                    ),
-                    BanRecommendation(
-                        champion_name="Kalista",
-                        priority=0.80,
-                        target_player="Enemy ADC",
-                        reasons=[
-                            "Target ban",
-                            "High comfort pick",
-                            "TODO: Implement analytics layer",
-                        ],
-                    ),
-                    BanRecommendation(
-                        champion_name="Rell",
-                        priority=0.70,
-                        target_player=None,
-                        reasons=[
-                            "Strong engage support",
-                            "TODO: Implement analytics layer",
-                        ],
-                    ),
-                ],
+            our_team = draft_state.red_team
+            enemy_team = draft_state.blue_team
+            our_picks = draft_state.red_picks
+            enemy_picks = draft_state.blue_picks
+
+        # Get all banned champions
+        banned = draft_state.blue_bans + draft_state.red_bans
+
+        # Format team players for recommendation engines
+        team_players = [
+            {"name": player.name, "role": player.role}
+            for player in our_team.players
+        ]
+        enemy_players = [
+            {"name": player.name, "role": player.role}
+            for player in enemy_team.players
+        ]
+
+        if draft_state.next_action == "pick":
+            # Get pick recommendations
+            raw_picks = self.pick_engine.get_recommendations(
+                team_players=team_players,
+                our_picks=our_picks,
+                enemy_picks=enemy_picks,
+                banned=banned,
+                limit=5,
             )
+
+            # Convert to PickRecommendation model objects
+            picks = [
+                PickRecommendation(
+                    champion_name=rec["champion_name"],
+                    confidence=rec.get("confidence", rec.get("score", 0.5)),
+                    suggested_role=rec.get("suggested_role"),
+                    flag=rec.get("flag"),
+                    reasons=rec.get("reasons", []),
+                    score=rec.get("score", 0.0),
+                    base_score=rec.get("base_score"),
+                    synergy_multiplier=rec.get("synergy_multiplier"),
+                    components=rec.get("components", {}),
+                )
+                for rec in raw_picks
+            ]
+
+            return Recommendations(for_team=for_team, picks=picks, bans=[])
+        else:
+            # Get ban recommendations
+            raw_bans = self.ban_service.get_ban_recommendations(
+                enemy_team_id=enemy_team.id,
+                our_picks=our_picks,
+                enemy_picks=enemy_picks,
+                banned=banned,
+                phase=draft_state.current_phase.value,
+                enemy_players=enemy_players,
+                limit=5,
+            )
+
+            # Convert to BanRecommendation model objects
+            bans = [
+                BanRecommendation(
+                    champion_name=rec["champion_name"],
+                    priority=rec.get("priority", 0.5),
+                    target_player=rec.get("target_player"),
+                    reasons=rec.get("reasons", []),
+                    components=rec.get("components", {}),
+                )
+                for rec in raw_bans
+            ]
+
+            return Recommendations(for_team=for_team, picks=[], bans=bans)

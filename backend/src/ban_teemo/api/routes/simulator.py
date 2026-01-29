@@ -15,6 +15,7 @@ from ban_teemo.services.enemy_simulator_service import EnemySimulatorService
 from ban_teemo.services.pick_recommendation_engine import PickRecommendationEngine
 from ban_teemo.services.ban_recommendation_service import BanRecommendationService
 from ban_teemo.services.team_evaluation_service import TeamEvaluationService
+from ban_teemo.services.scoring_logger import ScoringLogger
 from ban_teemo.repositories.draft_repository import DraftRepository
 
 # Constants
@@ -29,6 +30,7 @@ router = APIRouter(prefix="/api/simulator", tags=["simulator"])
 _sessions: dict[str, SimulatorSession] = {}
 _sessions_lock = threading.Lock()
 _session_locks: dict[str, threading.Lock] = {}
+_session_loggers: dict[str, ScoringLogger] = {}  # Diagnostic loggers per session
 _cleanup_lock = threading.Lock()
 _last_cleanup = 0.0
 
@@ -62,6 +64,10 @@ def _prune_expired_sessions(now: float | None = None) -> None:
                     expired.append(session_id)
 
             for session_id in expired:
+                # Save and remove logger before removing session
+                if session_id in _session_loggers:
+                    _session_loggers[session_id].save(suffix="_expired")
+                    _session_loggers.pop(session_id, None)
                 _sessions.pop(session_id, None)
                 _session_locks.pop(session_id, None)
 
@@ -182,6 +188,22 @@ async def start_simulator(request: Request, body: StartSimulatorRequest):
     with _sessions_lock:
         _sessions[session_id] = session
         _session_locks[session_id] = threading.Lock()
+
+        # Initialize diagnostic logger for this session
+        logger = ScoringLogger()
+        logger.start_session(
+            session_id=session_id,
+            mode="simulator",
+            blue_team=blue_team.name,
+            red_team=red_team.name,
+            coaching_side=body.coaching_side,
+            game_number=1,
+            extra_metadata={
+                "series_length": body.series_length,
+                "draft_mode": body.draft_mode,
+            }
+        )
+        _session_loggers[session_id] = logger
 
     is_our_turn = draft_state.next_team == body.coaching_side
 
@@ -325,6 +347,10 @@ async def complete_game(request: Request, session_id: str, body: CompleteGameReq
                     "team": "red",
                     "game": session.current_game,
                 }
+
+        # Save diagnostic logs for this game
+        if session_id in _session_loggers:
+            _session_loggers[session_id].save(suffix=f"_g{session.current_game}")
 
         return {
             "series_status": {
@@ -523,6 +549,10 @@ async def list_teams(request: Request, limit: int = 50):
 async def end_session(session_id: str):
     """End session early."""
     with _sessions_lock:
+        # Save diagnostic logs before ending
+        if session_id in _session_loggers:
+            _session_loggers[session_id].save(suffix="_ended")
+            _session_loggers.pop(session_id, None)
         if session_id in _sessions:
             del _sessions[session_id]
             _session_locks.pop(session_id, None)
@@ -579,6 +609,24 @@ def _build_response(
     """Build response after an action, optionally including computed data."""
     draft_state = session.draft_state
     is_our_turn = draft_state.next_team == session.coaching_side
+    action_count = len(draft_state.actions)
+
+    # Get logger for this session
+    logger = _session_loggers.get(session.session_id)
+
+    # Log the action that just occurred
+    if draft_state.actions and logger:
+        last_action = draft_state.actions[-1]
+        # We'll log actual action with empty recommendations for now
+        # Real recommendations are logged below when generated
+        logger.log_draft_state(
+            action_count=action_count,
+            phase=draft_state.current_phase.value,
+            blue_picks=draft_state.blue_picks,
+            red_picks=draft_state.red_picks,
+            blue_bans=draft_state.blue_bans,
+            red_bans=draft_state.red_bans,
+        )
 
     response = {
         "action": _serialize_action(draft_state.actions[-1]) if draft_state.actions else None,
@@ -596,6 +644,9 @@ def _build_response(
         our_picks = draft_state.blue_picks if session.coaching_side == "blue" else draft_state.red_picks
         enemy_picks = draft_state.red_picks if session.coaching_side == "blue" else draft_state.blue_picks
         banned = draft_state.blue_bans + draft_state.red_bans
+        team_players = [{"name": p.name, "role": p.role} for p in our_team.players]
+        enemy_players = [{"name": p.name, "role": p.role} for p in
+                         (session.red_team if session.coaching_side == "blue" else session.blue_team).players]
 
         if draft_state.next_action == "ban":
             all_unavailable = list(set(banned) | session.fearless_blocked_set)
@@ -607,14 +658,41 @@ def _build_response(
                 phase=draft_state.current_phase.value,
                 limit=5,
             )
+            # Log ban recommendations
+            if logger:
+                logger.log_ban_recommendations(
+                    action_count=action_count,
+                    phase=draft_state.current_phase.value,
+                    for_team=session.coaching_side,
+                    our_picks=our_picks,
+                    enemy_picks=enemy_picks,
+                    banned=all_unavailable,
+                    enemy_players=enemy_players,
+                    recommendations=response["recommendations"],
+                )
         else:
             response["recommendations"] = pick_engine.get_recommendations(
-                team_players=[{"name": p.name, "role": p.role} for p in our_team.players],
+                team_players=team_players,
                 our_picks=our_picks,
                 enemy_picks=enemy_picks,
                 banned=list(set(banned) | session.fearless_blocked_set),
                 limit=5,
             )
+            # Log pick recommendations
+            if logger:
+                logger.log_pick_recommendations(
+                    action_count=action_count,
+                    phase=draft_state.current_phase.value,
+                    for_team=session.coaching_side,
+                    our_picks=our_picks,
+                    enemy_picks=enemy_picks,
+                    banned=banned,
+                    team_players=team_players,
+                    candidates_count=len(response["recommendations"]),
+                    filled_roles=[],  # Would need pick_engine internals
+                    unfilled_roles=[],
+                    recommendations=response["recommendations"],
+                )
 
     # Optionally include evaluation (to avoid extra round trip)
     if include_evaluation:

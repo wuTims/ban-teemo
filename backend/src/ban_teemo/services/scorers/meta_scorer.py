@@ -3,24 +3,11 @@ import json
 from pathlib import Path
 from typing import Optional
 
+from ban_teemo.utils.role_normalizer import normalize_role
+
 
 class MetaScorer:
     """Scores champions based on current meta strength."""
-
-    # Normalize role names to handle variations
-    ROLE_ALIASES = {
-        "TOP": "TOP",
-        "JUNGLE": "JNG",
-        "JNG": "JNG",
-        "JG": "JNG",
-        "MID": "MID",
-        "MIDDLE": "MID",
-        "ADC": "ADC",
-        "BOT": "ADC",
-        "BOTTOM": "ADC",
-        "SUP": "SUP",
-        "SUPPORT": "SUP",
-    }
 
     def __init__(self, knowledge_dir: Optional[Path] = None):
         if knowledge_dir is None:
@@ -63,8 +50,8 @@ class MetaScorer:
         """Get top meta champions sorted by meta_score.
 
         Args:
-            role: Optional role filter (TOP, JNG, MID, ADC, SUP).
-                  Supports aliases like JUNGLE, SUPPORT, BOT.
+            role: Optional role filter (top, jungle, mid, bot, support).
+                  Supports aliases like JNG, ADC, SUP, JUNGLE, SUPPORT, BOT.
             limit: Maximum number of champions to return.
 
         Returns:
@@ -72,12 +59,15 @@ class MetaScorer:
         """
         # Filter by role if specified
         if role:
-            normalized_role = self.ROLE_ALIASES.get(role.upper(), role.upper())
-            filtered_champs = [
-                (name, stats)
-                for name, stats in self._meta_stats.items()
-                if self._champion_plays_role(name, normalized_role)
-            ]
+            normalized_role = normalize_role(role)
+            if normalized_role:
+                filtered_champs = [
+                    (name, stats)
+                    for name, stats in self._meta_stats.items()
+                    if self._champion_plays_role(name, normalized_role)
+                ]
+            else:
+                filtered_champs = list(self._meta_stats.items())
         else:
             filtered_champs = list(self._meta_stats.items())
 
@@ -88,19 +78,23 @@ class MetaScorer:
         )
         return [name for name, _ in ranked[:limit]]
 
-    # Map from normalized roles to all possible data formats
+    # Map from canonical lowercase roles to all possible data file formats
     ROLE_DATA_FORMATS = {
-        "TOP": ["TOP"],
-        "JNG": ["JNG", "JUNGLE"],
-        "MID": ["MID", "MIDDLE"],
-        "ADC": ["ADC", "BOT", "BOTTOM"],
-        "SUP": ["SUP", "SUPPORT"],
+        "top": ["TOP"],
+        "jungle": ["JNG", "JUNGLE"],
+        "mid": ["MID", "MIDDLE"],
+        "bot": ["ADC", "BOT", "BOTTOM"],
+        "support": ["SUP", "SUPPORT"],
     }
 
     def _champion_plays_role(self, champion_name: str, role: str) -> bool:
         """Check if a champion plays a specific role.
 
         Uses canonical_role as primary, with all_time_distribution as fallback.
+
+        Args:
+            champion_name: The champion name
+            role: Canonical role (top, jungle, mid, bot, support)
         """
         if champion_name not in self._champion_roles:
             # No role data - include by default
@@ -108,8 +102,8 @@ class MetaScorer:
 
         champ_data = self._champion_roles[champion_name]
 
-        # Get all possible formats for this role
-        role_formats = self.ROLE_DATA_FORMATS.get(role, [role])
+        # Get all possible data file formats for this canonical role
+        role_formats = self.ROLE_DATA_FORMATS.get(role, [role.upper()])
 
         # Check canonical role first
         canonical = champ_data.get("canonical_role") or ""
