@@ -182,7 +182,9 @@ const GRID_TO_RIOT_KEY: Record<string, string> = {
   "Yasuo": "Yasuo",
   "Yone": "Yone",
   "Yorick": "Yorick",
+  "Yunara": "Yunara",
   "Yuumi": "Yuumi",
+  "Zaahen": "Zaahen",
   "Zac": "Zac",
   "Zed": "Zed",
   "Zeri": "Zeri",
@@ -288,9 +290,28 @@ export function getAllChampionNames(): string[] {
   return Object.keys(GRID_TO_RIOT_KEY);
 }
 
+// Global cache for preloaded image blob URLs
+// Using blob URLs ensures instant rendering without network requests
+const imageCache = new Map<string, string>();
+
 /**
- * Preload all champion icons into browser cache.
- * This ensures icons appear instantly during draft actions.
+ * Get cached blob URL for a champion icon, or fall back to CDN URL.
+ */
+export function getCachedChampionIconUrl(championName: string): string {
+  const cdnUrl = getChampionIconUrl(championName);
+  return imageCache.get(cdnUrl) || cdnUrl;
+}
+
+/**
+ * Check if all champion icons have been preloaded.
+ */
+export function areIconsPreloaded(): boolean {
+  return imageCache.size > 0;
+}
+
+/**
+ * Preload all champion icons and store as blob URLs for instant rendering.
+ * Blob URLs bypass the browser's image decode step since data is already in memory.
  *
  * @param onProgress - Callback for progress updates
  * @returns Promise that resolves when all icons are loaded or timeout is reached
@@ -302,27 +323,29 @@ export async function preloadChampionIcons(
   const total = championNames.length;
   let loaded = 0;
 
-  const loadPromises = championNames.map((name) => {
-    return new Promise<void>((resolve) => {
+  const loadPromises = championNames.map(async (name) => {
+    const cdnUrl = getChampionIconUrl(name);
+    try {
+      const response = await fetch(cdnUrl);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      imageCache.set(cdnUrl, blobUrl);
+
+      // Pre-decode the blob URL to ensure it's ready for instant painting
       const img = new Image();
-      img.onload = () => {
-        loaded++;
-        onProgress?.(loaded, total);
-        resolve();
-      };
-      img.onerror = () => {
-        loaded++;
-        onProgress?.(loaded, total);
-        resolve(); // Don't fail on individual image errors
-      };
-      img.src = getChampionIconUrl(name);
-    });
+      img.src = blobUrl;
+      await img.decode().catch(() => {});
+    } catch {
+      // Fall back to CDN URL on error
+    }
+    loaded++;
+    onProgress?.(loaded, total);
   });
 
   // Race against timeout to prevent blocking forever
   await Promise.race([
     Promise.all(loadPromises),
-    new Promise((resolve) => setTimeout(resolve, 10000)),
+    new Promise((resolve) => setTimeout(resolve, 15000)),
   ]);
 }
 

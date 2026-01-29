@@ -1,6 +1,7 @@
 // deepdraft/src/components/draft/BanTrack.tsx
 import { ChampionPortrait } from "../shared";
 import type { Team } from "../../types";
+import { CHAMPION_ICON_SIZE_CLASS } from "../shared";
 
 interface BanTrackProps {
   blueBans: string[];
@@ -29,7 +30,7 @@ export function BanTrack({
         championName={ban}
         state={ban ? "banned" : isCurrent ? "picking" : "empty"}
         team={team}
-        size="sm"
+        className={`${CHAMPION_ICON_SIZE_CLASS} shrink-0`}
       />
     );
   };

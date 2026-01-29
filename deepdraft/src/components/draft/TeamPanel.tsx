@@ -80,8 +80,8 @@ export function TeamPanel({
         </div>
       </div>
 
-      {/* Pick Slots (role display temporarily disabled pending data refetch) */}
-      <div className="space-y-3">
+      {/* Pick Slots - horizontal on mobile, vertical on desktop */}
+      <div className="flex gap-2 lg:flex-col lg:gap-0 lg:space-y-3">
         {ROLE_ORDER.map((role, index) => {
           const pick = picks[index] || null;
           const isPicking = currentPickIndex === index;
@@ -90,27 +90,28 @@ export function TeamPanel({
             <div
               key={role}
               className={`
-                flex items-center gap-3 p-2 rounded
+                flex flex-col items-center gap-1 p-1
+                lg:flex-row lg:items-center lg:gap-3 lg:p-2 rounded
                 ${isPicking ? "bg-lol-hover" : ""}
                 transition-colors duration-200
               `}
             >
-              {/* Pick slot number */}
-              <span className="w-10 text-xs font-medium text-text-tertiary">
+              {/* Pick slot number - hidden on mobile */}
+              <span className="hidden lg:block w-10 text-xs font-medium text-text-tertiary">
                 Pick {index + 1}
               </span>
 
-              {/* Champion portrait */}
+              {/* Champion portrait - smaller on mobile */}
               <ChampionPortrait
                 championName={pick}
                 state={pick ? "picked" : isPicking ? "picking" : "empty"}
                 team={side}
-                size="sm"
+                className="w-10 h-10 lg:w-[66px] lg:h-[66px] 2xl:w-[88px] 2xl:h-[88px] shrink-0"
               />
 
-              {/* Champion name if picked */}
+              {/* Champion name - hidden on mobile, shown on desktop */}
               {pick && (
-                <span className="flex-1 text-sm text-gold-bright truncate">
+                <span className="hidden lg:block flex-1 text-sm text-gold-bright truncate">
                   {pick}
                 </span>
               )}

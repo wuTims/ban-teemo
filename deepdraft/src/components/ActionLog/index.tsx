@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { ChampionPortrait } from "../shared/ChampionPortrait";
+import { CHAMPION_ICON_SIZE_CLASS, ChampionPortrait } from "../shared";
 import type { DraftAction, TeamContext } from "../../types";
 
 interface ActionLogProps {
@@ -70,7 +70,7 @@ function ActionEntry({ action, teamName }: ActionEntryProps) {
         championName={action.champion_name}
         state={isBan ? "banned" : "picked"}
         team={action.team_side}
-        size="sm"
+        className={`${CHAMPION_ICON_SIZE_CLASS} shrink-0`}
       />
       <div className="flex-1 min-w-0">
         <p className={`text-sm font-medium truncate ${teamColorClass}`}>

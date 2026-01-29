@@ -69,3 +69,14 @@ body {
   @apply min-h-screen bg-lol-darkest text-text-primary;
   font-family: Inter, system-ui, sans-serif;
 }
+
+@layer utilities {
+  /* Hide scrollbars but keep scrolling enabled (useful to avoid layout jump). */
+  .scrollbar-none {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge legacy */
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+  }
+}

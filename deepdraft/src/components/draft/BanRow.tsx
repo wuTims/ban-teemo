@@ -1,5 +1,5 @@
 // deepdraft/src/components/draft/BanRow.tsx
-import { ChampionPortrait } from "../shared/ChampionPortrait";
+import { CHAMPION_ICON_SIZE_CLASS, ChampionPortrait } from "../shared";
 
 interface BanRowProps {
   blueBans: string[];
@@ -10,18 +10,23 @@ export function BanRow({ blueBans, redBans }: BanRowProps) {
   const renderBans = (bans: string[], side: "blue" | "red") => (
     <div className="flex gap-2">
       {[0, 1, 2, 3, 4].map((i) => (
-        <div
-          key={i}
-          className={`w-10 h-10 rounded border ${
-            side === "blue" ? "border-blue-team/30" : "border-red-team/30"
-          } bg-lol-light flex items-center justify-center overflow-hidden`}
-        >
-          {bans[i] ? (
-            <ChampionPortrait championName={bans[i]} size="sm" state="banned" />
-          ) : (
+        bans[i] ? (
+          <ChampionPortrait
+            key={i}
+            championName={bans[i]}
+            state="banned"
+            className={`${CHAMPION_ICON_SIZE_CLASS} shrink-0`}
+          />
+        ) : (
+          <div
+            key={i}
+            className={`${CHAMPION_ICON_SIZE_CLASS} shrink-0 rounded-sm overflow-hidden border-2 ${
+              side === "blue" ? "border-blue-team/30" : "border-red-team/30"
+            } bg-lol-light flex items-center justify-center`}
+          >
             <span className="text-text-tertiary text-xs">-</span>
-          )}
-        </div>
+          </div>
+        )
       ))}
     </div>
   );
