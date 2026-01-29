@@ -56,14 +56,19 @@ class ArchetypeService:
         total = sum(aggregate.values())
         if total > 0:
             aggregate = {k: v / total for k, v in aggregate.items()}
-
-        sorted_archetypes = sorted(aggregate.items(), key=lambda x: -x[1])
-        primary = sorted_archetypes[0][0] if sorted_archetypes else None
-        primary_score = sorted_archetypes[0][1] if sorted_archetypes else 0
+            sorted_archetypes = sorted(aggregate.items(), key=lambda x: -x[1])
+            primary = sorted_archetypes[0][0]
+            secondary = sorted_archetypes[1][0] if len(sorted_archetypes) > 1 else None
+            primary_score = sorted_archetypes[0][1]
+        else:
+            # No archetype data for any champion - return None primary
+            primary = None
+            secondary = None
+            primary_score = 0.0
 
         return {
             "primary": primary,
-            "secondary": sorted_archetypes[1][0] if len(sorted_archetypes) > 1 else None,
+            "secondary": secondary,
             "scores": aggregate,
             "alignment": round(primary_score, 3)  # How focused the comp is
         }

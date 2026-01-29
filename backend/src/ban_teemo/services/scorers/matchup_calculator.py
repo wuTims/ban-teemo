@@ -7,6 +7,15 @@ from typing import Optional
 class MatchupCalculator:
     """Calculates matchup scores between champions."""
 
+    # Translate canonical app roles to data file roles
+    ROLE_TO_DATA = {
+        "JNG": "JUNGLE",
+        "TOP": "TOP",
+        "MID": "MID",
+        "ADC": "ADC",
+        "SUP": "SUP",
+    }
+
     def __init__(self, knowledge_dir: Optional[Path] = None):
         if knowledge_dir is None:
             knowledge_dir = Path(__file__).parents[5] / "knowledge"
@@ -24,12 +33,13 @@ class MatchupCalculator:
 
     def get_lane_matchup(self, our_champion: str, enemy_champion: str, role: str) -> dict:
         """Get lane-specific matchup score."""
-        role_upper = role.upper()
+        # Translate canonical role (JNG) to data role (JUNGLE)
+        data_role = self.ROLE_TO_DATA.get(role.upper(), role.upper())
 
         # Direct lookup
         if our_champion in self._counters:
             vs_lane = self._counters[our_champion].get("vs_lane", {})
-            role_data = vs_lane.get(role_upper, {})
+            role_data = vs_lane.get(data_role, {})
             if enemy_champion in role_data:
                 matchup = role_data[enemy_champion]
                 return {
@@ -42,7 +52,7 @@ class MatchupCalculator:
         # Reverse lookup (invert)
         if enemy_champion in self._counters:
             vs_lane = self._counters[enemy_champion].get("vs_lane", {})
-            role_data = vs_lane.get(role_upper, {})
+            role_data = vs_lane.get(data_role, {})
             if our_champion in role_data:
                 matchup = role_data[our_champion]
                 return {
