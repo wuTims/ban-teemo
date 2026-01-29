@@ -1,4 +1,4 @@
-.PHONY: install install-backend install-frontend dev dev-backend dev-frontend seed test lint clean
+.PHONY: install install-backend install-frontend dev dev-backend dev-frontend setup-data download-data build-db test lint clean
 
 # Install all dependencies
 install: install-backend install-frontend
@@ -19,9 +19,28 @@ dev-backend:
 dev-frontend:
 	cd deepdraft && npm run dev
 
-# Database seeding
-seed:
-	cd backend && uv run python ../data/scripts/seed_database.py
+# =============================================================================
+# Database Setup (run these for first-time setup)
+# =============================================================================
+
+# Full data setup: download CSVs from GitHub release + build DuckDB
+setup-data: download-data build-db
+	@echo ""
+	@echo "✓ Data setup complete! You can now run 'make dev-backend'"
+
+# Download CSV data from GitHub releases (requires gh CLI)
+download-data:
+	@echo "==> Downloading data from GitHub releases..."
+	@if ! command -v gh >/dev/null 2>&1; then \
+		echo "Error: GitHub CLI (gh) is required. Install from https://cli.github.com/"; \
+		exit 1; \
+	fi
+	./scripts/download-data.sh
+
+# Build DuckDB database from CSV files
+build-db:
+	@echo "==> Building DuckDB database..."
+	cd backend && uv run python scripts/build_duckdb.py
 
 # Testing
 test: test-backend test-frontend
@@ -55,16 +74,25 @@ clean:
 	rm -rf backend/.venv
 	rm -rf deepdraft/node_modules
 	rm -rf deepdraft/dist
-	rm -f data/draft_assistant.db
 
 # Help
 help:
 	@echo "Available commands:"
-	@echo "  make install        - Install all dependencies"
-	@echo "  make dev-backend    - Start FastAPI dev server (port 8000)"
-	@echo "  make dev-frontend   - Start Vite dev server (port 5173)"
-	@echo "  make seed           - Seed the SQLite database"
-	@echo "  make test           - Run all tests"
-	@echo "  make lint           - Run linters"
-	@echo "  make build          - Build for production"
-	@echo "  make clean          - Remove build artifacts"
+	@echo ""
+	@echo "  First-time setup:"
+	@echo "    make install      - Install all dependencies (Python + Node)"
+	@echo "    make setup-data   - Download data + build DuckDB (requires gh CLI)"
+	@echo ""
+	@echo "  Development:"
+	@echo "    make dev-backend  - Start FastAPI dev server (port 8000)"
+	@echo "    make dev-frontend - Start Vite dev server (port 5173)"
+	@echo ""
+	@echo "  Individual data commands:"
+	@echo "    make download-data - Download CSVs from GitHub releases"
+	@echo "    make build-db      - Build DuckDB from CSV files"
+	@echo ""
+	@echo "  Other:"
+	@echo "    make test         - Run all tests"
+	@echo "    make lint         - Run linters"
+	@echo "    make build        - Build for production"
+	@echo "    make clean        - Remove build artifacts"

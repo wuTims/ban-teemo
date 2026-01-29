@@ -68,40 +68,32 @@ Since live matches can't be guaranteed during judging, DeepDraft uses a **histor
 
 - Python 3.12+ with [uv](https://docs.astral.sh/uv/)
 - Node.js 18+ with npm
-- GitHub CLI (`gh`) for data download
-- Make (optional)
+- GitHub CLI (`gh`) for data download - [install here](https://cli.github.com/)
+- Make (optional but recommended)
 
-### Installation
+### First-Time Setup
 
 ```bash
-# Clone the repository
+# 1. Clone the repository
 git clone https://github.com/your-org/ban-teemo.git
 cd ban-teemo
 
-# Install all dependencies
+# 2. Install dependencies
 make install
 
-# Or manually:
-cd backend && uv sync
-cd ../deepdraft && npm install
+# 3. Download data and build database (one command)
+make setup-data
 ```
 
-### Download Match Data
+That's it! The `setup-data` command:
+1. Downloads pre-built CSV data from GitHub releases (~50MB)
+2. Builds a DuckDB database for fast queries
 
-The pro match data is stored in GitHub releases to keep the repo lightweight:
-
+**Manual setup** (if you prefer not to use Make):
 ```bash
-# Download and extract data (requires gh CLI)
+cd backend && uv sync
+cd ../deepdraft && npm install
 ./scripts/download-data.sh
-
-# This creates outputs/full_2024_2025_v2/csv/ with:
-#   - 68,529 draft actions
-#   - 3,436 games
-#   - 1,482 series
-#   - 445 players
-#   - 57 teams
-
-# Build the DuckDB database (required for backend)
 cd backend && uv run python scripts/build_duckdb.py
 ```
 
@@ -116,6 +108,14 @@ make dev-frontend
 ```
 
 Open [http://localhost:5173](http://localhost:5173) to view the app.
+
+### Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| `gh: command not found` | Install GitHub CLI: https://cli.github.com/ |
+| `FileNotFoundError: draft_data.duckdb` | Run `make build-db` to create the database |
+| `No CSV files found` | Run `make download-data` first |
 
 ## Project Structure
 

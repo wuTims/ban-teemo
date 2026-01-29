@@ -22,8 +22,8 @@ class Settings(BaseSettings):
     # CORS - comma-separated origins
     cors_origins: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
 
-    # Database
-    database_url: str = "sqlite+aiosqlite:///../data/draft_assistant.db"
+    # Data path (directory containing draft_data.duckdb)
+    data_path: str = "outputs/full_2024_2025_v2/csv"
 
     # LLM Providers
     groq_api_key: str = ""
