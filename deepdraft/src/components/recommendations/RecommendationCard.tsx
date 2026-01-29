@@ -1,5 +1,5 @@
 // deepdraft/src/components/recommendations/RecommendationCard.tsx
-import { ChampionPortrait } from "../shared";
+import { ChampionPortrait, RECOMMENDATION_ICON_SIZE_CLASS } from "../shared";
 import type { PickRecommendation, RecommendationFlag } from "../../types";
 
 interface RecommendationCardProps {
@@ -72,7 +72,7 @@ export function RecommendationCard({
           championName={champion_name}
           state="picked"
           team="blue"
-          size="lg"
+          className={`${RECOMMENDATION_ICON_SIZE_CLASS} shrink-0`}
         />
         <div className="flex-1">
           <div className="flex items-center gap-2">

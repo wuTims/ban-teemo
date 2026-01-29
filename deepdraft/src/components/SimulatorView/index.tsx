@@ -2,7 +2,9 @@
 import { useMemo } from "react";
 import { PhaseIndicator, TeamPanel, BanRow } from "../draft";
 import { ChampionPool } from "../ChampionPool";
+import { RECOMMENDATION_ICON_SIZE_CLASS } from "../shared";
 import { ChampionPortrait } from "../shared/ChampionPortrait";
+import { getAllChampionNames } from "../../utils/dataDragon";
 import type {
   TeamContext,
   DraftState,
@@ -13,29 +15,8 @@ import type {
   DraftMode,
 } from "../../types";
 
-// Static champion list - could be fetched from API
-const ALL_CHAMPIONS = [
-  "Aatrox", "Ahri", "Akali", "Akshan", "Alistar", "Amumu", "Anivia", "Annie", "Aphelios",
-  "Ashe", "Aurelion Sol", "Aurora", "Azir", "Bard", "Bel'Veth", "Blitzcrank", "Brand",
-  "Braum", "Briar", "Caitlyn", "Camille", "Cassiopeia", "Cho'Gath", "Corki", "Darius",
-  "Diana", "Dr. Mundo", "Draven", "Ekko", "Elise", "Evelynn", "Ezreal", "Fiddlesticks",
-  "Fiora", "Fizz", "Galio", "Gangplank", "Garen", "Gnar", "Gragas", "Graves", "Gwen",
-  "Hecarim", "Heimerdinger", "Illaoi", "Irelia", "Ivern", "Janna", "Jarvan IV", "Jax",
-  "Jayce", "Jhin", "Jinx", "K'Sante", "Kai'Sa", "Kalista", "Karma", "Karthus", "Kassadin",
-  "Katarina", "Kayle", "Kayn", "Kennen", "Kha'Zix", "Kindred", "Kled", "Kog'Maw", "LeBlanc",
-  "Lee Sin", "Leona", "Lillia", "Lissandra", "Lucian", "Lulu", "Lux", "Malphite", "Malzahar",
-  "Maokai", "Master Yi", "Milio", "Miss Fortune", "Mordekaiser", "Morgana", "Naafiri",
-  "Nami", "Nasus", "Nautilus", "Neeko", "Nidalee", "Nilah", "Nocturne", "Nunu", "Olaf",
-  "Orianna", "Ornn", "Pantheon", "Poppy", "Pyke", "Qiyana", "Quinn", "Rakan", "Rammus",
-  "Rek'Sai", "Rell", "Renata Glasc", "Renekton", "Rengar", "Riven", "Rumble", "Ryze",
-  "Samira", "Sejuani", "Senna", "Seraphine", "Sett", "Shaco", "Shen", "Shyvana", "Singed",
-  "Sion", "Sivir", "Skarner", "Smolder", "Sona", "Soraka", "Swain", "Sylas", "Syndra",
-  "Tahm Kench", "Taliyah", "Talon", "Taric", "Teemo", "Thresh", "Tristana", "Trundle",
-  "Tryndamere", "Twisted Fate", "Twitch", "Udyr", "Urgot", "Varus", "Vayne", "Veigar",
-  "Vel'Koz", "Vex", "Vi", "Viego", "Viktor", "Vladimir", "Volibear", "Warwick", "Wukong",
-  "Xayah", "Xerath", "Xin Zhao", "Yasuo", "Yone", "Yorick", "Yuumi", "Zac", "Zed", "Zeri",
-  "Ziggs", "Zilean", "Zoe", "Zyra"
-];
+// Champion list derived from Data Dragon mapping
+const ALL_CHAMPIONS = getAllChampionNames();
 
 // Type guard to differentiate recommendation types
 function isPickRecommendation(rec: SimulatorRecommendation): rec is SimulatorPickRecommendation {
@@ -44,6 +25,28 @@ function isPickRecommendation(rec: SimulatorRecommendation): rec is SimulatorPic
 
 function isBanRecommendation(rec: SimulatorRecommendation): rec is SimulatorBanRecommendation {
   return "priority" in rec && "target_player" in rec;
+}
+
+// Helper to get top 3 scoring factors with labels
+function getTopFactors(components: Record<string, number>): Array<{ name: string; value: number; label: string }> {
+  const factorLabels: Record<string, string> = {
+    meta: "Meta",
+    proficiency: "Proficiency",
+    matchup: "Matchup",
+    counter: "Counter",
+    synergy: "Synergy",
+  };
+
+  return Object.entries(components)
+    .map(([name, value]) => ({ name, value, label: factorLabels[name] || name }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 3);
+}
+
+// Helper to find player for a role
+function getPlayerForRole(team: TeamContext, role: string): string | null {
+  const player = team.players.find(p => p.role === role);
+  return player?.name ?? null;
 }
 
 interface SimulatorViewProps {
@@ -65,26 +68,40 @@ function RecommendationCard({
   recommendation,
   isTopPick,
   onClick,
+  ourTeam,
 }: {
   recommendation: SimulatorRecommendation;
   isTopPick?: boolean;
   onClick: (champion: string) => void;
+  ourTeam: TeamContext;
 }) {
   const championName = recommendation.champion_name;
   const reasons = recommendation.reasons;
 
-  // Determine score/priority for display
+  // Determine score/priority and player info
   let displayScore: number;
   let displayLabel: string;
-  let targetInfo: string | null = null;
+  let playerInfo: string | null = null;
+  let topFactors: Array<{ name: string; value: number; label: string }> = [];
 
   if (isPickRecommendation(recommendation)) {
     displayScore = recommendation.score;
     displayLabel = `${Math.round(displayScore * 100)}%`;
+
+    // Get player for suggested role
+    const playerName = getPlayerForRole(ourTeam, recommendation.suggested_role);
+    playerInfo = playerName
+      ? `For: ${playerName} (${recommendation.suggested_role})`
+      : `For: ${recommendation.suggested_role}`;
+
+    // Get top 3 factors
+    topFactors = getTopFactors(recommendation.components);
   } else if (isBanRecommendation(recommendation)) {
     displayScore = recommendation.priority;
     displayLabel = `${Math.round(displayScore * 100)}%`;
-    targetInfo = recommendation.target_player;
+    playerInfo = recommendation.target_player
+      ? `Target: ${recommendation.target_player}`
+      : null;
   } else {
     displayScore = 0.5;
     displayLabel = "N/A";
@@ -108,33 +125,59 @@ function RecommendationCard({
         text-left w-full
       `}
     >
-      <div className="flex items-center gap-3">
+      {/* Header with champion and player info */}
+      <div className="flex items-center gap-3 mb-2">
         <ChampionPortrait
           championName={championName}
           state="picked"
-          size="md"
+          className={`${RECOMMENDATION_ICON_SIZE_CLASS} shrink-0`}
         />
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between gap-2">
             <h3 className="font-semibold text-sm uppercase text-gold-bright truncate">
               {championName}
             </h3>
-            <span className={`text-sm font-bold ${scoreColor}`}>
+            <span className={`text-sm font-bold ${scoreColor} shrink-0`}>
               {displayLabel}
             </span>
           </div>
-          {targetInfo && (
-            <div className="text-xs text-text-tertiary">
-              Target: {targetInfo}
-            </div>
-          )}
-          {reasons[0] && (
-            <div className="text-xs text-text-secondary truncate mt-1">
-              {reasons[0]}
+          {playerInfo && (
+            <div className="text-xs text-magic mt-0.5">
+              {playerInfo}
             </div>
           )}
         </div>
       </div>
+
+      {/* Top Factors (only for pick recommendations) */}
+      {topFactors.length > 0 && (
+        <div className="border-t border-gold-dim/30 pt-2 mb-2">
+          <div className="space-y-0.5">
+            {topFactors.map((factor) => (
+              <div key={factor.name} className="flex items-center gap-2 text-xs">
+                <span className="text-gold-dim">▸</span>
+                <span className="text-text-secondary">{factor.label}:</span>
+                <span className={`font-mono ${
+                  factor.value >= 0.7 ? "text-success" :
+                  factor.value >= 0.5 ? "text-warning" : "text-danger"
+                }`}>
+                  {factor.value.toFixed(2)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Reasons */}
+      {reasons.length > 0 && (
+        <div className="text-xs text-text-secondary">
+          <div className="flex items-start gap-1">
+            <span className="text-gold-dim">•</span>
+            <span className="truncate">{reasons[0]}</span>
+          </div>
+        </div>
+      )}
     </button>
   );
 }
@@ -194,10 +237,14 @@ export function SimulatorView({
         )}
       </div>
 
-      {/* Main 3-Column Layout */}
-      <div className="grid grid-cols-[220px_1fr_220px] gap-4 min-h-[500px]">
+      {/* Main Layout - Stacked on mobile, 3-column on desktop */}
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[220px_1fr_220px] lg:items-start">
         {/* Blue Team */}
-        <div className={coachingSide === "blue" ? "ring-2 ring-magic rounded-lg" : ""}>
+        <div
+          className={`flex flex-col h-full ${
+            coachingSide === "blue" ? "ring-2 ring-magic rounded-lg" : ""
+          }`}
+        >
           <TeamPanel
             team={blueTeam}
             picks={draftState.blue_picks}
@@ -221,7 +268,11 @@ export function SimulatorView({
         />
 
         {/* Red Team */}
-        <div className={coachingSide === "red" ? "ring-2 ring-magic rounded-lg" : ""}>
+        <div
+          className={`flex flex-col h-full ${
+            coachingSide === "red" ? "ring-2 ring-magic rounded-lg" : ""
+          }`}
+        >
           <TeamPanel
             team={redTeam}
             picks={draftState.red_picks}
@@ -260,6 +311,7 @@ export function SimulatorView({
                 recommendation={rec}
                 isTopPick={i === 0}
                 onClick={onChampionSelect}
+                ourTeam={coachingSide === "blue" ? blueTeam : redTeam}
               />
             ))}
           </div>
