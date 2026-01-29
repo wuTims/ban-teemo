@@ -154,3 +154,137 @@ export interface StartReplayResponse {
   patch: string | null;
   websocket_url: string;
 }
+
+// === Simulator Types ===
+
+export type DraftMode = "normal" | "fearless";
+
+export interface SimulatorConfig {
+  blueTeamId: string;
+  redTeamId: string;
+  coachingSide: Team;
+  seriesLength: 1 | 3 | 5;
+  draftMode: DraftMode;
+}
+
+export interface SeriesStatus {
+  blue_wins: number;
+  red_wins: number;
+  games_played?: number; // Optional: not always present in GET session
+  series_complete: boolean;
+}
+
+// Simulator-specific recommendation types (different from replay)
+export interface SimulatorBanRecommendation {
+  champion_name: string;
+  priority: number;
+  target_player: string | null;
+  target_role: string | null;
+  reasons: string[];
+}
+
+export interface ScoreComponents {
+  meta: number;
+  proficiency: number;
+  matchup: number;
+  counter: number;
+  synergy: number;
+}
+
+export interface SimulatorPickRecommendation {
+  champion_name: string;
+  score: number;
+  base_score: number;
+  synergy_multiplier: number;
+  confidence: number; // 0.65-1.0 numeric confidence
+  suggested_role: string;
+  components: ScoreComponents;
+  flag: RecommendationFlag;
+  reasons: string[];
+}
+
+// Union type: backend returns ban recs OR pick recs depending on phase
+export type SimulatorRecommendation = SimulatorBanRecommendation | SimulatorPickRecommendation;
+
+export interface SynergyPair {
+  champions: [string, string];
+  score: number;
+}
+
+export interface TeamDraftEvaluation {
+  archetype: string | null;
+  synergy_score: number;
+  composition_score: number;
+  strengths: string[];
+  weaknesses: string[];
+  synergy_pairs: SynergyPair[];
+}
+
+export interface TeamEvaluation {
+  our_evaluation: TeamDraftEvaluation;
+  enemy_evaluation: TeamDraftEvaluation;
+  matchup_advantage: number;
+  matchup_description: string;
+}
+
+export interface SimulatorStartResponse {
+  session_id: string;
+  game_number: number;
+  blue_team: TeamContext;
+  red_team: TeamContext;
+  draft_state: DraftState;
+  is_our_turn: boolean;
+}
+
+export interface SimulatorActionResponse {
+  action: DraftAction | null;
+  draft_state: DraftState;
+  is_our_turn: boolean;
+  source?: "reference_game" | "fallback_game" | "weighted_random";
+  // Optional: included when ?include_recommendations=true
+  recommendations?: SimulatorRecommendation[];
+  // Optional: included when ?include_evaluation=true
+  evaluation?: TeamEvaluation;
+}
+
+// Fearless blocked entry with team and game metadata for tooltips
+export interface FearlessBlockedEntry {
+  team: "blue" | "red";
+  game: number;
+}
+
+// Map of champion name -> blocking metadata
+export type FearlessBlocked = Record<string, FearlessBlockedEntry>;
+
+export interface CompleteGameResponse {
+  series_status: SeriesStatus;
+  fearless_blocked: FearlessBlocked;
+  next_game_ready: boolean;
+}
+
+export interface NextGameResponse {
+  game_number: number;
+  draft_state: DraftState;
+  fearless_blocked: FearlessBlocked;
+}
+
+export interface TeamListItem {
+  id: string;
+  name: string;
+}
+
+// === Stage 5: New Query Response Types ===
+
+export interface RecommendationsResponse {
+  for_action_count: number;
+  phase: DraftPhase;
+  recommendations: SimulatorRecommendation[];
+}
+
+export interface EvaluationResponse {
+  for_action_count: number;
+  our_evaluation: TeamDraftEvaluation | null;
+  enemy_evaluation: TeamDraftEvaluation | null;
+  matchup_advantage: number;
+  matchup_description: string;
+}
