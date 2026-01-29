@@ -269,35 +269,48 @@ class DraftRepository:
         """)
 
     def get_team_roster(self, team_id: str) -> list[dict]:
-        """Get current roster for a team based on most recent game.
+        """Get current roster for a team based on most recent game with complete role data.
 
         Returns list of dicts with: player_id, player_name, role
         Ordered by role (TOP, JNG, MID, ADC, SUP)
         """
-        # Get the most recent game for the team
-        recent_games = self.get_team_games(team_id, limit=1)
-        if not recent_games:
-            return []
+        # Role normalization: database uses lowercase, we need uppercase with JNG/ADC/SUP
+        role_map = {
+            "top": "TOP",
+            "jungle": "JNG",
+            "mid": "MID",
+            "bot": "ADC",
+            "support": "SUP",
+        }
 
-        game_id = recent_games[0]["game_id"]
-        return self._query(f"""
-            SELECT DISTINCT
-                player_id,
-                player_name,
-                role
-            FROM player_game_stats
-            WHERE game_id = '{game_id}'
-              AND team_id = '{team_id}'
-            ORDER BY
-                CASE role
-                    WHEN 'TOP' THEN 1
-                    WHEN 'JNG' THEN 2
-                    WHEN 'MID' THEN 3
-                    WHEN 'ADC' THEN 4
-                    WHEN 'SUP' THEN 5
-                    ELSE 6
-                END
-        """)
+        # Try recent games until we find one with complete role data (no NULLs)
+        recent_games = self.get_team_games(team_id, limit=10)
+        for game in recent_games:
+            game_id = game["game_id"]
+            roster = self._query(f"""
+                SELECT DISTINCT
+                    player_id,
+                    player_name,
+                    role
+                FROM player_game_stats
+                WHERE game_id = '{game_id}'
+                  AND team_id = '{team_id}'
+                  AND role IS NOT NULL
+            """)
+
+            # Need exactly 5 players with valid roles
+            if len(roster) == 5:
+                # Normalize roles and sort
+                for player in roster:
+                    raw_role = player["role"]
+                    player["role"] = role_map.get(raw_role.lower(), raw_role.upper()) if raw_role else "SUB"
+
+                # Sort by role order
+                role_order = {"TOP": 1, "JNG": 2, "MID": 3, "ADC": 4, "SUP": 5}
+                roster.sort(key=lambda p: role_order.get(p["role"], 6))
+                return roster
+
+        return []
 
     def get_team_context(self, team_id: str, side: str) -> TeamContext | None:
         """Build TeamContext for a team with its current roster.
