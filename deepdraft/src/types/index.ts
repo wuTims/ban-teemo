@@ -288,3 +288,9 @@ export interface EvaluationResponse {
   matchup_advantage: number;
   matchup_description: string;
 }
+
+// === Replay Insights ===
+export interface InsightEntry {
+  action: DraftAction;
+  recommendations: Recommendations;
+}

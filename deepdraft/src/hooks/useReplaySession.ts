@@ -6,6 +6,7 @@ import type {
   Recommendations,
   WebSocketMessage,
   DraftAction,
+  InsightEntry,
 } from "../types";
 
 type SessionStatus = "idle" | "connecting" | "playing" | "complete" | "error";
@@ -19,6 +20,7 @@ interface ReplaySessionState {
   recommendations: Recommendations | null;
   lastAction: DraftAction | null;
   actionHistory: DraftAction[];
+  recommendationHistory: InsightEntry[];
   totalActions: number;
   patch: string | null;
   error: string | null;
@@ -37,6 +39,7 @@ export function useReplaySession() {
     recommendations: null,
     lastAction: null,
     actionHistory: [],
+    recommendationHistory: [],
     totalActions: 0,
     patch: null,
     error: null,
@@ -48,7 +51,7 @@ export function useReplaySession() {
     seriesId: string,
     gameNumber: number,
     speed: number = 1.0,
-    delaySeconds: number = 3.0,
+    delaySeconds: number = 5.0,
   ) => {
     setState(prev => ({ ...prev, status: "connecting", error: null }));
 
@@ -99,6 +102,10 @@ export function useReplaySession() {
               recommendations: msg.recommendations,
               lastAction: msg.action,
               actionHistory: [...prev.actionHistory, msg.action],
+              recommendationHistory: [...prev.recommendationHistory, {
+                action: msg.action,
+                recommendations: msg.recommendations,
+              }],
             }));
             break;
 
@@ -147,6 +154,7 @@ export function useReplaySession() {
       recommendations: null,
       lastAction: null,
       actionHistory: [],
+      recommendationHistory: [],
       totalActions: 0,
       patch: null,
       error: null,

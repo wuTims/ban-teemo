@@ -104,8 +104,8 @@ export default function App() {
             </div>
 
             <RecommendationPanel
-              recommendations={replay.recommendations}
-              nextAction={replay.draftState?.next_action ?? null}
+              recommendationHistory={replay.recommendationHistory}
+              isLive={replay.status === "playing"}
             />
           </>
         ) : (
