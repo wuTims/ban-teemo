@@ -1279,6 +1279,141 @@ def build_champion_role_history(current_patch: str) -> dict:
     return result
 
 
+def build_frontend_champion_roles(current_patch: str) -> dict:
+    """Build frontend championRoles.json from champion_role_history.json.
+
+    This generates the frontend-compatible champion roles file by:
+    1. Using current_viable_roles from pro play data (champion_role_history.json)
+    2. Falling back to knowledge_base.json canonical positions
+    3. Preserving existing championRoles.json entries for champions with no data
+
+    Role name mapping: Backend uses JUNGLE, frontend uses JNG.
+    """
+    print("Building frontend championRoles.json...")
+
+    # Paths
+    history_file = OUTPUT_DIR / "champion_role_history.json"
+    frontend_file = BASE_DIR / "deepdraft" / "src" / "data" / "championRoles.json"
+
+    # Load data sources
+    history = load_json(history_file) if history_file.exists() else {"champions": {}}
+    knowledge_base = load_json(KNOWLEDGE_BASE_FILE) if KNOWLEDGE_BASE_FILE.exists() else {"champions": {}}
+
+    # Load existing frontend file to preserve manual entries
+    existing_frontend = {}
+    if frontend_file.exists():
+        existing_frontend = load_json(frontend_file)
+
+    # Role mapping: backend -> frontend
+    ROLE_MAP = {
+        "JUNGLE": "JNG",
+        "TOP": "TOP",
+        "MID": "MID",
+        "ADC": "ADC",
+        "SUP": "SUP",
+    }
+
+    # Reverse mapping for knowledge_base (uses Title Case)
+    KB_ROLE_MAP = {
+        "Top": "TOP",
+        "Jungle": "JNG",
+        "Mid": "MID",
+        "ADC": "ADC",
+        "Bot": "ADC",
+        "Support": "SUP",
+    }
+
+    def to_frontend_role(role: str) -> str:
+        """Convert backend role to frontend format."""
+        return ROLE_MAP.get(role, role)
+
+    def kb_to_frontend_role(role: str) -> str:
+        """Convert knowledge_base role to frontend format."""
+        return KB_ROLE_MAP.get(role, role.upper())
+
+    # Build the merged champion roles
+    champion_roles = {}
+
+    # Get all champion names from all sources
+    all_champions = set(history.get("champions", {}).keys())
+    all_champions.update(knowledge_base.get("champions", {}).keys())
+    all_champions.update(existing_frontend.keys())
+
+    for champion in sorted(all_champions):
+        canonical_all = []
+        canonical_role = None
+        source = None
+
+        # Priority 1: Pro play computed data (current_viable_roles)
+        history_data = history.get("champions", {}).get(champion, {})
+        if history_data.get("current_viable_roles"):
+            canonical_all = [to_frontend_role(r) for r in history_data["current_viable_roles"]]
+            # Use current_distribution to determine primary role
+            current_dist = history_data.get("current_distribution", {})
+            if current_dist:
+                # Find the role with highest rate in current distribution
+                primary = max(current_dist.items(), key=lambda x: x[1])[0]
+                canonical_role = to_frontend_role(primary)
+            elif history_data.get("pro_play_primary_role"):
+                canonical_role = to_frontend_role(history_data["pro_play_primary_role"])
+            source = "pro_play"
+
+        # Priority 2: Knowledge base + existing manual entries (merged)
+        # For champions without pro play data, merge knowledge_base with manual entries
+        if not canonical_all:
+            kb_data = knowledge_base.get("champions", {}).get(champion, {})
+            positions = kb_data.get("positions", [])
+            flex_positions = kb_data.get("flex_positions", [])
+            existing = existing_frontend.get(champion, {})
+
+            # Start with knowledge_base roles
+            kb_roles = [kb_to_frontend_role(p) for p in positions + flex_positions]
+            existing_roles = existing.get("canonical_all", [])
+
+            # Merge: include both knowledge_base and manual entries
+            merged_roles = list(kb_roles)
+            for role in existing_roles:
+                if role not in merged_roles:
+                    merged_roles.append(role)
+
+            if merged_roles:
+                canonical_all = merged_roles
+                # Prefer knowledge_base primary role, fall back to existing
+                if positions:
+                    canonical_role = kb_to_frontend_role(positions[0])
+                elif existing.get("canonical_role"):
+                    canonical_role = existing["canonical_role"]
+                source = "knowledge_base_merged" if kb_roles else "preserved_manual"
+
+        # Remove duplicates while preserving order
+        seen = set()
+        canonical_all = [r for r in canonical_all if not (r in seen or seen.add(r))]
+
+        # Ensure canonical_role is in canonical_all
+        if canonical_role and canonical_role not in canonical_all and canonical_all:
+            canonical_role = canonical_all[0]
+        elif not canonical_role and canonical_all:
+            canonical_role = canonical_all[0]
+
+        champion_roles[champion] = {
+            "canonical_all": canonical_all,
+            "canonical_role": canonical_role,
+        }
+
+    # Save to frontend location
+    frontend_file.parent.mkdir(parents=True, exist_ok=True)
+    save_json(champion_roles, frontend_file)
+
+    # Summary stats
+    with_roles = sum(1 for c in champion_roles.values() if c["canonical_all"])
+    multi_role = sum(1 for c in champion_roles.values() if len(c["canonical_all"]) > 1)
+
+    print(f"  Champions with roles: {with_roles}/{len(champion_roles)}")
+    print(f"  Multi-role champions: {multi_role}")
+
+    return champion_roles
+
+
 # ============================================================================
 # Main
 # ============================================================================
@@ -1293,6 +1428,7 @@ DATASETS = {
     "matchup_stats": build_matchup_stats,
     "skill_transfers": build_skill_transfers,
     "champion_role_history": build_champion_role_history,
+    "frontend_champion_roles": build_frontend_champion_roles,
 }
 
 
@@ -1329,6 +1465,7 @@ def main():
             "matchup_stats",
             "skill_transfers",
             "champion_role_history",  # Tracks role evolution and meta shifts
+            "frontend_champion_roles",  # Depends on champion_role_history
         ]
         for name in order:
             DATASETS[name](args.current_patch)

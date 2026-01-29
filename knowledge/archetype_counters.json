@@ -1,26 +1,697 @@
 {
   "metadata": {
     "version": "1.0.0",
-    "description": "RPS effectiveness matrix for team composition archetypes"
+    "description": "RPS effectiveness matrix for team composition archetypes",
+    "champion_count": 172,
+    "generated_from": "knowledge_base.json"
   },
-  "archetypes": ["engage", "split", "teamfight", "protect", "pick"],
+  "archetypes": [
+    "engage",
+    "split",
+    "teamfight",
+    "protect",
+    "pick"
+  ],
   "effectiveness_matrix": {
-    "engage": {"vs_engage": 1.0, "vs_split": 1.2, "vs_teamfight": 1.2, "vs_protect": 0.8, "vs_pick": 0.8},
-    "split": {"vs_engage": 0.8, "vs_split": 1.0, "vs_teamfight": 1.2, "vs_protect": 1.2, "vs_pick": 0.8},
-    "teamfight": {"vs_engage": 0.8, "vs_split": 0.8, "vs_teamfight": 1.0, "vs_protect": 1.2, "vs_pick": 1.2},
-    "protect": {"vs_engage": 1.2, "vs_split": 0.8, "vs_teamfight": 0.8, "vs_protect": 1.0, "vs_pick": 1.2},
-    "pick": {"vs_engage": 1.2, "vs_split": 1.2, "vs_teamfight": 0.8, "vs_protect": 0.8, "vs_pick": 1.0}
+    "engage": {
+      "vs_engage": 1.0,
+      "vs_split": 1.2,
+      "vs_teamfight": 1.2,
+      "vs_protect": 0.8,
+      "vs_pick": 0.8
+    },
+    "split": {
+      "vs_engage": 0.8,
+      "vs_split": 1.0,
+      "vs_teamfight": 1.2,
+      "vs_protect": 1.2,
+      "vs_pick": 0.8
+    },
+    "teamfight": {
+      "vs_engage": 0.8,
+      "vs_split": 0.8,
+      "vs_teamfight": 1.0,
+      "vs_protect": 1.2,
+      "vs_pick": 1.2
+    },
+    "protect": {
+      "vs_engage": 1.2,
+      "vs_split": 0.8,
+      "vs_teamfight": 0.8,
+      "vs_protect": 1.0,
+      "vs_pick": 1.2
+    },
+    "pick": {
+      "vs_engage": 1.2,
+      "vs_split": 1.2,
+      "vs_teamfight": 0.8,
+      "vs_protect": 0.8,
+      "vs_pick": 1.0
+    }
   },
   "champion_archetypes": {
-    "Malphite": {"engage": 0.9, "teamfight": 0.7},
-    "Orianna": {"teamfight": 0.8, "protect": 0.5},
-    "Nocturne": {"pick": 0.8, "engage": 0.5},
-    "Fiora": {"split": 0.9, "pick": 0.4},
-    "Lulu": {"protect": 0.9, "teamfight": 0.4},
-    "Thresh": {"pick": 0.7, "engage": 0.6},
-    "Jarvan IV": {"engage": 0.8, "teamfight": 0.6},
-    "Jinx": {"teamfight": 0.7, "protect": 0.3},
-    "Azir": {"teamfight": 0.8, "split": 0.4},
-    "Camille": {"split": 0.7, "pick": 0.6}
+    "Nocturne": {
+      "engage": 0.9,
+      "pick": 0.5,
+      "split": 0.5
+    },
+    "Diana": {
+      "engage": 0.9
+    },
+    "Jarvan IV": {
+      "engage": 0.9,
+      "teamfight": 0.6,
+      "pick": 0.6
+    },
+    "Kled": {
+      "engage": 0.9
+    },
+    "Camille": {
+      "engage": 0.9,
+      "split": 0.9,
+      "pick": 0.2
+    },
+    "Vi": {
+      "engage": 1.0
+    },
+    "Zac": {
+      "engage": 1.0,
+      "protect": 0.15
+    },
+    "Rell": {
+      "engage": 1.0,
+      "teamfight": 0.6,
+      "protect": 0.15
+    },
+    "Renekton": {
+      "engage": 0.6,
+      "pick": 0.9
+    },
+    "Akali": {
+      "engage": 0.6,
+      "pick": 0.2
+    },
+    "Leona": {
+      "engage": 0.6,
+      "pick": 0.5,
+      "protect": 0.15
+    },
+    "Alistar": {
+      "engage": 0.6,
+      "protect": 0.15
+    },
+    "Rakan": {
+      "engage": 0.8,
+      "protect": 0.2
+    },
+    "Lissandra": {
+      "engage": 0.8
+    },
+    "Wukong": {
+      "engage": 0.6
+    },
+    "Hecarim": {
+      "engage": 0.6
+    },
+    "Galio": {
+      "engage": 0.7,
+      "pick": 0.5,
+      "split": 0.5,
+      "protect": 0.15
+    },
+    "Shen": {
+      "engage": 0.5,
+      "pick": 0.5,
+      "split": 0.6,
+      "protect": 0.35
+    },
+    "Orianna": {
+      "engage": 0.5,
+      "protect": 0.5,
+      "teamfight": 1.0
+    },
+    "Ivern": {
+      "engage": 0.7,
+      "protect": 0.7
+    },
+    "Kayn": {
+      "engage": 0.5,
+      "pick": 0.2
+    },
+    "Jayce": {
+      "teamfight": 0.9
+    },
+    "Zoe": {
+      "teamfight": 0.9,
+      "pick": 0.6
+    },
+    "Xerath": {
+      "teamfight": 1.0
+    },
+    "Varus": {
+      "teamfight": 1.0
+    },
+    "Nidalee": {
+      "teamfight": 0.9,
+      "pick": 1.0
+    },
+    "Ziggs": {
+      "teamfight": 0.9
+    },
+    "Ezreal": {
+      "teamfight": 0.6,
+      "pick": 0.2
+    },
+    "Corki": {
+      "teamfight": 0.6
+    },
+    "Lux": {
+      "teamfight": 0.75
+    },
+    "Vel'Koz": {
+      "teamfight": 0.6
+    },
+    "Seraphine": {
+      "teamfight": 1.0
+    },
+    "Karma": {
+      "teamfight": 0.75
+    },
+    "Kog'Maw": {
+      "teamfight": 0.9,
+      "protect": 0.9
+    },
+    "Janna": {
+      "teamfight": 0.5,
+      "protect": 0.7
+    },
+    "Gragas": {
+      "teamfight": 0.5,
+      "engage": 0.2,
+      "protect": 0.15
+    },
+    "Yuumi": {
+      "teamfight": 0.5,
+      "protect": 0.2
+    },
+    "Braum": {
+      "teamfight": 0.5,
+      "protect": 0.5,
+      "pick": 0.5
+    },
+    "Morgana": {
+      "teamfight": 0.65,
+      "pick": 0.6
+    },
+    "Jinx": {
+      "protect": 0.9,
+      "teamfight": 1.0
+    },
+    "Twitch": {
+      "protect": 0.9
+    },
+    "Aphelios": {
+      "protect": 0.9,
+      "teamfight": 0.15
+    },
+    "Zeri": {
+      "protect": 0.9
+    },
+    "Kai'Sa": {
+      "protect": 0.6
+    },
+    "Vayne": {
+      "protect": 0.6
+    },
+    "Sivir": {
+      "protect": 0.6,
+      "teamfight": 0.15
+    },
+    "Xayah": {
+      "protect": 0.6,
+      "teamfight": 0.15
+    },
+    "Smolder": {
+      "protect": 0.6,
+      "teamfight": 0.15
+    },
+    "Lulu": {
+      "protect": 0.7,
+      "teamfight": 0.65
+    },
+    "Tahm Kench": {
+      "protect": 0.5,
+      "split": 0.5
+    },
+    "Milio": {
+      "protect": 0.7
+    },
+    "Renata Glasc": {
+      "protect": 0.5
+    },
+    "Blitzcrank": {
+      "pick": 0.9
+    },
+    "Thresh": {
+      "pick": 0.9,
+      "protect": 0.2
+    },
+    "LeBlanc": {
+      "pick": 0.9
+    },
+    "Ahri": {
+      "pick": 1.0
+    },
+    "Elise": {
+      "pick": 0.9
+    },
+    "Lee Sin": {
+      "pick": 0.9
+    },
+    "Ashe": {
+      "pick": 0.6,
+      "teamfight": 0.75
+    },
+    "Twisted Fate": {
+      "pick": 0.6,
+      "split": 0.6
+    },
+    "Rengar": {
+      "pick": 0.6
+    },
+    "Evelynn": {
+      "pick": 0.6
+    },
+    "Pyke": {
+      "pick": 0.6,
+      "engage": 0.2
+    },
+    "Taliyah": {
+      "pick": 0.5,
+      "protect": 0.2,
+      "teamfight": 0.15
+    },
+    "Fiora": {
+      "split": 0.9
+    },
+    "Tryndamere": {
+      "split": 0.9
+    },
+    "Jax": {
+      "split": 0.9
+    },
+    "Gwen": {
+      "split": 0.9,
+      "pick": 0.2
+    },
+    "Ryze": {
+      "split": 0.6
+    },
+    "Kennen": {
+      "split": 0.6,
+      "teamfight": 1.0
+    },
+    "Yorick": {
+      "split": 0.6,
+      "teamfight": 0.15
+    },
+    "Nasus": {
+      "split": 0.6,
+      "protect": 0.15,
+      "teamfight": 0.15
+    },
+    "Bard": {
+      "split": 0.5,
+      "engage": 0.2,
+      "protect": 0.2
+    },
+    "Rumble": {
+      "teamfight": 1.0
+    },
+    "Miss Fortune": {
+      "teamfight": 0.9
+    },
+    "Amumu": {
+      "teamfight": 1.0,
+      "protect": 0.15
+    },
+    "Malphite": {
+      "teamfight": 0.6,
+      "protect": 0.15
+    },
+    "Gnar": {
+      "teamfight": 0.6,
+      "protect": 0.15
+    },
+    "Zyra": {
+      "teamfight": 0.75
+    },
+    "Neeko": {
+      "teamfight": 0.75
+    },
+    "Karthus": {
+      "teamfight": 0.75
+    },
+    "Yasuo": {
+      "teamfight": 0.5,
+      "pick": 0.2
+    },
+    "Yone": {
+      "teamfight": 0.5,
+      "pick": 0.2
+    },
+    "Samira": {
+      "teamfight": 0.5,
+      "pick": 0.2
+    },
+    "Ornn": {
+      "teamfight": 0.9,
+      "protect": 0.15
+    },
+    "Sion": {
+      "teamfight": 1.0,
+      "protect": 0.15
+    },
+    "Maokai": {
+      "teamfight": 0.9,
+      "protect": 0.15
+    },
+    "Sejuani": {
+      "teamfight": 0.6,
+      "engage": 0.2
+    },
+    "Nautilus": {
+      "teamfight": 0.6,
+      "pick": 0.5,
+      "protect": 0.15
+    },
+    "Caitlyn": {
+      "teamfight": 0.6
+    },
+    "Syndra": {
+      "teamfight": 0.75
+    },
+    "Draven": {
+      "pick": 0.9
+    },
+    "Pantheon": {
+      "pick": 0.6
+    },
+    "Lucian": {
+      "pick": 0.8
+    },
+    "Kalista": {
+      "pick": 0.8
+    },
+    "Briar": {
+      "engage": 0.9,
+      "pick": 0.6
+    },
+    "Lillia": {
+      "split": 0.8,
+      "pick": 0.4
+    },
+    "Quinn": {
+      "teamfight": 0.5,
+      "pick": 0.2
+    },
+    "Viego": {
+      "split": 0.8,
+      "pick": 0.4
+    },
+    "Nilah": {
+      "split": 0.8,
+      "pick": 0.6
+    },
+    "Vladimir": {
+      "teamfight": 0.75
+    },
+    "Talon": {
+      "pick": 0.9
+    },
+    "Sylas": {
+      "teamfight": 0.7,
+      "pick": 0.5
+    },
+    "Zed": {
+      "pick": 1.0
+    },
+    "Viktor": {
+      "teamfight": 0.75
+    },
+    "Senna": {
+      "protect": 1.0,
+      "teamfight": 0.55
+    },
+    "Ekko": {
+      "pick": 1.0
+    },
+    "Trundle": {
+      "teamfight": 0.75,
+      "split": 0.5
+    },
+    "Kassadin": {
+      "pick": 1.0
+    },
+    "Darius": {
+      "teamfight": 0.75,
+      "split": 0.5
+    },
+    "Soraka": {
+      "protect": 1.0,
+      "teamfight": 0.4
+    },
+    "Nunu": {
+      "engage": 0.4,
+      "protect": 0.32
+    },
+    "Warwick": {
+      "engage": 0.7,
+      "pick": 0.6,
+      "teamfight": 0.15
+    },
+    "Cassiopeia": {
+      "teamfight": 0.75
+    },
+    "Vex": {
+      "teamfight": 0.7,
+      "pick": 0.5
+    },
+    "Rek'Sai": {
+      "split": 0.4,
+      "engage": 0.32
+    },
+    "Dr. Mundo": {
+      "engage": 0.4,
+      "protect": 0.32
+    },
+    "Hwei": {
+      "teamfight": 0.95
+    },
+    "Gangplank": {
+      "split": 0.5,
+      "engage": 0.4,
+      "teamfight": 0.15
+    },
+    "Annie": {
+      "teamfight": 0.85,
+      "pick": 0.5
+    },
+    "Anivia": {
+      "teamfight": 0.75
+    },
+    "Jhin": {
+      "pick": 0.7,
+      "engage": 0.5,
+      "teamfight": 0.15
+    },
+    "Urgot": {
+      "teamfight": 0.75,
+      "split": 0.5
+    },
+    "Swain": {
+      "teamfight": 0.75
+    },
+    "Aurelion Sol": {
+      "teamfight": 0.48
+    },
+    "Olaf": {
+      "engage": 0.7,
+      "pick": 0.6,
+      "teamfight": 0.15
+    },
+    "Shyvana": {
+      "teamfight": 0.6,
+      "split": 0.5
+    },
+    "Yunara": {
+      "teamfight": 0.5
+    },
+    "Skarner": {
+      "engage": 1.0,
+      "teamfight": 0.5,
+      "protect": 0.15
+    },
+    "Kha'Zix": {
+      "pick": 0.64
+    },
+    "Sona": {
+      "protect": 0.9,
+      "teamfight": 0.55
+    },
+    "Veigar": {
+      "teamfight": 0.85,
+      "pick": 0.5
+    },
+    "Taric": {
+      "protect": 1.0,
+      "teamfight": 0.4
+    },
+    "Zaahen": {
+      "split": 0.8,
+      "pick": 0.4
+    },
+    "Fiddlesticks": {
+      "teamfight": 0.75
+    },
+    "Aatrox": {
+      "teamfight": 0.6,
+      "split": 0.5,
+      "protect": 0.15
+    },
+    "K Sante": {
+      "engage": 0.4,
+      "protect": 0.32
+    },
+    "Garen": {
+      "teamfight": 0.75,
+      "split": 0.5
+    },
+    "Riven": {
+      "split": 0.8,
+      "pick": 0.6
+    },
+    "Poppy": {
+      "protect": 0.95,
+      "engage": 0.6
+    },
+    "Zilean": {
+      "teamfight": 0.6,
+      "protect": 0.2
+    },
+    "Shaco": {
+      "pick": 0.9
+    },
+    "Bel'Veth": {
+      "split": 0.4,
+      "engage": 0.32
+    },
+    "Irelia": {
+      "engage": 0.7,
+      "pick": 0.6
+    },
+    "Xin Zhao": {
+      "split": 0.4,
+      "engage": 0.32
+    },
+    "Heimerdinger": {
+      "teamfight": 0.75
+    },
+    "Volibear": {
+      "teamfight": 0.6,
+      "split": 0.5,
+      "protect": 0.15
+    },
+    "Akshan": {
+      "pick": 1.0
+    },
+    "Graves": {
+      "teamfight": 0.5
+    },
+    "Rammus": {
+      "engage": 1.0,
+      "teamfight": 0.5,
+      "protect": 0.15
+    },
+    "Naafiri": {
+      "pick": 1.0
+    },
+    "Kayle": {
+      "teamfight": 0.75,
+      "protect": 0.2
+    },
+    "Teemo": {
+      "teamfight": 0.65
+    },
+    "Brand": {
+      "teamfight": 0.85,
+      "pick": 0.5
+    },
+    "Mordekaiser": {
+      "teamfight": 0.75,
+      "split": 0.5
+    },
+    "Malzahar": {
+      "teamfight": 0.75
+    },
+    "Udyr": {
+      "teamfight": 0.6,
+      "split": 0.5,
+      "protect": 0.15
+    },
+    "Qiyana": {
+      "pick": 0.9
+    },
+    "Tristana": {
+      "teamfight": 0.5
+    },
+    "Illaoi": {
+      "teamfight": 0.75,
+      "split": 0.5
+    },
+    "Mel": {
+      "teamfight": 0.95
+    },
+    "Aurora": {
+      "teamfight": 0.7,
+      "pick": 0.7
+    },
+    "Singed": {
+      "engage": 0.5,
+      "protect": 0.55
+    },
+    "Azir": {
+      "teamfight": 0.6
+    },
+    "Sett": {
+      "teamfight": 0.6,
+      "split": 0.5
+    },
+    "Cho'Gath": {
+      "engage": 0.4,
+      "protect": 0.32
+    },
+    "Kindred": {
+      "teamfight": 0.5,
+      "pick": 0.2
+    },
+    "Katarina": {
+      "pick": 1.0
+    },
+    "Master Yi": {
+      "split": 0.4,
+      "engage": 0.32
+    },
+    "Ambessa": {
+      "engage": 0.7,
+      "pick": 0.8
+    },
+    "Nami": {
+      "protect": 0.9,
+      "teamfight": 0.4
+    },
+    "Fizz": {
+      "pick": 1.0
+    }
   }
 }

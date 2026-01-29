@@ -13,10 +13,10 @@
   },
   "Akali": {
     "canonical_all": [
-      "TOP",
-      "MID"
+      "MID",
+      "TOP"
     ],
-    "canonical_role": "TOP"
+    "canonical_role": "MID"
   },
   "Akshan": {
     "canonical_all": [
@@ -69,8 +69,16 @@
     "canonical_role": "ADC"
   },
   "Aurelion Sol": {
-    "canonical_all": [],
-    "canonical_role": null
+    "canonical_all": [
+      "MID"
+    ],
+    "canonical_role": "MID"
+  },
+  "AurelionSol": {
+    "canonical_all": [
+      "MID"
+    ],
+    "canonical_role": "MID"
   },
   "Aurora": {
     "canonical_all": [
@@ -96,6 +104,12 @@
       "JNG"
     ],
     "canonical_role": "JNG"
+  },
+  "Belveth": {
+    "canonical_all": [
+      "TOP"
+    ],
+    "canonical_role": "TOP"
   },
   "Blitzcrank": {
     "canonical_all": [
@@ -130,6 +144,7 @@
   },
   "Camille": {
     "canonical_all": [
+      "SUP",
       "TOP"
     ],
     "canonical_role": "TOP"
@@ -141,14 +156,23 @@
     "canonical_role": "MID"
   },
   "Cho'Gath": {
-    "canonical_all": [],
-    "canonical_role": null
+    "canonical_all": [
+      "TOP"
+    ],
+    "canonical_role": "TOP"
+  },
+  "Chogath": {
+    "canonical_all": [
+      "TOP"
+    ],
+    "canonical_role": "TOP"
   },
   "Corki": {
     "canonical_all": [
+      "ADC",
       "MID"
     ],
-    "canonical_role": "MID"
+    "canonical_role": "ADC"
   },
   "Darius": {
     "canonical_all": [
@@ -164,8 +188,17 @@
     "canonical_role": "JNG"
   },
   "Dr. Mundo": {
-    "canonical_all": [],
-    "canonical_role": null
+    "canonical_all": [
+      "JNG",
+      "TOP"
+    ],
+    "canonical_role": "JNG"
+  },
+  "DrMundo": {
+    "canonical_all": [
+      "TOP"
+    ],
+    "canonical_role": "TOP"
   },
   "Draven": {
     "canonical_all": [
@@ -178,13 +211,14 @@
       "JNG",
       "MID"
     ],
-    "canonical_role": "JNG"
+    "canonical_role": "MID"
   },
   "Elise": {
     "canonical_all": [
-      "JNG"
+      "JNG",
+      "SUP"
     ],
-    "canonical_role": "JNG"
+    "canonical_role": "SUP"
   },
   "Evelynn": {
     "canonical_all": [
@@ -218,7 +252,8 @@
   },
   "Galio": {
     "canonical_all": [
-      "MID"
+      "MID",
+      "TOP"
     ],
     "canonical_role": "MID"
   },
@@ -242,9 +277,11 @@
   },
   "Gragas": {
     "canonical_all": [
-      "JNG"
+      "JNG",
+      "SUP",
+      "TOP"
     ],
-    "canonical_role": "JNG"
+    "canonical_role": "TOP"
   },
   "Graves": {
     "canonical_all": [
@@ -266,10 +303,11 @@
   },
   "Heimerdinger": {
     "canonical_all": [
+      "SUP",
       "MID",
       "TOP"
     ],
-    "canonical_role": "MID"
+    "canonical_role": "SUP"
   },
   "Hwei": {
     "canonical_all": [
@@ -286,8 +324,8 @@
   },
   "Irelia": {
     "canonical_all": [
-      "TOP",
-      "MID"
+      "MID",
+      "TOP"
     ],
     "canonical_role": "TOP"
   },
@@ -304,18 +342,27 @@
     "canonical_role": "SUP"
   },
   "Jarvan IV": {
-    "canonical_all": [],
-    "canonical_role": null
+    "canonical_all": [
+      "JNG"
+    ],
+    "canonical_role": "JNG"
+  },
+  "JarvanIV": {
+    "canonical_all": [
+      "TOP"
+    ],
+    "canonical_role": "TOP"
   },
   "Jax": {
     "canonical_all": [
-      "TOP",
-      "JNG"
+      "JNG",
+      "TOP"
     ],
     "canonical_role": "TOP"
   },
   "Jayce": {
     "canonical_all": [
+      "MID",
       "TOP"
     ],
     "canonical_role": "TOP"
@@ -333,12 +380,28 @@
     "canonical_role": "ADC"
   },
   "K'Sante": {
-    "canonical_all": [],
-    "canonical_role": null
+    "canonical_all": [
+      "TOP"
+    ],
+    "canonical_role": "TOP"
+  },
+  "KSante": {
+    "canonical_all": [
+      "TOP"
+    ],
+    "canonical_role": "TOP"
   },
   "Kai'Sa": {
-    "canonical_all": [],
-    "canonical_role": null
+    "canonical_all": [
+      "ADC"
+    ],
+    "canonical_role": "ADC"
+  },
+  "Kaisa": {
+    "canonical_all": [
+      "ADC"
+    ],
+    "canonical_role": "ADC"
   },
   "Kalista": {
     "canonical_all": [
@@ -351,7 +414,7 @@
       "MID",
       "SUP"
     ],
-    "canonical_role": "MID"
+    "canonical_role": "SUP"
   },
   "Karthus": {
     "canonical_all": [
@@ -390,8 +453,16 @@
     "canonical_role": "TOP"
   },
   "Kha'Zix": {
-    "canonical_all": [],
-    "canonical_role": null
+    "canonical_all": [
+      "JNG"
+    ],
+    "canonical_role": "JNG"
+  },
+  "Khazix": {
+    "canonical_all": [
+      "MID"
+    ],
+    "canonical_role": "MID"
   },
   "Kindred": {
     "canonical_all": [
@@ -406,16 +477,40 @@
     "canonical_role": "TOP"
   },
   "Kog'Maw": {
-    "canonical_all": [],
-    "canonical_role": null
+    "canonical_all": [
+      "ADC"
+    ],
+    "canonical_role": "ADC"
+  },
+  "KogMaw": {
+    "canonical_all": [
+      "ADC"
+    ],
+    "canonical_role": "ADC"
   },
   "LeBlanc": {
-    "canonical_all": [],
-    "canonical_role": null
+    "canonical_all": [
+      "MID"
+    ],
+    "canonical_role": "MID"
+  },
+  "Leblanc": {
+    "canonical_all": [
+      "MID"
+    ],
+    "canonical_role": "MID"
   },
   "Lee Sin": {
-    "canonical_all": [],
-    "canonical_role": null
+    "canonical_all": [
+      "JNG"
+    ],
+    "canonical_role": "JNG"
+  },
+  "LeeSin": {
+    "canonical_all": [
+      "TOP"
+    ],
+    "canonical_role": "TOP"
   },
   "Leona": {
     "canonical_all": [
@@ -452,7 +547,7 @@
       "MID",
       "SUP"
     ],
-    "canonical_role": "MID"
+    "canonical_role": "SUP"
   },
   "Malphite": {
     "canonical_all": [
@@ -468,15 +563,22 @@
   },
   "Maokai": {
     "canonical_all": [
+      "JNG",
       "SUP"
     ],
-    "canonical_role": "SUP"
+    "canonical_role": "JNG"
   },
   "Master Yi": {
     "canonical_all": [
       "JNG"
     ],
     "canonical_role": "JNG"
+  },
+  "MasterYi": {
+    "canonical_all": [
+      "TOP"
+    ],
+    "canonical_role": "TOP"
   },
   "Mel": {
     "canonical_all": [
@@ -492,8 +594,22 @@
     "canonical_role": "SUP"
   },
   "Miss Fortune": {
-    "canonical_all": [],
-    "canonical_role": null
+    "canonical_all": [
+      "ADC"
+    ],
+    "canonical_role": "ADC"
+  },
+  "MissFortune": {
+    "canonical_all": [
+      "ADC"
+    ],
+    "canonical_role": "ADC"
+  },
+  "MonkeyKing": {
+    "canonical_all": [
+      "TOP"
+    ],
+    "canonical_role": "TOP"
   },
   "Mordekaiser": {
     "canonical_all": [
@@ -503,16 +619,18 @@
   },
   "Morgana": {
     "canonical_all": [
-      "SUP",
-      "MID"
+      "JNG",
+      "MID",
+      "SUP"
     ],
-    "canonical_role": "SUP"
+    "canonical_role": "MID"
   },
   "Naafiri": {
     "canonical_all": [
+      "JNG",
       "MID"
     ],
-    "canonical_role": "MID"
+    "canonical_role": "JNG"
   },
   "Nami": {
     "canonical_all": [
@@ -537,7 +655,7 @@
       "MID",
       "SUP"
     ],
-    "canonical_role": "MID"
+    "canonical_role": "SUP"
   },
   "Nidalee": {
     "canonical_all": [
@@ -553,9 +671,16 @@
   },
   "Nocturne": {
     "canonical_all": [
-      "JNG"
+      "JNG",
+      "SUP"
     ],
     "canonical_role": "JNG"
+  },
+  "Nunu": {
+    "canonical_all": [
+      "TOP"
+    ],
+    "canonical_role": "TOP"
   },
   "Nunu & Willump": {
     "canonical_all": [
@@ -565,9 +690,10 @@
   },
   "Olaf": {
     "canonical_all": [
+      "JNG",
       "TOP"
     ],
-    "canonical_role": "TOP"
+    "canonical_role": "JNG"
   },
   "Orianna": {
     "canonical_all": [
@@ -583,17 +709,19 @@
   },
   "Pantheon": {
     "canonical_all": [
-      "TOP",
-      "SUP"
+      "JNG",
+      "SUP",
+      "TOP"
     ],
-    "canonical_role": "TOP"
+    "canonical_role": "JNG"
   },
   "Poppy": {
     "canonical_all": [
-      "TOP",
-      "JNG"
+      "JNG",
+      "SUP",
+      "TOP"
     ],
-    "canonical_role": "TOP"
+    "canonical_role": "JNG"
   },
   "Pyke": {
     "canonical_all": [
@@ -603,9 +731,10 @@
   },
   "Qiyana": {
     "canonical_all": [
+      "JNG",
       "MID"
     ],
-    "canonical_role": "MID"
+    "canonical_role": "JNG"
   },
   "Quinn": {
     "canonical_all": [
@@ -626,8 +755,17 @@
     "canonical_role": "JNG"
   },
   "Rek'Sai": {
-    "canonical_all": [],
-    "canonical_role": null
+    "canonical_all": [
+      "JNG",
+      "TOP"
+    ],
+    "canonical_role": "TOP"
+  },
+  "RekSai": {
+    "canonical_all": [
+      "TOP"
+    ],
+    "canonical_role": "TOP"
   },
   "Rell": {
     "canonical_all": [
@@ -635,9 +773,17 @@
     ],
     "canonical_role": "SUP"
   },
+  "Renata": {
+    "canonical_all": [
+      "SUP"
+    ],
+    "canonical_role": "SUP"
+  },
   "Renata Glasc": {
-    "canonical_all": [],
-    "canonical_role": null
+    "canonical_all": [
+      "SUP"
+    ],
+    "canonical_role": "SUP"
   },
   "Renekton": {
     "canonical_all": [
@@ -693,7 +839,7 @@
       "ADC",
       "SUP"
     ],
-    "canonical_role": "ADC"
+    "canonical_role": "SUP"
   },
   "Sett": {
     "canonical_all": [
@@ -771,6 +917,7 @@
   },
   "Sylas": {
     "canonical_all": [
+      "JNG",
       "MID"
     ],
     "canonical_role": "MID"
@@ -782,15 +929,23 @@
     "canonical_role": "MID"
   },
   "Tahm Kench": {
-    "canonical_all": [],
-    "canonical_role": null
+    "canonical_all": [
+      "SUP"
+    ],
+    "canonical_role": "SUP"
+  },
+  "TahmKench": {
+    "canonical_all": [
+      "TOP"
+    ],
+    "canonical_role": "TOP"
   },
   "Taliyah": {
     "canonical_all": [
       "JNG",
       "MID"
     ],
-    "canonical_role": "JNG"
+    "canonical_role": "MID"
   },
   "Talon": {
     "canonical_all": [
@@ -818,15 +973,17 @@
   },
   "Tristana": {
     "canonical_all": [
-      "ADC"
+      "ADC",
+      "MID"
     ],
-    "canonical_role": "ADC"
+    "canonical_role": "MID"
   },
   "Trundle": {
     "canonical_all": [
+      "JNG",
       "TOP"
     ],
-    "canonical_role": "TOP"
+    "canonical_role": "JNG"
   },
   "Tryndamere": {
     "canonical_all": [
@@ -835,8 +992,16 @@
     "canonical_role": "TOP"
   },
   "Twisted Fate": {
-    "canonical_all": [],
-    "canonical_role": null
+    "canonical_all": [
+      "MID"
+    ],
+    "canonical_role": "MID"
+  },
+  "TwistedFate": {
+    "canonical_all": [
+      "MID"
+    ],
+    "canonical_role": "MID"
   },
   "Twitch": {
     "canonical_all": [
@@ -846,8 +1011,8 @@
   },
   "Udyr": {
     "canonical_all": [
-      "TOP",
-      "JNG"
+      "JNG",
+      "TOP"
     ],
     "canonical_role": "TOP"
   },
@@ -882,6 +1047,12 @@
     ],
     "canonical_role": "SUP"
   },
+  "Velkoz": {
+    "canonical_all": [
+      "MID"
+    ],
+    "canonical_role": "MID"
+  },
   "Vex": {
     "canonical_all": [
       "MID"
@@ -896,7 +1067,8 @@
   },
   "Viego": {
     "canonical_all": [
-      "JNG"
+      "JNG",
+      "MID"
     ],
     "canonical_role": "JNG"
   },
@@ -908,15 +1080,17 @@
   },
   "Vladimir": {
     "canonical_all": [
-      "MID"
-    ],
-    "canonical_role": "MID"
-  },
-  "Volibear": {
-    "canonical_all": [
+      "MID",
       "TOP"
     ],
     "canonical_role": "TOP"
+  },
+  "Volibear": {
+    "canonical_all": [
+      "JNG",
+      "TOP"
+    ],
+    "canonical_role": "JNG"
   },
   "Warwick": {
     "canonical_all": [
@@ -925,8 +1099,10 @@
     "canonical_role": "JNG"
   },
   "Wukong": {
-    "canonical_all": [],
-    "canonical_role": null
+    "canonical_all": [
+      "JNG"
+    ],
+    "canonical_role": "JNG"
   },
   "Xayah": {
     "canonical_all": [
@@ -942,23 +1118,31 @@
     "canonical_role": "MID"
   },
   "Xin Zhao": {
-    "canonical_all": [],
-    "canonical_role": null
+    "canonical_all": [
+      "JNG"
+    ],
+    "canonical_role": "JNG"
+  },
+  "XinZhao": {
+    "canonical_all": [
+      "TOP"
+    ],
+    "canonical_role": "TOP"
   },
   "Yasuo": {
     "canonical_all": [
-      "TOP",
+      "ADC",
       "MID",
-      "ADC"
+      "TOP"
     ],
     "canonical_role": "TOP"
   },
   "Yone": {
     "canonical_all": [
-      "TOP",
-      "MID"
+      "MID",
+      "TOP"
     ],
-    "canonical_role": "TOP"
+    "canonical_role": "MID"
   },
   "Yorick": {
     "canonical_all": [
@@ -993,9 +1177,10 @@
   },
   "Zed": {
     "canonical_all": [
+      "JNG",
       "MID"
     ],
-    "canonical_role": "MID"
+    "canonical_role": "JNG"
   },
   "Zeri": {
     "canonical_all": [
@@ -1005,7 +1190,8 @@
   },
   "Ziggs": {
     "canonical_all": [
-      "ADC"
+      "ADC",
+      "MID"
     ],
     "canonical_role": "ADC"
   },
@@ -1023,8 +1209,9 @@
   },
   "Zyra": {
     "canonical_all": [
+      "JNG",
       "SUP"
     ],
-    "canonical_role": "SUP"
+    "canonical_role": "JNG"
   }
 }
