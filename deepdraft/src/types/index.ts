@@ -292,5 +292,5 @@ export interface EvaluationResponse {
 // === Replay Insights ===
 export interface InsightEntry {
   action: DraftAction;
-  recommendations: Recommendations;
+  recommendations: Recommendations | null;
 }

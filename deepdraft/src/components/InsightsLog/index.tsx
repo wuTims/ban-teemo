@@ -55,10 +55,10 @@ export function InsightsLog({ entries, isLive }: InsightsLogProps) {
           const teamColor = entry.action.team_side === "blue" ? "blue-team" : "red-team";
           const teamLabel = entry.action.team_side === "blue" ? "Blue" : "Red";
 
-          // Get recommendations based on action type
+          // Get recommendations based on action type (may be null at draft end)
           const recs = isBan
-            ? entry.recommendations.bans
-            : entry.recommendations.picks;
+            ? entry.recommendations?.bans ?? []
+            : entry.recommendations?.picks ?? [];
           const top3 = recs.slice(0, 3);
 
           // Calculate action number within type
