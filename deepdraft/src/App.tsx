@@ -1,23 +1,27 @@
 // deepdraft/src/App.tsx
+import { useState } from "react";
 import { ActionLog } from "./components/ActionLog";
 import { DraftBoard } from "./components/DraftBoard";
 import { RecommendationPanel } from "./components/RecommendationPanel";
 import { ReplayControls } from "./components/ReplayControls";
-import { useReplaySession } from "./hooks";
+import { SimulatorSetupModal } from "./components/SimulatorSetupModal";
+import { SimulatorView } from "./components/SimulatorView";
+import { useReplaySession, useSimulatorSession } from "./hooks";
+import type { SimulatorConfig } from "./types";
+
+type AppMode = "replay" | "simulator";
 
 export default function App() {
-  const {
-    status,
-    blueTeam,
-    redTeam,
-    draftState,
-    recommendations,
-    actionHistory,
-    patch,
-    error,
-    startReplay,
-    stopReplay,
-  } = useReplaySession();
+  const [mode, setMode] = useState<AppMode>("replay");
+  const [showSetup, setShowSetup] = useState(false);
+
+  const replay = useReplaySession();
+  const simulator = useSimulatorSession();
+
+  const handleStartSimulator = async (config: SimulatorConfig) => {
+    await simulator.startSession(config);
+    setShowSetup(false);
+  };
 
   return (
     <div className="min-h-screen bg-lol-darkest">
@@ -27,60 +31,175 @@ export default function App() {
           <h1 className="text-xl font-bold uppercase tracking-wide text-gold-bright">
             DeepDraft
           </h1>
-          <span className="text-sm text-text-tertiary">
-            LoL Draft Assistant
-          </span>
+          <span className="text-sm text-text-tertiary">LoL Draft Assistant</span>
+        </div>
+
+        {/* Mode Toggle */}
+        <div className="ml-8 flex items-center gap-2">
+          <button
+            onClick={() => setMode("replay")}
+            className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+              mode === "replay"
+                ? "bg-magic text-lol-darkest"
+                : "bg-lol-light text-text-secondary hover:bg-lol-hover"
+            }`}
+          >
+            Replay
+          </button>
+          <button
+            onClick={() => {
+              setMode("simulator");
+              if (simulator.status === "setup") setShowSetup(true);
+            }}
+            className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+              mode === "simulator"
+                ? "bg-magic text-lol-darkest"
+                : "bg-lol-light text-text-secondary hover:bg-lol-hover"
+            }`}
+          >
+            Simulator
+          </button>
         </div>
 
         <div className="ml-auto flex items-center gap-4">
-          {patch && (
-            <span className="text-xs text-text-tertiary">
-              Patch {patch}
-            </span>
+          {mode === "replay" && replay.patch && (
+            <span className="text-xs text-text-tertiary">Patch {replay.patch}</span>
           )}
-          {status === "playing" && (
-            <span className="text-xs text-magic animate-pulse">
-              ● Live
-            </span>
+          {mode === "replay" && replay.status === "playing" && (
+            <span className="text-xs text-magic animate-pulse">Live</span>
+          )}
+          {mode === "simulator" && simulator.status === "drafting" && (
+            <span className="text-xs text-magic animate-pulse">Drafting</span>
           )}
         </div>
       </header>
 
       {/* Main Content */}
       <main className="p-6 space-y-6">
-        {/* Replay Controls */}
-        <ReplayControls
-          status={status}
-          onStart={startReplay}
-          onStop={stopReplay}
-          error={error}
-        />
-
-        {/* Draft Board + Action Log */}
-        <div className="flex flex-row gap-6">
-          <div className="flex-1">
-            <DraftBoard
-              blueTeam={blueTeam}
-              redTeam={redTeam}
-              draftState={draftState}
+        {mode === "replay" ? (
+          <>
+            <ReplayControls
+              status={replay.status}
+              onStart={replay.startReplay}
+              onStop={replay.stopReplay}
+              error={replay.error}
             />
-          </div>
 
-          {status !== "idle" && (
-            <ActionLog
-              actions={actionHistory}
-              blueTeam={blueTeam}
-              redTeam={redTeam}
+            <div className="flex flex-row gap-6">
+              <div className="flex-1">
+                <DraftBoard
+                  blueTeam={replay.blueTeam}
+                  redTeam={replay.redTeam}
+                  draftState={replay.draftState}
+                />
+              </div>
+
+              {replay.status !== "idle" && (
+                <ActionLog
+                  actions={replay.actionHistory}
+                  blueTeam={replay.blueTeam}
+                  redTeam={replay.redTeam}
+                />
+              )}
+            </div>
+
+            <RecommendationPanel
+              recommendations={replay.recommendations}
+              nextAction={replay.draftState?.next_action ?? null}
             />
-          )}
-        </div>
+          </>
+        ) : (
+          <>
+            {simulator.status === "setup" && (
+              <div className="text-center py-12">
+                <p className="text-text-secondary mb-4">
+                  Practice drafting against an AI opponent based on real pro team data.
+                </p>
+                <button
+                  onClick={() => setShowSetup(true)}
+                  className="px-6 py-3 bg-magic text-lol-darkest rounded-lg font-semibold hover:bg-magic-bright transition-colors"
+                >
+                  Start New Draft
+                </button>
+              </div>
+            )}
 
-        {/* Recommendations Panel */}
-        <RecommendationPanel
-          recommendations={recommendations}
-          nextAction={draftState?.next_action ?? null}
-        />
+            {simulator.status === "drafting" && simulator.blueTeam && simulator.redTeam && simulator.draftState && (
+              <SimulatorView
+                blueTeam={simulator.blueTeam}
+                redTeam={simulator.redTeam}
+                coachingSide={simulator.coachingSide!}
+                draftState={simulator.draftState}
+                recommendations={simulator.recommendations}
+                isOurTurn={simulator.isOurTurn}
+                isEnemyThinking={simulator.isEnemyThinking}
+                gameNumber={simulator.gameNumber}
+                seriesScore={simulator.seriesStatus ? [simulator.seriesStatus.blue_wins, simulator.seriesStatus.red_wins] : [0, 0]}
+                fearlessBlocked={simulator.fearlessBlocked}
+                draftMode={simulator.draftMode}
+                onChampionSelect={simulator.submitAction}
+              />
+            )}
+
+            {simulator.status === "game_complete" && (
+              <div className="text-center py-12 space-y-6">
+                <h2 className="text-2xl font-bold text-gold-bright uppercase tracking-wide">
+                  Draft Complete!
+                </h2>
+                <p className="text-text-secondary">Who won this game?</p>
+                <div className="flex justify-center gap-4">
+                  <button
+                    onClick={() => simulator.recordWinner("blue")}
+                    className="px-6 py-2 bg-blue-team/80 text-white rounded font-semibold hover:bg-blue-team transition-colors"
+                  >
+                    {simulator.blueTeam?.name || "Blue"} Won
+                  </button>
+                  <button
+                    onClick={() => simulator.recordWinner("red")}
+                    className="px-6 py-2 bg-red-team/80 text-white rounded font-semibold hover:bg-red-team transition-colors"
+                  >
+                    {simulator.redTeam?.name || "Red"} Won
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {simulator.status === "series_complete" && (
+              <div className="text-center py-12 space-y-6">
+                <h2 className="text-2xl font-bold text-gold-bright uppercase tracking-wide">
+                  Series Complete!
+                </h2>
+                <div className="text-xl text-text-primary">
+                  <span className="text-blue-team">{simulator.blueTeam?.name}</span>
+                  <span className="mx-4 text-gold-bright font-bold">
+                    {simulator.seriesStatus?.blue_wins} - {simulator.seriesStatus?.red_wins}
+                  </span>
+                  <span className="text-red-team">{simulator.redTeam?.name}</span>
+                </div>
+                <button
+                  onClick={simulator.endSession}
+                  className="px-6 py-2 bg-magic text-lol-darkest rounded font-semibold hover:bg-magic-bright transition-colors"
+                >
+                  New Session
+                </button>
+              </div>
+            )}
+
+            {simulator.error && (
+              <div className="bg-danger/20 border border-danger/50 rounded-lg p-4 text-center text-danger">
+                {simulator.error}
+              </div>
+            )}
+          </>
+        )}
       </main>
+
+      {/* Simulator Setup Modal */}
+      <SimulatorSetupModal
+        isOpen={showSetup}
+        onStart={handleStartSimulator}
+        onClose={() => setShowSetup(false)}
+      />
     </div>
   );
 }
