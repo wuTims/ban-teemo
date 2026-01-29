@@ -33,16 +33,20 @@ export function SimulatorSetupModal({ isOpen, onStart, onClose }: SimulatorSetup
     }
   }, [isOpen]);
 
-  const handleStart = () => {
+  const handleStart = async () => {
     if (!blueTeamId || !redTeamId) return;
     setLoading(true);
-    onStart({
-      blueTeamId,
-      redTeamId,
-      coachingSide,
-      seriesLength,
-      draftMode,
-    });
+    try {
+      await onStart({
+        blueTeamId,
+        redTeamId,
+        coachingSide,
+        seriesLength,
+        draftMode,
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!isOpen) return null;

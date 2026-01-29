@@ -30,6 +30,7 @@ interface SimulatorState {
   teamEvaluation: TeamEvaluation | null;
   isOurTurn: boolean;
   isEnemyThinking: boolean;
+  isRecordingWinner: boolean;
   gameNumber: number;
   seriesStatus: SeriesStatus | null;
   fearlessBlocked: FearlessBlocked;
@@ -48,6 +49,7 @@ const initialState: SimulatorState = {
   teamEvaluation: null,
   isOurTurn: false,
   isEnemyThinking: false,
+  isRecordingWinner: false,
   gameNumber: 1,
   seriesStatus: null,
   fearlessBlocked: {},
@@ -283,7 +285,9 @@ export function useSimulatorSession() {
   }, [state.sessionId, state.isOurTurn, triggerEnemyAction, fetchRecommendations]);
 
   const recordWinner = useCallback(async (winner: "blue" | "red") => {
-    if (!state.sessionId) return;
+    if (!state.sessionId || state.isRecordingWinner) return;
+
+    setState((s) => ({ ...s, isRecordingWinner: true }));
 
     try {
       const res = await fetch(`${API_BASE}/api/simulator/sessions/${state.sessionId}/games/complete`, {
@@ -301,11 +305,12 @@ export function useSimulatorSession() {
         status: data.series_status.series_complete ? "series_complete" : "game_complete",
         seriesStatus: data.series_status,
         fearlessBlocked: data.fearless_blocked,
+        isRecordingWinner: false,
       }));
     } catch (err) {
-      setState((s) => ({ ...s, error: String(err) }));
+      setState((s) => ({ ...s, error: String(err), isRecordingWinner: false }));
     }
-  }, [state.sessionId]);
+  }, [state.sessionId, state.isRecordingWinner]);
 
   const nextGame = useCallback(async () => {
     const currentSessionId = state.sessionId;
