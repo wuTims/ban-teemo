@@ -473,6 +473,9 @@ class PickRecommendationEngine:
         Flex champions contribute fractionally based on their role probabilities.
         Pure role champions contribute 1.0 to their role.
 
+        Uses get_role_probabilities() for proper fallback to champion_role_history.json
+        when champions aren't in flex_champions.json.
+
         Args:
             our_picks: List of pick dicts with 'champion' and 'role' keys
 
@@ -488,35 +491,35 @@ class PickRecommendationEngine:
             if not champion:
                 continue
 
-            # Get flex probabilities for this champion
-            flex_data = self.flex_resolver._flex_data.get(champion, {})
-            is_flex = flex_data.get("is_flex", False)
+            # Get role probabilities (with fallback to role_history for unknown champs)
+            role_probs = self.flex_resolver.get_role_probabilities(champion, filled_roles=set())
+
+            if not role_probs:
+                # No role data at all - use assigned role if provided
+                if assigned_role:
+                    normalized = normalize_role(assigned_role)
+                    if normalized:
+                        role_fill[normalized] = role_fill.get(normalized, 0.0) + 1.0
+                continue
+
+            # Check if flex (multiple roles with significant probability)
+            is_flex = self.flex_resolver.is_flex_pick(champion)
 
             if is_flex:
-                # Flex champion: distribute based on role probabilities from flex data
-                for key, value in flex_data.items():
-                    if key in ("is_flex", "games_total", "kb_positions"):
-                        continue
-                    if isinstance(value, (int, float)) and value > 0:
-                        normalized = normalize_role(key)
-                        if normalized:
-                            role_fill[normalized] = role_fill.get(normalized, 0.0) + value
+                # Flex champion: distribute based on role probabilities
+                for role, prob in role_probs.items():
+                    role_fill[role] = role_fill.get(role, 0.0) + prob
             else:
-                # Pure role champion: 1.0 to assigned or inferred role
+                # Pure role champion: 1.0 to assigned or primary role
                 role_to_fill = assigned_role
-                if not role_to_fill:
-                    # Infer role from flex data (highest probability)
-                    best_role, best_prob = None, 0.0
-                    for key, value in flex_data.items():
-                        if key in ("is_flex", "games_total", "kb_positions"):
-                            continue
-                        if isinstance(value, (int, float)) and value > best_prob:
-                            best_role, best_prob = key, value
-                    role_to_fill = best_role
                 if role_to_fill:
-                    normalized_role = normalize_role(role_to_fill)
-                    if normalized_role:
-                        role_fill[normalized_role] = role_fill.get(normalized_role, 0.0) + 1.0
+                    normalized = normalize_role(role_to_fill)
+                    if normalized:
+                        role_fill[normalized] = role_fill.get(normalized, 0.0) + 1.0
+                else:
+                    # Use primary role from probabilities
+                    primary_role = max(role_probs, key=role_probs.get)
+                    role_fill[primary_role] = role_fill.get(primary_role, 0.0) + 1.0
 
         return role_fill
 
