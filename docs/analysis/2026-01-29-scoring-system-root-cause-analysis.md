@@ -298,3 +298,107 @@ No breakdown of HOW priority was calculated.
 ### Priority 3 (Frontend)
 - `deepdraft/src/components/SimulatorView/index.tsx` - Show ban breakdown
 - `deepdraft/src/components/InsightsLog/index.tsx` - Reverse sort order
+
+---
+
+## Fix Implementation (Updated)
+
+This section reflects the **implemented fixes** after reviewing data coverage and failure modes.
+
+### Key Changes (Implemented)
+
+1. **Role Viability from Current Data**
+   - Use `current_viable_roles` / `current_distribution` in `champion_role_history.json`.
+   - Before: stale all-time roles slipped into recommendations.
+   - After: only patch-recent roles are considered viable.
+
+2. **Role-Fit Selection for Proficiency**
+   - Suggested role now maximizes **roster fit**, not just role probability.
+   - Before: flex picks were assigned to the highest-probability lane, even if the roster player had no data.
+   - After: role selection uses `role_prob × role_player_proficiency` with transfer fallback.
+
+3. **Skill Transfer Fallback + Candidate Expansion**
+   - Use `skill_transfers.json` to boost LOW/NO_DATA proficiency.
+   - Before: transfer targets never appeared in candidates.
+   - After: one-hop transfer targets are added and filtered by current viable roles.
+
+4. **Dynamic Weighting for NO_DATA**
+   - If proficiency is `NO_DATA`, set its weight to 0.
+   - Before: missing data quietly contributed neutral mass.
+   - After: weights are redistributed to other components, preventing silent inflation.
+
+5. **Diagnostics + UI Visibility**
+   - Include archetype in diagnostic component stats.
+   - Surface archetype as a top factor in UI breakdown.
+
+### Expected Impact
+
+- **Transfer-ready champs** (e.g., new meta picks with sparse personal data) become visible and competitive.
+- **Role-accurate recommendations** for flex picks; no more "best on the wrong player" scoring.
+- **NO_DATA noise reduced** because missing proficiency no longer contributes neutral mass.
+- **Archetype alignment is visible** in both logs and UI for auditing.
+
+---
+
+## Champion Comfort + Role Strength Update (2026-01-30)
+
+### Change Summary
+
+Replaced skill-transfer-based proficiency with two-component model:
+
+**Before (Transfer-Based):**
+- Proficiency for unplayed champions used skill transfer blending
+- Coverage was ~65% (105/162 champions had transfer data)
+- Could produce noisy boosts from questionable transfer mappings
+- Role selection biased by player baseline differences
+- Proficiency weight: 30%
+
+**After (Comfort + Role Strength):**
+- **Champion Comfort**: 0.5 baseline for all, scales with games on that specific champion
+- **Role Strength**: Player's aggregate performance in role (win_rate-weighted avg)
+- Role selection based on role_prob × role_need, NOT player proficiency
+- Soft role fill: flex champions contribute fractionally, roles close at ≥0.9
+- Proficiency weight: 20% (reduced to emphasize meta/archetype)
+
+### Formula
+
+```
+comfort = 0.5 + 0.5 × min(1.0, games / 8)
+role_strength = weighted_avg(player's win_rate_weighted for role champions)
+
+# With role strength:
+proficiency = comfort × (1 + role_strength × 0.3)
+proficiency = min(0.95, proficiency)
+
+# Without role strength (comfort-only):
+proficiency = min(0.95, comfort)  # Still capped!
+```
+
+### Role Selection (Decoupled)
+
+```
+role_score = role_prob × role_need_weight
+# role_prob already encodes viability from FlexResolver
+# proficiency calculated AFTER role is chosen
+# flex champs re-evaluated for unfilled roles if best role filled
+```
+
+### Updated Weights
+
+| Component | Old | New |
+|-----------|-----|-----|
+| meta | 0.20 | 0.25 |
+| proficiency | 0.30 | 0.20 |
+| matchup | 0.20 | 0.20 |
+| counter | 0.15 | 0.15 |
+| archetype | 0.15 | 0.20 |
+
+### Impact
+
+- Flex champions assigned by role_prob, not player baseline differences
+- Flex champs re-evaluated for unfilled roles when best role is filled
+- More predictable proficiency behavior (monotonic with games)
+- Soft role fill keeps flex champions viable early in draft
+- **Unknown player → NO_DATA** (weights redistributed)
+- **Known player, no role data → comfort_only** (capped at 0.95)
+- Meta and archetype now dominate recommendations
