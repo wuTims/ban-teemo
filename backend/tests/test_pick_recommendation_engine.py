@@ -9,6 +9,28 @@ def engine():
     return PickRecommendationEngine()
 
 
+def test_components_include_matchup_counter():
+    """Matchup and counter should be combined into matchup_counter."""
+    engine = PickRecommendationEngine()
+
+    # Minimal setup
+    team_players = [{"name": "Test", "role": "mid"}]
+    recs = engine.get_recommendations(
+        team_players=team_players,
+        our_picks=[],
+        enemy_picks=["Ahri"],  # Need enemy for matchup data
+        banned=[],
+        limit=1
+    )
+
+    if recs:
+        components = recs[0]["components"]
+        # Should have combined component
+        assert "matchup_counter" in components, (
+            f"Expected 'matchup_counter' component, got: {list(components.keys())}"
+        )
+
+
 @pytest.fixture
 def sample_team_players():
     """Sample team roster with lowercase canonical roles."""
@@ -450,22 +472,28 @@ def test_base_weights_sum_to_one(engine):
     assert abs(total - 1.0) < 0.001
 
 
-def test_proficiency_weight_reduced():
-    """Proficiency weight should be 0.20."""
+def test_proficiency_weight_lowest():
+    """Proficiency weight should be 0.15 (lowest - they're pros)."""
     engine = PickRecommendationEngine()
-    assert engine.BASE_WEIGHTS["proficiency"] == 0.20
+    assert engine.BASE_WEIGHTS["proficiency"] == 0.15
 
 
-def test_meta_weight_increased():
-    """Meta weight should be 0.25."""
+def test_meta_weight():
+    """Meta weight should be 0.30 (tied highest with archetype)."""
     engine = PickRecommendationEngine()
-    assert engine.BASE_WEIGHTS["meta"] == 0.25
+    assert engine.BASE_WEIGHTS["meta"] == 0.30
 
 
-def test_archetype_weight_increased():
-    """Archetype weight should be 0.20."""
+def test_archetype_weight_highest():
+    """Archetype weight should be 0.30 (tied highest - defines team identity)."""
     engine = PickRecommendationEngine()
-    assert engine.BASE_WEIGHTS["archetype"] == 0.20
+    assert engine.BASE_WEIGHTS["archetype"] == 0.30
+
+
+def test_matchup_counter_weight():
+    """Matchup+counter combined weight should be 0.25."""
+    engine = PickRecommendationEngine()
+    assert engine.BASE_WEIGHTS["matchup_counter"] == 0.25
 
 
 def test_role_selection_not_biased_by_player_baseline(tmp_path):
@@ -808,15 +836,59 @@ def test_get_effective_weights_first_pick_reduces_proficiency():
     assert weights["meta"] > 0.25, "First pick should increase meta weight"
 
 
-def test_get_effective_weights_counter_pick_increases_matchup():
-    """Counter-pick scenario should increase matchup weight."""
+def test_first_pick_caps_proficiency_score():
+    """First pick should cap proficiency score at 0.7 to prevent comfort picks dominating."""
+    engine = PickRecommendationEngine()
+
+    team_players = [
+        {"name": "TestTop", "role": "top"},
+        {"name": "TestJungle", "role": "jungle"},
+        {"name": "TestMid", "role": "mid"},
+        {"name": "TestAdc", "role": "adc"},
+        {"name": "TestSupport", "role": "support"},
+    ]
+    unfilled_roles = {"top", "jungle", "mid", "adc", "support"}
+
+    # First pick (our_picks=[])
+    score_first = engine._calculate_score(
+        champion="Rumble",  # High proficiency champion
+        team_players=team_players,
+        unfilled_roles=unfilled_roles,
+        our_picks=[],
+        enemy_picks=[],
+        role_cache={"Rumble": {"top": 1.0}},
+        role_fill={},
+    )
+
+    # Later pick (our_picks has champions)
+    score_later = engine._calculate_score(
+        champion="Rumble",
+        team_players=team_players,
+        unfilled_roles={"jungle", "mid", "adc", "support"},
+        our_picks=["Ksante"],
+        enemy_picks=[],
+        role_cache={"Rumble": {"top": 1.0}, "Ksante": {"top": 1.0}},
+        role_fill={"top": 1.0},
+    )
+
+    # First pick proficiency should be capped at 0.7
+    assert score_first["components"]["proficiency"] <= 0.7, (
+        f"First pick proficiency should be capped at 0.7, got {score_first['components']['proficiency']}"
+    )
+
+    # Later picks should NOT be capped (can exceed 0.7 if raw score is higher)
+    # Note: actual score depends on player data, but the cap shouldn't apply
+
+
+def test_get_effective_weights_counter_pick_increases_matchup_counter():
+    """Counter-pick scenario should increase matchup_counter weight."""
     engine = PickRecommendationEngine()
 
     # Late draft with enemy picks visible
     weights = engine._get_effective_weights("HIGH", pick_count=4, has_enemy_picks=True)
 
-    # Matchup should be increased for counter-picking
-    assert weights["matchup"] >= 0.20, "Counter-pick should maintain/increase matchup weight"
+    # Matchup_counter should be increased for counter-picking (base 0.25 + 0.05)
+    assert weights["matchup_counter"] >= 0.25, "Counter-pick should maintain/increase matchup_counter weight"
 
 
 def test_get_effective_weights_no_data_redistributes():

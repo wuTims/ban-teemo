@@ -14,21 +14,31 @@ from ban_teemo.services.synergy_service import SynergyService
 from ban_teemo.utils.role_normalizer import CANONICAL_ROLES, normalize_role
 
 # Soft role fill threshold - role considered "filled" at this confidence
-ROLE_FILL_THRESHOLD = 0.9
+# 0.75 means if a champion is 75%+ likely in a role, that role is filled
+ROLE_FILL_THRESHOLD = 0.75
 
 
 class PickRecommendationEngine:
     """Generates pick recommendations using weighted multi-factor scoring."""
 
-    # Weights sum to 1.0 - meta and archetype emphasized
+    # Domain expert priority order:
+    # 1. Team composition (archetype) - "draft best team possible"
+    # 2. Meta strength - "don't pick weak champions"
+    # 3. Matchup/Counter - "don't feed"
+    # 4. Proficiency - "they're pros anyway"
+    #
+    # NOTE: Synergy is NOT a base weight - it's applied as a multiplier to the
+    # final score. This is intentional: synergy is a team-wide modifier that
+    # scales the entire recommendation, not an individual champion attribute.
+    # Adding synergy here would double-count it (once as weight, once as multiplier).
     BASE_WEIGHTS = {
-        "meta": 0.25,         # Champion's current meta strength
-        "proficiency": 0.20,  # Player expertise (comfort + role strength)
-        "matchup": 0.20,      # Lane matchup win rates
-        "counter": 0.15,      # Team-level counter value
-        "archetype": 0.20,    # Team composition alignment
+        "archetype": 0.30,       # Team composition fit (highest - defines team identity)
+        "meta": 0.30,            # Champion power level
+        "matchup_counter": 0.25, # Combined lane + team matchups
+        "proficiency": 0.15,     # Player comfort (lowest - they're pros)
     }
-    SYNERGY_MULTIPLIER_RANGE = 0.3
+    # Widened from 0.3 to 0.5 for better score differentiation (0.75-1.25 range)
+    SYNERGY_MULTIPLIER_RANGE = 0.5
     ALL_ROLES = CANONICAL_ROLES  # {top, jungle, mid, bot, support}
     TRANSFER_EXPANSION_LIMIT = 2
 
@@ -295,21 +305,27 @@ class PickRecommendationEngine:
             role_prof_conf, 0.5
         )
 
-        # Matchup (lane) - USE CACHE for enemy role probabilities
+        # Combined matchup_counter (lane + team matchups)
+        # Rationale: "don't feed" encompasses both lane and team-level matchups
         matchup_scores = []
+        counter_scores = []
+
         for enemy in enemy_picks:
+            # Lane matchup
             role_probs = role_cache.get(enemy, {})  # Use cache instead of direct call
             if suggested_role in role_probs and role_probs[suggested_role] > 0:
                 result = self.matchup_calculator.get_lane_matchup(champion, enemy, suggested_role)
                 matchup_scores.append(result["score"])
-        components["matchup"] = sum(matchup_scores) / len(matchup_scores) if matchup_scores else 0.5
 
-        # Counter (team) - unchanged
-        counter_scores = []
-        for enemy in enemy_picks:
+            # Team counter
             result = self.matchup_calculator.get_team_matchup(champion, enemy)
             counter_scores.append(result["score"])
-        components["counter"] = sum(counter_scores) / len(counter_scores) if counter_scores else 0.5
+
+        # Combine: weight lane matchup slightly higher (60/40)
+        # Lane matchup is more important than general team counter
+        matchup_avg = sum(matchup_scores) / len(matchup_scores) if matchup_scores else 0.5
+        counter_avg = sum(counter_scores) / len(counter_scores) if counter_scores else 0.5
+        components["matchup_counter"] = matchup_avg * 0.6 + counter_avg * 0.4
 
         # Synergy
         synergy_result = self.synergy_service.calculate_team_synergy(our_picks + [champion])
@@ -324,18 +340,27 @@ class PickRecommendationEngine:
         # Base score
         pick_count = len(our_picks)
         has_enemy_picks = len(enemy_picks) > 0
+
+        # Cap proficiency on first pick to prevent comfort picks dominating over power picks
+        # Weight reduction alone (0.20 -> 0.10) isn't enough when prof=0.95
+        if pick_count == 0:
+            components["proficiency"] = min(components["proficiency"], 0.7)
+
         effective_weights = self._get_effective_weights(
             role_prof_conf,
             pick_count=pick_count,
             has_enemy_picks=has_enemy_picks
         )
+        # NOTE: Synergy is applied as a multiplier AFTER base_score, not as a component.
+        # This avoids double-counting synergy (which is already a multiplier in the
+        # current implementation). See synergy_multiplier usage below.
         base_score = (
+            components["archetype"] * effective_weights["archetype"] +
             components["meta"] * effective_weights["meta"] +
-            components["proficiency"] * effective_weights["proficiency"] +
-            components["matchup"] * effective_weights["matchup"] +
-            components["counter"] * effective_weights["counter"] +
-            components["archetype"] * effective_weights["archetype"]
+            components["matchup_counter"] * effective_weights["matchup_counter"] +
+            components["proficiency"] * effective_weights["proficiency"]
         )
+        # Synergy multiplier is applied separately: total_score = base_score * synergy_multiplier
 
         # Apply blind pick safety factor for early picks without enemy context
         blind_safety_applied = False
@@ -346,12 +371,20 @@ class PickRecommendationEngine:
             components["blind_safety"] = blind_safety
 
         # Apply role flex bonus for early picks (hides role assignment)
+        # Increased from 5% to 15% - flex picks are consistently undervalued
         if pick_count <= 1:
             role_flex = self._get_role_flex_score(champion)
-            # Add as weighted component (5% of total)
-            role_flex_bonus = role_flex * 0.05
+            role_flex_bonus = role_flex * 0.15  # Was 0.05
             base_score = base_score + role_flex_bonus
             components["role_flex"] = role_flex
+
+            # Add presence bonus for highly contested champions (>40% presence)
+            # These are clearly valued by pros regardless of other factors
+            presence = self.meta_scorer.get_presence(champion)
+            if presence > 0.4:
+                presence_bonus = 0.05
+                base_score = base_score + presence_bonus
+                components["presence_bonus"] = presence_bonus
 
         total_score = base_score * synergy_multiplier
         confidence = (1.0 + prof_conf_val) / 2
@@ -508,8 +541,8 @@ class PickRecommendationEngine:
         """Get context-adjusted scoring weights.
 
         Adjustments:
-        - First pick (pick_count=0, no enemy): reduce proficiency, boost meta
-        - Counter-pick (late draft, has enemy): boost matchup
+        - First pick (pick_count=0, no enemy): reduce proficiency/archetype, boost meta
+        - Counter-pick (late draft, has enemy): boost matchup_counter
         - NO_DATA proficiency: redistribute to other components
 
         Args:
@@ -522,27 +555,43 @@ class PickRecommendationEngine:
         """
         weights = dict(self.BASE_WEIGHTS)
 
-        # First pick context: reduce proficiency, increase meta
-        # Rationale: First picks are about power level, not player comfort
+        # First pick context: heavily reduce proficiency and archetype, boost meta
+        # Rationale: Blind picks are about power level, not player comfort or comp synergy
+        # Eval showed archetype has negative predictive value (-0.088 delta) in early picks
         if pick_count == 0 and not has_enemy_picks:
-            redistribution = 0.08  # Take from proficiency
-            weights["proficiency"] -= redistribution
-            weights["meta"] += redistribution
+            prof_redistribution = 0.10  # Take from proficiency (0.15 -> 0.05)
+            arch_redistribution = 0.15  # Take from archetype (0.30 -> 0.15)
+            weights["proficiency"] -= prof_redistribution
+            weights["archetype"] -= arch_redistribution
+            weights["meta"] += prof_redistribution + arch_redistribution  # +0.25 to meta (0.30 -> 0.55)
 
-        # Counter-pick context: increase matchup weight
+        # Second pick context (pick_count == 1): still reduce archetype but less aggressive
+        elif pick_count == 1:
+            arch_redistribution = 0.10  # Archetype 0.30 -> 0.20
+            weights["archetype"] -= arch_redistribution
+            weights["meta"] += arch_redistribution
+
+        # Mid-draft context (picks 2-3): boost archetype for comp direction
+        elif pick_count in [2, 3] and has_enemy_picks:
+            # Archetype becomes more valuable as team direction emerges
+            arch_boost = 0.05  # Take from matchup_counter
+            weights["archetype"] += arch_boost
+            weights["matchup_counter"] -= arch_boost
+
+        # Counter-pick context: increase matchup_counter weight
         # Rationale: Late picks should exploit matchup knowledge
-        elif has_enemy_picks and pick_count >= 3:
+        elif has_enemy_picks and pick_count >= 4:
             redistribution = 0.05
             weights["meta"] -= redistribution
-            weights["matchup"] += redistribution
+            weights["matchup_counter"] += redistribution
 
         # Handle NO_DATA proficiency - redistribute most of its weight
         if prof_conf == "NO_DATA":
             redistribute = weights["proficiency"] * 0.8
             weights["proficiency"] = weights["proficiency"] * 0.2
             # Distribute evenly to other components
-            for key in ["meta", "matchup", "counter", "archetype"]:
-                weights[key] += redistribute / 4
+            for key in ["meta", "matchup_counter", "archetype"]:
+                weights[key] += redistribute / 3
 
         return weights
 
@@ -663,19 +712,12 @@ class PickRecommendationEngine:
         elif prof >= 0.7:
             reasons.append("Strong team proficiency")
 
-        # Matchup - only mention if we have actual favorable data (not neutral 0.5)
-        matchup = components.get("matchup", 0.5)
-        if matchup >= 0.6:
-            reasons.append("Strong lane matchup")
-        elif matchup >= 0.55:
-            reasons.append("Favorable lane matchups")
-
-        # Counter - team-wide matchup advantage
-        counter = components.get("counter", 0.5)
-        if counter >= 0.6:
-            reasons.append("Counters enemy comp")
-        elif counter >= 0.55:
-            reasons.append("Good into enemy team")
+        # Matchup/Counter - combined lane and team matchup advantage
+        matchup_counter = components.get("matchup_counter", 0.5)
+        if matchup_counter >= 0.6:
+            reasons.append("Strong matchups vs enemy")
+        elif matchup_counter >= 0.55:
+            reasons.append("Favorable matchups")
 
         # Synergy
         synergy = components.get("synergy", 0.5)
