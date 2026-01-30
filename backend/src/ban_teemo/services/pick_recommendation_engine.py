@@ -209,7 +209,7 @@ class PickRecommendationEngine:
         unavailable: set[str],
         role_cache: dict[str, dict[str, float]],
     ) -> list[str]:
-        """Get candidate champions from team pools and meta picks for unfilled roles.
+        """Get candidate champions from team pools, meta picks, and global power picks.
 
         Uses pre-computed role_cache for O(1) lookups.
         Only returns champions that can play at least one unfilled role.
