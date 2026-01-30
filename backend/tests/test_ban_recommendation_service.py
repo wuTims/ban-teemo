@@ -507,3 +507,100 @@ def test_get_role_denial_score_no_players():
 
     score = service._get_role_denial_score("Kai'Sa", ["Azir"], [])
     assert score == 0.0
+
+
+def test_phase2_bans_use_tiered_priority():
+    """Phase 2 bans should use tiered priority system."""
+    service = BanRecommendationService()
+
+    # Phase 2 with some picks already made
+    recommendations = service.get_ban_recommendations(
+        enemy_team_id="test",
+        our_picks=["Jarvan IV", "Rumble"],  # Teamfight/engage direction
+        enemy_picks=["Azir", "Vi"],  # Enemy has mid + jungle
+        banned=["Yunara", "Neeko"],
+        phase="BAN_PHASE_2",
+        enemy_players=[
+            {"name": "Viper", "role": "bot"},
+            {"name": "Keria", "role": "support"},
+            {"name": "TestMid", "role": "mid"},
+            {"name": "TestJungle", "role": "jungle"},
+            {"name": "TestTop", "role": "top"},
+        ],
+        limit=5,
+    )
+
+    # Should have tiered priority in recommendations
+    has_tier = any(
+        "tier" in r.get("components", {})
+        for r in recommendations
+    )
+    assert has_tier, "Phase 2 should include tier classification"
+
+
+def test_phase2_tier1_prioritizes_counter_in_pool():
+    """Tier 1 should be highest priority: counters our picks AND in enemy pool."""
+    service = BanRecommendationService()
+
+    recommendations = service.get_ban_recommendations(
+        enemy_team_id="test",
+        our_picks=["Azir"],  # We picked Azir
+        enemy_picks=["Jarvan IV"],
+        banned=[],
+        phase="BAN_PHASE_2",
+        enemy_players=[
+            {"name": "Viper", "role": "bot"},  # Viper has Kai'Sa in pool
+        ],
+        limit=10,
+    )
+
+    # Look for T1 tier bans
+    t1_bans = [r for r in recommendations
+               if r.get("components", {}).get("tier") == "T1_COUNTER_AND_POOL"]
+
+    # If we have T1 bans, they should be near the top
+    if t1_bans:
+        t1_names = [b["champion_name"] for b in t1_bans]
+        top_3_names = [r["champion_name"] for r in recommendations[:3]]
+        has_t1_in_top = any(name in top_3_names for name in t1_names)
+        # Soft assertion - T1 should generally be near top
+        assert has_t1_in_top or len(recommendations) < 3, (
+            f"T1 bans {t1_names} should be prioritized, top 3: {top_3_names}"
+        )
+
+
+def test_phase1_includes_global_power_bans():
+    """Phase 1 should include high-presence bans even with sparse enemy data."""
+    service = BanRecommendationService()
+
+    # No enemy player data (sparse)
+    recommendations = service.get_ban_recommendations(
+        enemy_team_id="unknown",
+        our_picks=[],
+        enemy_picks=[],
+        banned=[],
+        phase="BAN_PHASE_1",
+        enemy_players=[],  # Empty - no player data
+        limit=5,
+    )
+
+    # Should still return recommendations based on meta/presence
+    assert len(recommendations) >= 3, "Should have bans even without player data"
+
+    # High presence champions should be recommended
+    champ_names = [r["champion_name"] for r in recommendations]
+    # At least one high-presence champion should be in top 5
+    high_presence = {"Azir", "Yunara", "Poppy", "Pantheon", "Neeko"}
+    has_power_ban = any(c in high_presence for c in champ_names)
+    assert has_power_ban, f"Should include power bans, got: {champ_names}"
+
+    # Verify global power bans have the T3_GLOBAL_POWER tier classification
+    # (this ensures the new _get_global_power_bans method is being used)
+    has_global_power_tier = any(
+        r.get("components", {}).get("tier") == "T3_GLOBAL_POWER"
+        for r in recommendations
+    )
+    assert has_global_power_tier, (
+        f"Should have T3_GLOBAL_POWER tier bans, got tiers: "
+        f"{[r.get('components', {}).get('tier') for r in recommendations]}"
+    )

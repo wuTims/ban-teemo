@@ -93,21 +93,28 @@ class BanRecommendationService:
                         "components": components,
                     })
 
-        # Phase 2: Add counter-pick bans (champions that counter our picks)
-        if not is_phase_1 and our_picks:
-            counter_bans = self._get_counter_pick_bans(our_picks, unavailable)
-            for counter_ban in counter_bans:
+        # Phase 2: Add contextual bans (archetype, synergy, role denial)
+        if not is_phase_1:
+            contextual_bans = self._get_contextual_phase2_bans(
+                our_picks=our_picks,
+                enemy_picks=enemy_picks,
+                enemy_players=enemy_players or [],
+                unavailable=unavailable,
+            )
+
+            for ctx_ban in contextual_bans:
                 # Check if already in candidates and boost priority if so
                 existing = next(
-                    (c for c in ban_candidates if c["champion_name"] == counter_ban["champion_name"]),
+                    (c for c in ban_candidates if c["champion_name"] == ctx_ban["champion_name"]),
                     None
                 )
                 if existing:
-                    # Boost priority for counter picks that are also in player pools
-                    existing["priority"] = min(1.0, existing["priority"] + 0.15)
-                    existing["reasons"].append(counter_ban["reasons"][0])
+                    # Merge contextual scores
+                    existing["priority"] = min(1.0, existing["priority"] + ctx_ban["priority"] * 0.5)
+                    existing["components"].update(ctx_ban["components"])
+                    existing["reasons"].extend(ctx_ban["reasons"])
                 else:
-                    ban_candidates.append(counter_ban)
+                    ban_candidates.append(ctx_ban)
 
         # Add high meta picks
         for champ in self.meta_scorer.get_top_meta_champions(limit=15):
@@ -536,3 +543,134 @@ class BanRecommendationService:
                 return 0.4  # General denial - fills unfilled role
 
         return 0.0
+
+    def _get_contextual_phase2_bans(
+        self,
+        our_picks: list[str],
+        enemy_picks: list[str],
+        enemy_players: list[dict],
+        unavailable: set[str],
+    ) -> list[dict]:
+        """Generate contextual Phase 2 ban recommendations with TIERED PRIORITY.
+
+        TIERED PRIORITY SYSTEM (Phase 2):
+            Tier 1 (Highest): Counters our picks + in enemy pool
+            Tier 2 (High):    Completes enemy archetype + in pool
+            Tier 3 (Medium):  Counters our picks (regardless of pool)
+            Tier 4 (Lower):   General archetype/synergy counter
+
+        Considers:
+        - Counter to our picks: Champions that counter what we've picked
+        - Archetype completion: Champions that complete enemy's comp direction
+        - Synergy denial: Champions that would synergize with enemy picks
+        - Role denial: Champions that fill roles enemy still needs
+
+        Returns:
+            List of ban candidates with contextual scoring and tier info
+        """
+        candidates: dict[str, dict] = {}
+
+        # Get meta champions as potential ban targets
+        meta_champs = set(self.meta_scorer.get_top_meta_champions(limit=30))
+
+        # Also include enemy player pool champions for unfilled roles
+        filled_roles = set()
+        for pick in enemy_picks:
+            probs = self.flex_resolver.get_role_probabilities(pick)
+            if probs:
+                primary = max(probs, key=probs.get)
+                filled_roles.add(primary)
+        unfilled_roles = {"top", "jungle", "mid", "bot", "support"} - filled_roles
+
+        enemy_pool_champs = set()
+        for player in enemy_players:
+            if player.get("role") in unfilled_roles:
+                pool = self.proficiency_scorer.get_player_champion_pool(
+                    player["name"], min_games=2
+                )
+                for entry in pool[:8]:
+                    enemy_pool_champs.add(entry["champion"])
+                    meta_champs.add(entry["champion"])
+
+        for champ in meta_champs:
+            if champ in unavailable:
+                continue
+
+            components: dict[str, float] = {}
+            reasons: list[str] = []
+
+            # Calculate contextual scores
+            arch_score = self._get_archetype_counter_score(champ, enemy_picks)
+            synergy_score = self._get_synergy_denial_score(champ, enemy_picks)
+            role_score = self._get_role_denial_score(champ, enemy_picks, enemy_players)
+            meta_score = self.meta_scorer.get_meta_score(champ)
+
+            # Check if counters our picks
+            counters_us = False
+            counter_strength = 0.0
+            for our_pick in our_picks:
+                matchup = self.matchup_calculator.get_team_matchup(our_pick, champ)
+                if matchup["score"] < 0.45:  # This champ counters our pick
+                    counters_us = True
+                    counter_strength = max(counter_strength, 1.0 - matchup["score"])
+
+            is_in_enemy_pool = champ in enemy_pool_champs
+
+            # Determine tier and calculate priority
+            tier_bonus = 0.0
+            if counters_us and is_in_enemy_pool:
+                # TIER 1: Counters our picks + in enemy pool
+                tier_bonus = 0.20
+                components["tier"] = "T1_COUNTER_AND_POOL"
+                reasons.append("Counters our picks AND in enemy pool")
+            elif arch_score > 0.3 and is_in_enemy_pool:
+                # TIER 2: Completes enemy archetype + in pool
+                tier_bonus = 0.15
+                components["tier"] = "T2_ARCHETYPE_AND_POOL"
+                reasons.append("Completes enemy comp AND in pool")
+            elif counters_us:
+                # TIER 3: Counters our picks (regardless of pool)
+                tier_bonus = 0.10
+                components["tier"] = "T3_COUNTER_ONLY"
+                reasons.append("Counters our picks")
+            elif arch_score > 0.2 or synergy_score > 0.2 or role_score > 0.2:
+                # TIER 4: General contextual ban
+                tier_bonus = 0.0
+                components["tier"] = "T4_CONTEXTUAL"
+            else:
+                continue  # Skip if no meaningful contextual value
+
+            # Base component scores
+            if counters_us:
+                components["counter_our_picks"] = round(counter_strength * 0.30, 3)
+                reasons.append("Counters our picks")
+            if arch_score > 0.1:
+                components["archetype_counter"] = round(arch_score * 0.25, 3)
+                reasons.append("Fits enemy's archetype")
+            if synergy_score > 0.1:
+                components["synergy_denial"] = round(synergy_score * 0.20, 3)
+                reasons.append("Synergizes with enemy")
+            if role_score > 0.1:
+                components["role_denial"] = round(role_score * 0.15, 3)
+                reasons.append("Fills enemy's role")
+            components["meta"] = round(meta_score * 0.10, 3)
+            components["tier_bonus"] = round(tier_bonus, 3)
+
+            # Calculate priority
+            priority = sum(v for k, v in components.items() if k != "tier")
+
+            candidates[champ] = {
+                "champion_name": champ,
+                "priority": round(priority, 3),
+                "target_player": None,
+                "target_role": None,
+                "reasons": list(set(reasons[:3])) if reasons else ["Contextual ban"],
+                "components": components,
+            }
+
+        # Sort by priority and return top candidates
+        sorted_candidates = sorted(
+            candidates.values(),
+            key=lambda x: -x["priority"]
+        )
+        return sorted_candidates[:10]
