@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from ban_teemo.models.simulator import SimulatorSession, GameResult
 from ban_teemo.models.draft import DraftState, DraftAction, DraftPhase
 from ban_teemo.models.team import Player, TeamContext
+from ban_teemo.models.recommendations import PickRecommendation, RoleGroupedRecommendations
 from ban_teemo.services.enemy_simulator_service import EnemySimulatorService
 from ban_teemo.services.pick_recommendation_engine import PickRecommendationEngine
 from ban_teemo.services.ban_recommendation_service import BanRecommendationService
@@ -461,6 +462,8 @@ async def get_recommendations(request: Request, session_id: str):
         banned = draft_state.blue_bans + draft_state.red_bans
 
         recommendations = []
+        role_grouped = None
+
         if draft_state.next_action == "ban":
             all_unavailable = list(set(banned) | session.fearless_blocked_set)
             recommendations = ban_service.get_ban_recommendations(
@@ -472,19 +475,54 @@ async def get_recommendations(request: Request, session_id: str):
                 limit=5,
             )
         else:
-            recommendations = pick_engine.get_recommendations(
+            # For pick phase, get more recommendations for role grouping
+            all_picks = pick_engine.get_recommendations(
                 team_players=[{"name": p.name, "role": p.role} for p in our_team.players],
                 our_picks=our_picks,
                 enemy_picks=enemy_picks,
                 banned=list(set(banned) | session.fearless_blocked_set),
-                limit=5,
+                limit=20,  # Get more for role grouping
             )
 
-        return {
+            # PRIMARY: Top 5 overall recommendations (phase-optimized)
+            recommendations = all_picks[:5]
+
+            # SUPPLEMENTAL: Alternative view grouped by role
+            # Use case: late draft role filling, draft planning
+            pick_objects = [
+                PickRecommendation(
+                    champion_name=p["champion_name"],
+                    confidence=p.get("confidence", 0.0),
+                    suggested_role=p.get("suggested_role"),
+                    flag=p.get("flag"),
+                    reasons=p.get("reasons", []),
+                    score=p.get("score", 0.0),
+                    base_score=p.get("base_score"),
+                    synergy_multiplier=p.get("synergy_multiplier"),
+                    components=p.get("components", {}),
+                    proficiency_source=p.get("proficiency_source"),
+                    proficiency_player=p.get("proficiency_player"),
+                )
+                for p in all_picks
+            ]
+            grouped = RoleGroupedRecommendations.from_picks(pick_objects, limit_per_role=2)
+            role_grouped = {
+                "view_type": "supplemental",
+                "description": "Alternative view: top picks per unfilled role",
+                **grouped.to_dict()
+            }
+
+        response = {
             "for_action_count": action_count,
             "phase": draft_state.current_phase.value,
             "recommendations": recommendations,
         }
+
+        # Only include role_grouped for pick phases
+        if role_grouped is not None:
+            response["role_grouped"] = role_grouped
+
+        return response
 
 
 @router.get("/sessions/{session_id}/evaluation")

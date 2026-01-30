@@ -1,11 +1,13 @@
 """Tests for simulator API routes."""
 
+import httpx
 import pytest
 from unittest.mock import MagicMock, patch
-from fastapi.testclient import TestClient
 
 from ban_teemo.main import app
 from ban_teemo.api.routes.simulator import _sessions, _sessions_lock, _session_locks
+
+pytestmark = pytest.mark.anyio
 
 
 @pytest.fixture
@@ -48,8 +50,8 @@ def mock_services():
 
 
 @pytest.fixture
-def client(mock_services):
-    """Create test client with mocked services."""
+async def client(mock_services):
+    """Create async test client with mocked services."""
     # Clear sessions before each test
     with _sessions_lock:
         _sessions.clear()
@@ -63,19 +65,22 @@ def client(mock_services):
         if hasattr(app.state, attr):
             delattr(app.state, attr)
 
-    return TestClient(app)
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        yield client
 
 
 class TestStartSimulator:
     """Tests for POST /api/simulator/sessions."""
 
-    def test_start_simulator_success(self, client, mock_services):
+    @pytest.mark.anyio
+    async def test_start_simulator_success(self, client, mock_services):
         """Test successfully starting a simulator session."""
         with patch(
             "ban_teemo.api.routes.simulator.EnemySimulatorService",
             return_value=mock_services["enemy_service"],
         ):
-            response = client.post(
+            response = await client.post(
                 "/api/simulator/sessions",
                 json={
                     "blue_team_id": "team_blue_123",
@@ -97,13 +102,14 @@ class TestStartSimulator:
         assert "recommendations" not in data
         assert "team_evaluation" not in data
 
-    def test_start_simulator_with_series(self, client, mock_services):
+    @pytest.mark.anyio
+    async def test_start_simulator_with_series(self, client, mock_services):
         """Test starting a Bo3 series."""
         with patch(
             "ban_teemo.api.routes.simulator.EnemySimulatorService",
             return_value=mock_services["enemy_service"],
         ):
-            response = client.post(
+            response = await client.post(
                 "/api/simulator/sessions",
                 json={
                     "blue_team_id": "team_blue_123",
@@ -119,7 +125,7 @@ class TestStartSimulator:
         # Red side means blue picks first, so not our turn
         assert data["is_our_turn"] is False
 
-    def test_start_simulator_team_not_found(self, client, mock_services):
+    async def test_start_simulator_team_not_found(self, client, mock_services):
         """Test error when team is not found."""
         # Override the fixture's mock to return None
         app.state.repository.get_team_context = MagicMock(return_value=None)
@@ -128,7 +134,7 @@ class TestStartSimulator:
             "ban_teemo.api.routes.simulator.EnemySimulatorService",
             return_value=mock_services["enemy_service"],
         ):
-            response = client.post(
+            response = await client.post(
                 "/api/simulator/sessions",
                 json={
                     "blue_team_id": "nonexistent",
@@ -144,13 +150,13 @@ class TestStartSimulator:
 class TestSubmitAction:
     """Tests for POST /api/simulator/sessions/{session_id}/actions."""
 
-    def test_submit_action_success(self, client, mock_services):
+    async def test_submit_action_success(self, client, mock_services):
         """Test successfully submitting a pick/ban."""
         with patch(
             "ban_teemo.api.routes.simulator.EnemySimulatorService",
             return_value=mock_services["enemy_service"],
         ):
-            start_response = client.post(
+            start_response = await client.post(
                 "/api/simulator/sessions",
                 json={
                     "blue_team_id": "team_blue_123",
@@ -161,7 +167,7 @@ class TestSubmitAction:
             session_id = start_response.json()["session_id"]
 
             # Submit a ban (blue bans first)
-            response = client.post(
+            response = await client.post(
                 f"/api/simulator/sessions/{session_id}/actions",
                 json={"champion": "Azir"},
             )
@@ -174,23 +180,23 @@ class TestSubmitAction:
         # By default, no recommendations in action response
         assert "recommendations" not in data
 
-    def test_submit_action_session_not_found(self, client, mock_services):
+    async def test_submit_action_session_not_found(self, client, mock_services):
         """Test error when session doesn't exist."""
-        response = client.post(
+        response = await client.post(
             "/api/simulator/sessions/nonexistent_session/actions",
             json={"champion": "Azir"},
         )
         assert response.status_code == 404
         assert "Session not found" in response.json()["detail"]
 
-    def test_submit_action_not_your_turn(self, client, mock_services):
+    async def test_submit_action_not_your_turn(self, client, mock_services):
         """Test error when it's not your turn."""
         with patch(
             "ban_teemo.api.routes.simulator.EnemySimulatorService",
             return_value=mock_services["enemy_service"],
         ):
             # Start as red side (blue picks first, so not our turn)
-            start_response = client.post(
+            start_response = await client.post(
                 "/api/simulator/sessions",
                 json={
                     "blue_team_id": "team_blue_123",
@@ -201,7 +207,7 @@ class TestSubmitAction:
             session_id = start_response.json()["session_id"]
 
             # Try to submit when it's not our turn
-            response = client.post(
+            response = await client.post(
                 f"/api/simulator/sessions/{session_id}/actions",
                 json={"champion": "Azir"},
             )
@@ -209,13 +215,13 @@ class TestSubmitAction:
         assert response.status_code == 400
         assert "Not your turn" in response.json()["detail"]
 
-    def test_submit_action_champion_unavailable(self, client, mock_services):
+    async def test_submit_action_champion_unavailable(self, client, mock_services):
         """Test error when champion is already picked/banned."""
         with patch(
             "ban_teemo.api.routes.simulator.EnemySimulatorService",
             return_value=mock_services["enemy_service"],
         ):
-            start_response = client.post(
+            start_response = await client.post(
                 "/api/simulator/sessions",
                 json={
                     "blue_team_id": "team_blue_123",
@@ -226,16 +232,16 @@ class TestSubmitAction:
             session_id = start_response.json()["session_id"]
 
             # Ban Azir first time
-            client.post(
+            await client.post(
                 f"/api/simulator/sessions/{session_id}/actions",
                 json={"champion": "Azir"},
             )
 
             # Enemy bans
-            client.post(f"/api/simulator/sessions/{session_id}/actions/enemy")
+            await client.post(f"/api/simulator/sessions/{session_id}/actions/enemy")
 
             # Try to ban Azir again
-            response = client.post(
+            response = await client.post(
                 f"/api/simulator/sessions/{session_id}/actions",
                 json={"champion": "Azir"},
             )
@@ -247,13 +253,13 @@ class TestSubmitAction:
 class TestGetSession:
     """Tests for GET /api/simulator/sessions/{session_id}."""
 
-    def test_get_session_success(self, client, mock_services):
+    async def test_get_session_success(self, client, mock_services):
         """Test getting session state."""
         with patch(
             "ban_teemo.api.routes.simulator.EnemySimulatorService",
             return_value=mock_services["enemy_service"],
         ):
-            start_response = client.post(
+            start_response = await client.post(
                 "/api/simulator/sessions",
                 json={
                     "blue_team_id": "team_blue_123",
@@ -263,7 +269,7 @@ class TestGetSession:
             )
             session_id = start_response.json()["session_id"]
 
-            response = client.get(f"/api/simulator/sessions/{session_id}")
+            response = await client.get(f"/api/simulator/sessions/{session_id}")
 
         assert response.status_code == 200
         data = response.json()
@@ -271,22 +277,22 @@ class TestGetSession:
         assert data["status"] == "drafting"
         assert data["game_number"] == 1
 
-    def test_get_session_not_found(self, client, mock_services):
+    async def test_get_session_not_found(self, client, mock_services):
         """Test error when session doesn't exist."""
-        response = client.get("/api/simulator/sessions/nonexistent")
+        response = await client.get("/api/simulator/sessions/nonexistent")
         assert response.status_code == 404
 
 
 class TestEndSession:
     """Tests for DELETE /api/simulator/sessions/{session_id}."""
 
-    def test_end_session_success(self, client, mock_services):
+    async def test_end_session_success(self, client, mock_services):
         """Test ending a session."""
         with patch(
             "ban_teemo.api.routes.simulator.EnemySimulatorService",
             return_value=mock_services["enemy_service"],
         ):
-            start_response = client.post(
+            start_response = await client.post(
                 "/api/simulator/sessions",
                 json={
                     "blue_team_id": "team_blue_123",
@@ -297,14 +303,14 @@ class TestEndSession:
             session_id = start_response.json()["session_id"]
 
             # End the session
-            response = client.delete(f"/api/simulator/sessions/{session_id}")
+            response = await client.delete(f"/api/simulator/sessions/{session_id}")
 
         assert response.status_code == 200
         assert response.json()["status"] == "ended"
 
-    def test_end_nonexistent_session(self, client, mock_services):
+    async def test_end_nonexistent_session(self, client, mock_services):
         """Test ending a session that doesn't exist (should succeed silently)."""
-        response = client.delete("/api/simulator/sessions/nonexistent")
+        response = await client.delete("/api/simulator/sessions/nonexistent")
         assert response.status_code == 200
         assert response.json()["status"] == "ended"
 
@@ -312,7 +318,7 @@ class TestEndSession:
 class TestListTeams:
     """Tests for GET /api/simulator/teams."""
 
-    def test_list_teams_success(self, client, mock_services):
+    async def test_list_teams_success(self, client, mock_services):
         """Test listing available teams."""
         # Set up the _query mock on the repository already in app.state
         app.state.repository._query = MagicMock(
@@ -326,14 +332,14 @@ class TestListTeams:
             "ban_teemo.api.routes.simulator.EnemySimulatorService",
             return_value=mock_services["enemy_service"],
         ):
-            response = client.get("/api/simulator/teams")
+            response = await client.get("/api/simulator/teams")
 
         assert response.status_code == 200
         data = response.json()
         assert "teams" in data
         assert len(data["teams"]) == 2
 
-    def test_list_teams_respects_limit(self, client, mock_services):
+    async def test_list_teams_respects_limit(self, client, mock_services):
         """Test that limit parameter is passed correctly."""
         app.state.repository._query = MagicMock(return_value=[])
 
@@ -341,13 +347,13 @@ class TestListTeams:
             "ban_teemo.api.routes.simulator.EnemySimulatorService",
             return_value=mock_services["enemy_service"],
         ):
-            client.get("/api/simulator/teams?limit=10")
+            await client.get("/api/simulator/teams?limit=10")
 
         # Verify the query was called with the limit
         call_args = app.state.repository._query.call_args[0][0]
         assert "LIMIT 10" in call_args
 
-    def test_list_teams_clamps_excessive_limit(self, client, mock_services):
+    async def test_list_teams_clamps_excessive_limit(self, client, mock_services):
         """Test that excessive limit is clamped to MAX_TEAMS_LIMIT."""
         app.state.repository._query = MagicMock(return_value=[])
 
@@ -355,7 +361,7 @@ class TestListTeams:
             "ban_teemo.api.routes.simulator.EnemySimulatorService",
             return_value=mock_services["enemy_service"],
         ):
-            client.get("/api/simulator/teams?limit=9999")
+            await client.get("/api/simulator/teams?limit=9999")
 
         # Verify the query was called with clamped limit (500)
         call_args = app.state.repository._query.call_args[0][0]
@@ -365,13 +371,13 @@ class TestListTeams:
 class TestGetRecommendations:
     """Tests for GET /api/simulator/sessions/{session_id}/recommendations."""
 
-    def test_get_recommendations_ban_phase(self, client, mock_services):
+    async def test_get_recommendations_ban_phase(self, client, mock_services):
         """Test getting ban recommendations."""
         with patch(
             "ban_teemo.api.routes.simulator.EnemySimulatorService",
             return_value=mock_services["enemy_service"],
         ):
-            start_response = client.post(
+            start_response = await client.post(
                 "/api/simulator/sessions",
                 json={
                     "blue_team_id": "team_blue_123",
@@ -381,7 +387,7 @@ class TestGetRecommendations:
             )
             session_id = start_response.json()["session_id"]
 
-            response = client.get(f"/api/simulator/sessions/{session_id}/recommendations")
+            response = await client.get(f"/api/simulator/sessions/{session_id}/recommendations")
 
         assert response.status_code == 200
         data = response.json()
@@ -390,18 +396,18 @@ class TestGetRecommendations:
         assert data["phase"] == "BAN_PHASE_1"
         assert "recommendations" in data
 
-    def test_get_recommendations_session_not_found(self, client, mock_services):
+    async def test_get_recommendations_session_not_found(self, client, mock_services):
         """Test error when session doesn't exist."""
-        response = client.get("/api/simulator/sessions/nonexistent/recommendations")
+        response = await client.get("/api/simulator/sessions/nonexistent/recommendations")
         assert response.status_code == 404
 
-    def test_recommendations_staleness_tracking(self, client, mock_services):
+    async def test_recommendations_staleness_tracking(self, client, mock_services):
         """Test that for_action_count updates after actions."""
         with patch(
             "ban_teemo.api.routes.simulator.EnemySimulatorService",
             return_value=mock_services["enemy_service"],
         ):
-            start_response = client.post(
+            start_response = await client.post(
                 "/api/simulator/sessions",
                 json={
                     "blue_team_id": "team_blue_123",
@@ -412,33 +418,33 @@ class TestGetRecommendations:
             session_id = start_response.json()["session_id"]
 
             # Initial recommendations
-            rec1 = client.get(f"/api/simulator/sessions/{session_id}/recommendations")
+            rec1 = await client.get(f"/api/simulator/sessions/{session_id}/recommendations")
             assert rec1.json()["for_action_count"] == 0
 
             # Submit an action
-            client.post(
+            await client.post(
                 f"/api/simulator/sessions/{session_id}/actions",
                 json={"champion": "Jinx"},
             )
 
             # Enemy action
-            client.post(f"/api/simulator/sessions/{session_id}/actions/enemy")
+            await client.post(f"/api/simulator/sessions/{session_id}/actions/enemy")
 
             # Recommendations should reflect new action count
-            rec2 = client.get(f"/api/simulator/sessions/{session_id}/recommendations")
+            rec2 = await client.get(f"/api/simulator/sessions/{session_id}/recommendations")
             assert rec2.json()["for_action_count"] == 2
 
 
 class TestGetEvaluation:
     """Tests for GET /api/simulator/sessions/{session_id}/evaluation."""
 
-    def test_get_evaluation_no_picks(self, client, mock_services):
+    async def test_get_evaluation_no_picks(self, client, mock_services):
         """Test evaluation when no picks made yet."""
         with patch(
             "ban_teemo.api.routes.simulator.EnemySimulatorService",
             return_value=mock_services["enemy_service"],
         ):
-            start_response = client.post(
+            start_response = await client.post(
                 "/api/simulator/sessions",
                 json={
                     "blue_team_id": "team_blue_123",
@@ -448,7 +454,7 @@ class TestGetEvaluation:
             )
             session_id = start_response.json()["session_id"]
 
-            response = client.get(f"/api/simulator/sessions/{session_id}/evaluation")
+            response = await client.get(f"/api/simulator/sessions/{session_id}/evaluation")
 
         assert response.status_code == 200
         data = response.json()
@@ -456,22 +462,93 @@ class TestGetEvaluation:
         assert data["our_evaluation"] is None
         assert data["enemy_evaluation"] is None
 
-    def test_get_evaluation_session_not_found(self, client, mock_services):
+    async def test_get_evaluation_session_not_found(self, client, mock_services):
         """Test error when session doesn't exist."""
-        response = client.get("/api/simulator/sessions/nonexistent/evaluation")
+        response = await client.get("/api/simulator/sessions/nonexistent/evaluation")
         assert response.status_code == 404
+
+
+class TestRoleGroupedRecommendations:
+    """Tests for role-grouped recommendations in pick phase."""
+
+    async def test_recommendations_include_role_grouped(self, client, mock_services):
+        """GET /recommendations returns role-grouped picks during pick phase."""
+        with patch(
+            "ban_teemo.api.routes.simulator.EnemySimulatorService",
+            return_value=mock_services["enemy_service"],
+        ):
+            # Create session
+            start_response = await client.post(
+                "/api/simulator/sessions",
+                json={
+                    "blue_team_id": "team_blue_123",
+                    "red_team_id": "team_red_456",
+                    "coaching_side": "blue",
+                },
+            )
+            session_id = start_response.json()["session_id"]
+
+            # Complete ban phase (6 bans) to get to pick phase
+            for i in range(3):
+                # Our ban
+                await client.post(
+                    f"/api/simulator/sessions/{session_id}/actions",
+                    json={"champion": f"BanChamp{i}"},
+                )
+                # Enemy ban
+                await client.post(f"/api/simulator/sessions/{session_id}/actions/enemy")
+
+            # Now in PICK_PHASE_1, get recommendations
+            response = await client.get(f"/api/simulator/sessions/{session_id}/recommendations")
+
+        assert response.status_code == 200
+        data = response.json()
+
+        # Verify role_grouped is present during pick phase
+        assert "role_grouped" in data
+        assert "by_role" in data["role_grouped"]
+        by_role = data["role_grouped"]["by_role"]
+        assert isinstance(by_role, dict)
+
+        # Verify view_type metadata
+        assert data["role_grouped"]["view_type"] == "supplemental"
+
+    async def test_recommendations_no_role_grouped_in_ban_phase(self, client, mock_services):
+        """GET /recommendations does NOT return role_grouped in ban phase."""
+        with patch(
+            "ban_teemo.api.routes.simulator.EnemySimulatorService",
+            return_value=mock_services["enemy_service"],
+        ):
+            start_response = await client.post(
+                "/api/simulator/sessions",
+                json={
+                    "blue_team_id": "team_blue_123",
+                    "red_team_id": "team_red_456",
+                    "coaching_side": "blue",
+                },
+            )
+            session_id = start_response.json()["session_id"]
+
+            # Get recommendations during ban phase
+            response = await client.get(f"/api/simulator/sessions/{session_id}/recommendations")
+
+        assert response.status_code == 200
+        data = response.json()
+
+        # role_grouped should NOT be present during ban phase
+        assert "role_grouped" not in data
 
 
 class TestEagerFetchQueryParams:
     """Tests for ?include_recommendations and ?include_evaluation query params."""
 
-    def test_action_with_include_recommendations(self, client, mock_services):
+    async def test_action_with_include_recommendations(self, client, mock_services):
         """Test action endpoint with include_recommendations=true."""
         with patch(
             "ban_teemo.api.routes.simulator.EnemySimulatorService",
             return_value=mock_services["enemy_service"],
         ):
-            start_response = client.post(
+            start_response = await client.post(
                 "/api/simulator/sessions",
                 json={
                     "blue_team_id": "team_blue_123",
@@ -482,27 +559,27 @@ class TestEagerFetchQueryParams:
             session_id = start_response.json()["session_id"]
 
             # Submit action WITHOUT query params
-            response_without = client.post(
+            response_without = await client.post(
                 f"/api/simulator/sessions/{session_id}/actions",
                 json={"champion": "Jinx"},
             )
             assert "recommendations" not in response_without.json()
 
             # Trigger enemy action WITH query params
-            response_with = client.post(
+            response_with = await client.post(
                 f"/api/simulator/sessions/{session_id}/actions/enemy?include_recommendations=true",
             )
             data = response_with.json()
             assert "recommendations" in data
             assert isinstance(data["recommendations"], list)
 
-    def test_action_with_include_evaluation(self, client, mock_services):
+    async def test_action_with_include_evaluation(self, client, mock_services):
         """Test action endpoint with include_evaluation=true."""
         with patch(
             "ban_teemo.api.routes.simulator.EnemySimulatorService",
             return_value=mock_services["enemy_service"],
         ):
-            start_response = client.post(
+            start_response = await client.post(
                 "/api/simulator/sessions",
                 json={
                     "blue_team_id": "team_blue_123",
@@ -513,7 +590,7 @@ class TestEagerFetchQueryParams:
             session_id = start_response.json()["session_id"]
 
             # Submit action WITH include_evaluation
-            response = client.post(
+            response = await client.post(
                 f"/api/simulator/sessions/{session_id}/actions?include_evaluation=true",
                 json={"champion": "Jinx"},
             )
