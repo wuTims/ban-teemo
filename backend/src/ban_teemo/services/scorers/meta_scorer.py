@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Optional
 
 from ban_teemo.utils.role_normalizer import normalize_role
+from ban_teemo.utils.role_viability import extract_current_role_viability, CURRENT_ROLE_THRESHOLD
 
 
 class MetaScorer:
@@ -90,7 +91,7 @@ class MetaScorer:
     def _champion_plays_role(self, champion_name: str, role: str) -> bool:
         """Check if a champion plays a specific role.
 
-        Uses canonical_role as primary, with all_time_distribution as fallback.
+        Uses current viable roles when available, with all-time data as fallback.
 
         Args:
             champion_name: The champion name
@@ -101,6 +102,11 @@ class MetaScorer:
             return True
 
         champ_data = self._champion_roles[champion_name]
+        current_roles, has_current = extract_current_role_viability(
+            champ_data, threshold=CURRENT_ROLE_THRESHOLD
+        )
+        if has_current:
+            return role in (current_roles or set())
 
         # Get all possible data file formats for this canonical role
         role_formats = self.ROLE_DATA_FORMATS.get(role, [role.upper()])
@@ -124,3 +130,36 @@ class MetaScorer:
                 return True
 
         return False
+
+    def get_blind_pick_safety(self, champion_name: str) -> float:
+        """Get blind pick safety factor for a champion.
+
+        Based on pick_context data:
+        - Counter-pick dependent champions are penalized for blind picking
+        - Champions with high blind_early_win_rate are rewarded
+
+        Returns:
+            Float 0.7-1.1 as a multiplier (1.0 = neutral)
+        """
+        if champion_name not in self._meta_stats:
+            return 1.0  # Neutral for unknown
+
+        meta_data = self._meta_stats[champion_name]
+        pick_context = meta_data.get("pick_context", {})
+
+        if not pick_context:
+            return 1.0
+
+        # Check if counter-pick dependent
+        is_counter_dependent = pick_context.get("is_counter_pick_dependent", False)
+        if is_counter_dependent:
+            return 0.85  # Penalty for blind picking counter-dependent champs
+
+        # Use blind early win rate to determine safety
+        blind_wr = pick_context.get("blind_early_win_rate")
+        if blind_wr is not None:
+            # Scale 0.7-1.1 based on win rate (0.4-0.6 range)
+            # 0.5 WR = 1.0 safety, 0.6 WR = 1.1, 0.4 WR = 0.9
+            return 0.9 + (blind_wr - 0.5) * 0.4
+
+        return 1.0

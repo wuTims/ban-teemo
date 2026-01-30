@@ -1,4 +1,5 @@
 """Tests for meta scorer."""
+import json
 import pytest
 from ban_teemo.services.scorers.meta_scorer import MetaScorer
 
@@ -72,3 +73,74 @@ def test_get_top_meta_champions_role_aliases(scorer):
     sup_champs = scorer.get_top_meta_champions(role="SUP", limit=5)
     support_champs = scorer.get_top_meta_champions(role="SUPPORT", limit=5)
     assert sup_champs == support_champs
+
+
+def _write_meta_knowledge(tmp_path, meta_stats, role_history):
+    knowledge_dir = tmp_path / "knowledge"
+    knowledge_dir.mkdir()
+    (knowledge_dir / "meta_stats.json").write_text(
+        json.dumps({"champions": meta_stats})
+    )
+    (knowledge_dir / "champion_role_history.json").write_text(
+        json.dumps({"champions": role_history})
+    )
+    return knowledge_dir
+
+
+def test_current_viable_roles_override_all_time(tmp_path):
+    meta_stats = {"RoleChamp": {"meta_score": 0.9}}
+    role_history = {
+        "RoleChamp": {
+            "canonical_role": "TOP",
+            "all_time_distribution": {"TOP": 1.0},
+            "current_viable_roles": ["MID"],
+        },
+    }
+    knowledge_dir = _write_meta_knowledge(tmp_path, meta_stats, role_history)
+    scorer = MetaScorer(knowledge_dir)
+
+    assert scorer.get_top_meta_champions(role="top", limit=5) == []
+    assert scorer.get_top_meta_champions(role="mid", limit=5) == ["RoleChamp"]
+
+
+def test_current_distribution_threshold_blocks_old_role(tmp_path):
+    meta_stats = {"RoleChamp2": {"meta_score": 0.9}}
+    role_history = {
+        "RoleChamp2": {
+            "current_distribution": {"TOP": 0.04, "MID": 0.96},
+        },
+    }
+    knowledge_dir = _write_meta_knowledge(tmp_path, meta_stats, role_history)
+    scorer = MetaScorer(knowledge_dir)
+
+    assert scorer.get_top_meta_champions(role="top", limit=5) == []
+    assert scorer.get_top_meta_champions(role="mid", limit=5) == ["RoleChamp2"]
+
+
+def test_get_blind_pick_safety_counter_dependent_penalized():
+    """Counter-pick dependent champions should have lower blind safety."""
+    scorer = MetaScorer()
+
+    # Neeko is flagged as counter_pick_dependent in meta_stats
+    safety = scorer.get_blind_pick_safety("Neeko")
+
+    # Should be penalized for blind picking
+    assert safety < 0.9, f"Counter-dependent Neeko should have low blind safety: {safety}"
+
+
+def test_get_blind_pick_safety_blind_safe_rewarded():
+    """Champions with high blind win rate should have good safety."""
+    scorer = MetaScorer()
+
+    # Azir has high blind_early_win_rate
+    safety = scorer.get_blind_pick_safety("Azir")
+
+    assert safety >= 0.9, f"Blind-safe Azir should have high safety: {safety}"
+
+
+def test_get_blind_pick_safety_unknown_neutral():
+    """Unknown champions return neutral safety."""
+    scorer = MetaScorer()
+
+    safety = scorer.get_blind_pick_safety("NonexistentChamp")
+    assert safety == 1.0, "Unknown should return neutral 1.0"
