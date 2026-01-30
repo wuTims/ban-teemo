@@ -200,6 +200,11 @@ class ProficiencyScorer:
     ) -> tuple[float, str, Optional[str], str]:
         """Return role proficiency with skill transfer fallback.
 
+        DEPRECATED: Use get_champion_proficiency instead.
+        This method is kept for backward compatibility but should not be used
+        for new code. The comfort + role strength approach provides more stable
+        and predictable proficiency scores.
+
         Returns:
             (score, confidence, player_name, source)
             source: direct | transfer | none
