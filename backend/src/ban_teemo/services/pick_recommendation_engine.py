@@ -540,58 +540,40 @@ class PickRecommendationEngine:
     ) -> dict[str, float]:
         """Get context-adjusted scoring weights.
 
-        Adjustments:
-        - First pick (pick_count=0, no enemy): reduce proficiency/archetype, boost meta
-        - Counter-pick (late draft, has enemy): boost matchup_counter
-        - NO_DATA proficiency: redistribute to other components
+        Priority order (domain expert):
+        1. archetype - team composition (NEVER reduced - defines team identity)
+        2. meta - champion power
+        3. matchup_counter - don't feed
+        4. proficiency - lowest (pros can play anything)
 
-        Args:
-            prof_conf: Proficiency confidence level
-            pick_count: Number of picks our team has made
-            has_enemy_picks: Whether enemy has revealed picks
-
-        Returns:
-            Dict of component weights summing to ~1.0
+        Design rationale:
+        - Archetype is never reduced because first pick often defines team identity
+        - Meta is boosted early (power picks) and reduced late (counters matter more)
+        - Matchup_counter is boosted late when counter-picking is possible
+        - Proficiency is always lowest priority for pro play
         """
         weights = dict(self.BASE_WEIGHTS)
 
-        # First pick context: heavily reduce proficiency and archetype, boost meta
-        # Rationale: Blind picks are about power level, not player comfort or comp synergy
-        # Eval showed archetype has negative predictive value (-0.088 delta) in early picks
+        # First pick: boost meta, reduce proficiency further
+        # NOTE: Archetype is NOT reduced - first pick often sets team identity
         if pick_count == 0 and not has_enemy_picks:
-            prof_redistribution = 0.10  # Take from proficiency (0.15 -> 0.05)
-            arch_redistribution = 0.15  # Take from archetype (0.30 -> 0.15)
-            weights["proficiency"] -= prof_redistribution
-            weights["archetype"] -= arch_redistribution
-            weights["meta"] += prof_redistribution + arch_redistribution  # +0.25 to meta (0.30 -> 0.55)
+            # Blind picks are about power level + team identity
+            weights["meta"] += 0.05           # 0.30 -> 0.35
+            weights["proficiency"] -= 0.05    # 0.15 -> 0.10
 
-        # Second pick context (pick_count == 1): still reduce archetype but less aggressive
-        elif pick_count == 1:
-            arch_redistribution = 0.10  # Archetype 0.30 -> 0.20
-            weights["archetype"] -= arch_redistribution
-            weights["meta"] += arch_redistribution
+        # Late draft: boost matchup_counter, reduce meta
+        elif has_enemy_picks and pick_count >= 3:
+            weights["matchup_counter"] += 0.05  # 0.25 -> 0.30
+            weights["meta"] -= 0.05             # 0.30 -> 0.25
 
-        # Mid-draft context (picks 2-3): boost archetype for comp direction
-        elif pick_count in [2, 3] and has_enemy_picks:
-            # Archetype becomes more valuable as team direction emerges
-            arch_boost = 0.05  # Take from matchup_counter
-            weights["archetype"] += arch_boost
-            weights["matchup_counter"] -= arch_boost
-
-        # Counter-pick context: increase matchup_counter weight
-        # Rationale: Late picks should exploit matchup knowledge
-        elif has_enemy_picks and pick_count >= 4:
-            redistribution = 0.05
-            weights["meta"] -= redistribution
-            weights["matchup_counter"] += redistribution
-
-        # Handle NO_DATA proficiency - redistribute most of its weight
+        # Handle NO_DATA proficiency
         if prof_conf == "NO_DATA":
             redistribute = weights["proficiency"] * 0.8
-            weights["proficiency"] = weights["proficiency"] * 0.2
-            # Distribute evenly to other components
-            for key in ["meta", "matchup_counter", "archetype"]:
-                weights[key] += redistribute / 3
+            weights["proficiency"] *= 0.2
+            # Distribute to archetype and meta (most important factors)
+            weights["archetype"] += redistribute * 0.5
+            weights["meta"] += redistribute * 0.3
+            weights["matchup_counter"] += redistribute * 0.2
 
         return weights
 
