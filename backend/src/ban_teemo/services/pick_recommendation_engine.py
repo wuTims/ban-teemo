@@ -172,6 +172,13 @@ class PickRecommendationEngine:
                 if champ not in unavailable:
                     base_candidates.add(champ)
 
+        # Collect global power picks (regardless of role)
+        # Ensures power picks aren't missed due to sparse player data
+        global_power = self.meta_scorer.get_top_meta_champions(role=None, limit=20)
+        for champ in global_power:
+            if champ not in unavailable:
+                base_candidates.add(champ)
+
         all_champions.update(base_candidates)
 
         # Expand candidates with transfer targets (one-hop)
@@ -228,7 +235,16 @@ class PickRecommendationEngine:
                     if probs:
                         candidates.add(champ)
 
-        # 3. One-hop transfer targets for candidate expansion
+        # 3. Global power picks (high presence regardless of role/pool)
+        # Ensures power picks aren't missed due to sparse player data
+        global_power = self.meta_scorer.get_top_meta_champions(role=None, limit=20)
+        for champ in global_power:
+            if champ not in unavailable and champ not in candidates:
+                probs = role_cache.get(champ, {})
+                if probs:
+                    candidates.add(champ)
+
+        # 4. One-hop transfer targets for candidate expansion
         base_candidates = set(candidates)
         for champ in base_candidates:
             for transfer in self.skill_transfer_service.get_similar_champions(
@@ -328,6 +344,14 @@ class PickRecommendationEngine:
             base_score = base_score * blind_safety
             blind_safety_applied = True
             components["blind_safety"] = blind_safety
+
+        # Apply role flex bonus for early picks (hides role assignment)
+        if pick_count <= 1:
+            role_flex = self._get_role_flex_score(champion)
+            # Add as weighted component (5% of total)
+            role_flex_bonus = role_flex * 0.05
+            base_score = base_score + role_flex_bonus
+            components["role_flex"] = role_flex
 
         total_score = base_score * synergy_multiplier
         confidence = (1.0 + prof_conf_val) / 2
@@ -594,6 +618,28 @@ class PickRecommendationEngine:
         if result["components"].get("meta", 0) < 0.4 and result["components"].get("proficiency", 0) >= 0.7:
             return "SURPRISE_PICK"
         return None
+
+    def _get_role_flex_score(self, champion: str) -> float:
+        """Calculate role flexibility score for a champion.
+
+        Champions that can play multiple roles are valuable in early draft
+        because they hide team's role assignment from the enemy.
+
+        Returns:
+            Float 0.0-0.8 representing role flexibility value
+        """
+        probs = self.flex_resolver.get_role_probabilities(champion)
+        if not probs:
+            return 0.2  # Unknown - assume single role
+
+        # Count roles with >= 20% probability (viable roles)
+        viable_roles = [r for r, p in probs.items() if p >= 0.20]
+
+        if len(viable_roles) >= 3:
+            return 0.8  # True flex (3+ roles)
+        elif len(viable_roles) >= 2:
+            return 0.5  # Dual flex
+        return 0.2  # Single role
 
     def _generate_reasons(self, champion: str, result: dict) -> list[str]:
         """Generate human-readable reasons based on component strengths."""

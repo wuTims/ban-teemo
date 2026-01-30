@@ -866,3 +866,83 @@ def test_first_pick_applies_blind_safety_factor():
             # Check that blind_safety_applied flag exists or score reflects it
             assert "blind_safety_applied" in rec or rec["score"] < 0.75
             break
+
+
+# Role flex scoring tests (Task 16)
+
+def test_role_flex_bonus_applied_early_draft():
+    """Early draft picks should get bonus for role flexibility."""
+    engine = PickRecommendationEngine()
+
+    team_players = [
+        {"name": "TestTop", "role": "top"},
+        {"name": "TestJungle", "role": "jungle"},
+        {"name": "TestMid", "role": "mid"},
+        {"name": "TestBot", "role": "bot"},
+        {"name": "TestSupport", "role": "support"},
+    ]
+
+    # Get recommendations for first pick
+    recommendations = engine.get_recommendations(
+        team_players=team_players,
+        our_picks=[],
+        enemy_picks=[],
+        banned=[],
+        limit=20,
+    )
+
+    # Find a known flex pick (Aurora can go mid/top/jungle)
+    aurora_rec = next((r for r in recommendations if r["champion_name"] == "Aurora"), None)
+
+    # Should have role_flex component
+    if aurora_rec:
+        assert "role_flex" in aurora_rec.get("components", {}), (
+            "Early draft should include role_flex component"
+        )
+
+
+def test_role_flex_score_multi_role():
+    """Champions with multiple viable roles should have high flex score."""
+    engine = PickRecommendationEngine()
+
+    # Aurora can go mid/top (2 roles - dual flex)
+    flex_score = engine._get_role_flex_score("Aurora")
+    assert flex_score >= 0.5, f"Dual-flex Aurora should have flex >= 0.5: {flex_score}"
+
+
+def test_role_flex_score_single_role():
+    """Single-role champions should have low flex score."""
+    engine = PickRecommendationEngine()
+
+    # Jinx is bot only
+    flex_score = engine._get_role_flex_score("Jinx")
+    assert flex_score <= 0.3, f"Single-role Jinx should have flex <= 0.3: {flex_score}"
+
+
+# Global power picks tests (Task 17)
+
+def test_candidates_include_global_power_picks():
+    """Candidate pool should include high-presence picks regardless of player pools."""
+    engine = PickRecommendationEngine()
+
+    # Players with NO proficiency data (simulates sparse data)
+    team_players = [
+        {"name": "UnknownTop", "role": "top"},
+        {"name": "UnknownJungle", "role": "jungle"},
+        {"name": "UnknownMid", "role": "mid"},
+        {"name": "UnknownBot", "role": "bot"},
+        {"name": "UnknownSupport", "role": "support"},
+    ]
+
+    unfilled_roles = {"top", "jungle", "mid", "bot", "support"}
+    unavailable = set()
+
+    # Build candidates
+    role_cache = engine._build_role_cache(team_players, unfilled_roles, unavailable, [])
+    candidates = engine._get_candidates(team_players, unfilled_roles, unavailable, role_cache)
+
+    # High presence champions should be included even without player pool data
+    # Azir has ~39% presence and should always be considered
+    assert "Azir" in candidates, "High-presence Azir should be in candidates"
+    # Should have more than just role-specific meta picks
+    assert len(candidates) >= 30, f"Should have broad candidate pool, got {len(candidates)}"
