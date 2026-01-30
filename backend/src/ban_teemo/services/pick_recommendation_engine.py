@@ -306,10 +306,12 @@ class PickRecommendationEngine:
         components["archetype"] = archetype_score
 
         # Base score
+        pick_count = len(our_picks)
+        has_enemy_picks = len(enemy_picks) > 0
         effective_weights = self._get_effective_weights(
             role_prof_conf,
-            pick_count=len(our_picks),
-            has_enemy_picks=len(enemy_picks) > 0
+            pick_count=pick_count,
+            has_enemy_picks=has_enemy_picks
         )
         base_score = (
             components["meta"] * effective_weights["meta"] +
@@ -318,6 +320,14 @@ class PickRecommendationEngine:
             components["counter"] * effective_weights["counter"] +
             components["archetype"] * effective_weights["archetype"]
         )
+
+        # Apply blind pick safety factor for early picks without enemy context
+        blind_safety_applied = False
+        if pick_count <= 1 and not has_enemy_picks:
+            blind_safety = self.meta_scorer.get_blind_pick_safety(champion)
+            base_score = base_score * blind_safety
+            blind_safety_applied = True
+            components["blind_safety"] = blind_safety
 
         total_score = base_score * synergy_multiplier
         confidence = (1.0 + prof_conf_val) / 2
@@ -332,6 +342,7 @@ class PickRecommendationEngine:
             "effective_weights": {k: round(v, 3) for k, v in effective_weights.items()},
             "proficiency_source": prof_source,
             "proficiency_player": prof_player,
+            "blind_safety_applied": blind_safety_applied,
         }
 
     def _calculate_archetype_score(

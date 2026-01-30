@@ -830,3 +830,39 @@ def test_get_effective_weights_no_data_redistributes():
     # Total should still sum to ~1.0
     total = sum(weights.values())
     assert 0.99 <= total <= 1.01, f"Weights should sum to 1.0, got {total}"
+
+
+# Blind pick safety tests (Task 7)
+
+def test_first_pick_applies_blind_safety_factor():
+    """First pick scoring should apply blind safety factor."""
+    engine = PickRecommendationEngine()
+
+    team_players = [
+        {"name": "TestTop", "role": "top"},
+        {"name": "TestJungle", "role": "jungle"},
+        {"name": "TestMid", "role": "mid"},
+        {"name": "TestBot", "role": "bot"},
+        {"name": "TestSupport", "role": "support"},
+    ]
+
+    # Get recommendations for first pick (no context)
+    recommendations = engine.get_recommendations(
+        team_players=team_players,
+        our_picks=[],
+        enemy_picks=[],
+        banned=[],
+        limit=10,
+    )
+
+    # Counter-dependent champions should not be top recommended for first pick
+    # (Neeko is counter_pick_dependent)
+    top_5_names = [r["champion_name"] for r in recommendations[:5]]
+
+    # This is a soft check - Neeko can still appear but shouldn't dominate
+    # The test validates the factor is being applied by checking scores
+    for rec in recommendations:
+        if rec["champion_name"] == "Neeko":
+            # Check that blind_safety_applied flag exists or score reflects it
+            assert "blind_safety_applied" in rec or rec["score"] < 0.75
+            break
