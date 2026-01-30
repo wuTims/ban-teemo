@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Optional
 
 from ban_teemo.services.archetype_service import ArchetypeService
 from ban_teemo.services.scorers import FlexResolver, MatchupCalculator, MetaScorer, ProficiencyScorer
+from ban_teemo.services.synergy_service import SynergyService
 from ban_teemo.utils.role_normalizer import normalize_role
 
 if TYPE_CHECKING:
@@ -26,6 +27,7 @@ class BanRecommendationService:
         self.matchup_calculator = MatchupCalculator(knowledge_dir)
         self.flex_resolver = FlexResolver(knowledge_dir)
         self.archetype_service = ArchetypeService(knowledge_dir)
+        self.synergy_service = SynergyService(knowledge_dir)
         self._draft_repository = draft_repository
 
     def get_ban_recommendations(
@@ -79,6 +81,7 @@ class BanRecommendationService:
                         player=player,
                         proficiency=entry,
                         pool_size=pool_size,
+                        is_phase_1=is_phase_1,
                     )
 
                     ban_candidates.append({
@@ -135,57 +138,118 @@ class BanRecommendationService:
         player: dict,
         proficiency: dict,
         pool_size: int = 0,
+        is_phase_1: bool = True,
     ) -> tuple[float, dict[str, float]]:
-        """Calculate ban priority score for a player's champion pool entry.
+        """Calculate ban priority score using explicit tiered priority.
 
-        Args:
-            champion: Champion name being considered for ban
-            player: Player dict with 'name' and 'role'
-            proficiency: Proficiency entry with 'score', 'games', 'confidence'
-            pool_size: Pre-computed size of player's champion pool (min_games=2)
+        TIERED PRIORITY SYSTEM (Phase 1):
+            Tier 1 (Highest): High proficiency + high presence (in pool + meta power)
+            Tier 2 (High):    High proficiency only (pool targeting)
+            Tier 3 (Medium):  High presence only (global power)
+            Tier 4 (Lower):   General meta bans
 
-        Returns:
-            Tuple of (priority_score, components_dict)
+        Base weights: proficiency(30%), meta(25%), presence(25%), flex(20%)
+        Tier bonuses applied on top for combined conditions.
         """
         components: dict[str, float] = {}
 
-        # Base: player proficiency on champion
-        proficiency_component = proficiency["score"] * 0.4
-        components["proficiency"] = round(proficiency_component, 3)
+        if is_phase_1:
+            # Phase 1: Tiered power pick priority
 
-        # Meta strength
-        meta_score = self.meta_scorer.get_meta_score(champion)
-        meta_component = meta_score * 0.3
-        components["meta"] = round(meta_component, 3)
+            # Calculate base components
+            meta_score = self.meta_scorer.get_meta_score(champion)
+            presence = self._get_presence_score(champion)
+            flex = self._get_flex_value(champion)
+            prof_score = proficiency["score"]
+            conf = proficiency.get("confidence", "LOW")
 
-        # Games played (comfort factor)
-        games = proficiency.get("games", 0)
-        comfort = min(1.0, games / 10)
-        comfort_component = comfort * 0.2
-        components["comfort"] = round(comfort_component, 3)
+            # Determine tier conditions
+            is_high_proficiency = prof_score >= 0.7 and conf in {"HIGH", "MEDIUM"}
+            is_high_presence = presence >= 0.25
+            is_in_pool = proficiency.get("games", 0) >= 2
 
-        # Confidence bonus
-        conf = proficiency.get("confidence", "LOW")
-        conf_bonus = {"HIGH": 0.1, "MEDIUM": 0.05, "LOW": 0.0}.get(conf, 0)
-        components["confidence_bonus"] = round(conf_bonus, 3)
+            # Base score (weights: prof 30%, meta 25%, presence 25%, flex 20%)
+            proficiency_component = prof_score * 0.30
+            meta_component = meta_score * 0.25
+            presence_component = presence * 0.25
+            flex_component = flex * 0.20
 
-        # Pool depth exploitation - bans hurt more against shallow pools
-        pool_bonus = 0.0
-        if pool_size >= 1:  # Only boost if we have actual data
-            if pool_size <= 3:
-                pool_bonus = 0.20  # High impact - shallow pool
-            elif pool_size <= 5:
-                pool_bonus = 0.10  # Medium impact
-            # Deep pools (6+) get no bonus
-        components["pool_depth_bonus"] = round(pool_bonus, 3)
+            components["proficiency"] = round(proficiency_component, 3)
+            components["meta"] = round(meta_component, 3)
+            components["presence"] = round(presence_component, 3)
+            components["flex"] = round(flex_component, 3)
 
-        priority = (
-            proficiency_component
-            + meta_component
-            + comfort_component
-            + conf_bonus
-            + pool_bonus
-        )
+            base_priority = (
+                proficiency_component
+                + meta_component
+                + presence_component
+                + flex_component
+            )
+
+            # Apply tier bonuses
+            tier_bonus = 0.0
+            if is_high_proficiency and is_high_presence and is_in_pool:
+                # TIER 1: High proficiency + high presence + in pool
+                tier_bonus = 0.15
+                components["tier"] = "T1_POOL_AND_POWER"
+            elif is_high_proficiency and is_in_pool:
+                # TIER 2: High proficiency, in pool (comfort pick targeting)
+                tier_bonus = 0.10
+                components["tier"] = "T2_POOL_TARGET"
+            elif is_high_presence:
+                # TIER 3: High presence only (global power ban)
+                tier_bonus = 0.05
+                components["tier"] = "T3_GLOBAL_POWER"
+            else:
+                # TIER 4: General meta ban
+                tier_bonus = 0.0
+                components["tier"] = "T4_GENERAL"
+
+            components["tier_bonus"] = round(tier_bonus, 3)
+
+            # Pool depth exploitation (additive - shallow pools = higher impact)
+            pool_bonus = 0.0
+            if pool_size >= 1:
+                if pool_size <= 3:
+                    pool_bonus = 0.08
+                elif pool_size <= 5:
+                    pool_bonus = 0.04
+            components["pool_depth_bonus"] = round(pool_bonus, 3)
+
+            priority = base_priority + tier_bonus + pool_bonus
+        else:
+            # Phase 2: Keep original calculation for now (Task 14 will update)
+            proficiency_component = proficiency["score"] * 0.4
+            components["proficiency"] = round(proficiency_component, 3)
+
+            meta_score = self.meta_scorer.get_meta_score(champion)
+            meta_component = meta_score * 0.3
+            components["meta"] = round(meta_component, 3)
+
+            games = proficiency.get("games", 0)
+            comfort = min(1.0, games / 10)
+            comfort_component = comfort * 0.2
+            components["comfort"] = round(comfort_component, 3)
+
+            conf = proficiency.get("confidence", "LOW")
+            conf_bonus = {"HIGH": 0.1, "MEDIUM": 0.05, "LOW": 0.0}.get(conf, 0)
+            components["confidence_bonus"] = round(conf_bonus, 3)
+
+            pool_bonus = 0.0
+            if pool_size >= 1:
+                if pool_size <= 3:
+                    pool_bonus = 0.20
+                elif pool_size <= 5:
+                    pool_bonus = 0.10
+            components["pool_depth_bonus"] = round(pool_bonus, 3)
+
+            priority = (
+                proficiency_component
+                + meta_component
+                + comfort_component
+                + conf_bonus
+                + pool_bonus
+            )
 
         return (round(min(1.0, priority), 3), components)
 
@@ -389,3 +453,29 @@ class BanRecommendationService:
 
         # Combine contribution and alignment boost
         return round(contribution * 0.6 + alignment_boost * 0.4, 3)
+
+    def _get_synergy_denial_score(self, champion: str, enemy_picks: list[str]) -> float:
+        """Calculate synergy denial value of banning this champion.
+
+        Would this champion complete a strong synergy with enemy picks?
+
+        Args:
+            champion: Champion to potentially ban
+            enemy_picks: Champions enemy has already picked
+
+        Returns:
+            Float 0.0-1.0 representing synergy denial value
+        """
+        if not enemy_picks:
+            return 0.0
+
+        # Calculate synergy gain if enemy added this champion
+        synergy_with = self.synergy_service.calculate_team_synergy(
+            enemy_picks + [champion]
+        )
+        synergy_without = self.synergy_service.calculate_team_synergy(enemy_picks)
+
+        synergy_gain = synergy_with["total_score"] - synergy_without["total_score"]
+
+        # Scale the gain (typical range is 0.0-0.2) to 0-1
+        return round(max(0, min(1.0, synergy_gain * 3)), 3)

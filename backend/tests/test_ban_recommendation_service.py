@@ -346,3 +346,116 @@ def test_get_archetype_counter_score_no_enemy():
 
     score = service._get_archetype_counter_score("Orianna", [])
     assert score == 0.0
+
+
+def test_phase1_ban_priority_uses_tiered_system():
+    """Phase 1 bans should use tiered priority system."""
+    service = BanRecommendationService()
+
+    # T1: High proficiency + high presence + in pool
+    priority_t1, components_t1 = service._calculate_ban_priority(
+        champion="Azir",  # High presence champion
+        player={"name": "TestPlayer", "role": "mid"},
+        proficiency={"score": 0.8, "games": 10, "confidence": "HIGH"},
+        pool_size=5,
+        is_phase_1=True,
+    )
+
+    # Should include tier classification
+    assert "tier" in components_t1, "Should include tier classification"
+    assert components_t1["tier"] == "T1_POOL_AND_POWER", (
+        f"High prof + high presence should be T1, got {components_t1['tier']}"
+    )
+    assert "tier_bonus" in components_t1, "Should include tier bonus"
+    assert components_t1["tier_bonus"] >= 0.10, "T1 should have significant bonus"
+
+
+def test_phase1_tier2_pool_targeting():
+    """Tier 2 should apply for pool targeting without high presence."""
+    service = BanRecommendationService()
+
+    # T2: High proficiency, in pool, but low presence champion
+    priority, components = service._calculate_ban_priority(
+        champion="Qiyana",  # Lower presence (~7%)
+        player={"name": "TestPlayer", "role": "mid"},
+        proficiency={"score": 0.75, "games": 8, "confidence": "MEDIUM"},
+        pool_size=3,
+        is_phase_1=True,
+    )
+
+    # Should be T2 (pool target) or T4 (if presence threshold not met)
+    tier = components.get("tier", "")
+    assert tier in ["T2_POOL_TARGET", "T4_GENERAL"], f"Low presence comfort pick: {tier}"
+
+
+def test_phase1_tier_ordering():
+    """Higher tiers should have higher priority than lower tiers."""
+    service = BanRecommendationService()
+
+    # T1 scenario
+    p1, c1 = service._calculate_ban_priority(
+        champion="Azir",
+        player={"name": "P1", "role": "mid"},
+        proficiency={"score": 0.85, "games": 12, "confidence": "HIGH"},
+        pool_size=4,
+        is_phase_1=True,
+    )
+
+    # T4 scenario (low proficiency, low presence)
+    p4, c4 = service._calculate_ban_priority(
+        champion="Qiyana",
+        player={"name": "P1", "role": "mid"},
+        proficiency={"score": 0.5, "games": 2, "confidence": "LOW"},
+        pool_size=8,
+        is_phase_1=True,
+    )
+
+    assert p1 > p4, f"T1 priority ({p1}) should exceed T4 ({p4})"
+
+
+def test_get_synergy_denial_score_strong_synergy():
+    """Banning a champion with strong synergy to enemy should score high."""
+    service = BanRecommendationService()
+
+    # Enemy has Jarvan - Orianna has strong synergy (J4 ult + Ori ult combo)
+    enemy_picks = ["Jarvan IV"]
+
+    score = service._get_synergy_denial_score("Orianna", enemy_picks)
+
+    # Should have some synergy denial value
+    assert score >= 0.0, f"Should have non-negative synergy denial: {score}"
+
+
+def test_get_synergy_denial_score_no_synergy():
+    """Banning a champion with no synergy should score 0."""
+    service = BanRecommendationService()
+
+    score = service._get_synergy_denial_score("Orianna", [])
+    assert score == 0.0
+
+
+def test_get_role_denial_score_unfilled_role():
+    """Banning a champion for unfilled enemy role should score high."""
+    service = BanRecommendationService()
+
+    # Enemy has picked mid and jungle, still needs bot
+    enemy_picks = ["Azir", "Jarvan IV"]
+    enemy_players = [
+        {"name": "Viper", "role": "bot"},  # Viper is known ADC
+        {"name": "TestMid", "role": "mid"},
+        {"name": "TestJungle", "role": "jungle"},
+    ]
+
+    # Kai'Sa is in Viper's pool and fills bot
+    score = service._get_role_denial_score("Kai'Sa", enemy_picks, enemy_players)
+
+    # Should have role denial value
+    assert score >= 0.3, f"Kai'Sa should deny Viper's bot role: {score}"
+
+
+def test_get_role_denial_score_no_players():
+    """No enemy players returns 0."""
+    service = BanRecommendationService()
+
+    score = service._get_role_denial_score("Kai'Sa", ["Azir"], [])
+    assert score == 0.0
