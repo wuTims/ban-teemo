@@ -479,3 +479,60 @@ class BanRecommendationService:
 
         # Scale the gain (typical range is 0.0-0.2) to 0-1
         return round(max(0, min(1.0, synergy_gain * 3)), 3)
+
+    def _get_role_denial_score(
+        self,
+        champion: str,
+        enemy_picks: list[str],
+        enemy_players: list[dict]
+    ) -> float:
+        """Calculate role denial value of banning this champion.
+
+        Does banning this deny a role the enemy still needs to fill?
+
+        Args:
+            champion: Champion to potentially ban
+            enemy_picks: Champions enemy has already picked
+            enemy_players: Enemy player info with 'name' and 'role'
+
+        Returns:
+            Float 0.0-0.8 representing role denial value
+        """
+        if not enemy_players:
+            return 0.0
+
+        # Infer which roles enemy has filled
+        filled_roles = set()
+        for pick in enemy_picks:
+            probs = self.flex_resolver.get_role_probabilities(pick)
+            if probs:
+                primary_role = max(probs, key=probs.get)
+                filled_roles.add(primary_role)
+
+        unfilled_roles = {"top", "jungle", "mid", "bot", "support"} - filled_roles
+
+        if not unfilled_roles:
+            return 0.0
+
+        # Can this champion fill an unfilled role?
+        champ_probs = self.flex_resolver.get_role_probabilities(champion)
+        if not champ_probs:
+            return 0.0
+
+        for role in unfilled_roles:
+            if champ_probs.get(role, 0) >= 0.25:  # Viable in this role
+                # Check if any enemy player in this role has this in their pool
+                player = next(
+                    (p for p in enemy_players if p.get("role") == role),
+                    None
+                )
+                if player:
+                    pool = self.proficiency_scorer.get_player_champion_pool(
+                        player["name"], min_games=2
+                    )
+                    pool_champs = [e["champion"] for e in pool[:10]]
+                    if champion in pool_champs:
+                        return 0.8  # High denial - in player's pool for unfilled role
+                return 0.4  # General denial - fills unfilled role
+
+        return 0.0

@@ -209,18 +209,20 @@ def test_auto_lookup_normalizes_roles(mock_repository):
     assert players[0]["name"] == "TestPlayer"
 
 
-def test_pool_depth_boost_shallow_pool(service):
-    """Verify +0.20 boost is applied for pools with ≤3 champions."""
+def test_pool_depth_boost_shallow_pool_phase2(service):
+    """Verify +0.20 boost is applied for pools with ≤3 champions in Phase 2."""
     # Create controlled proficiency entry
     proficiency = {"score": 0.5, "games": 5, "confidence": "MEDIUM"}
     player = {"name": "TestPlayer", "role": "MID"}
 
     # Calculate base priority (without pool depth) by testing with deep pool
+    # Use is_phase_1=False to test Phase 2 behavior (original pool depth logic)
     base_priority, _ = service._calculate_ban_priority(
         champion="Azir",
         player=player,
         proficiency=proficiency,
         pool_size=10,  # Deep pool - no boost
+        is_phase_1=False,
     )
 
     # Calculate priority with shallow pool
@@ -229,6 +231,7 @@ def test_pool_depth_boost_shallow_pool(service):
         player=player,
         proficiency=proficiency,
         pool_size=3,  # Shallow pool - should get +0.20
+        is_phase_1=False,
     )
 
     # Verify exact boost amount
@@ -237,16 +240,18 @@ def test_pool_depth_boost_shallow_pool(service):
     assert components["pool_depth_bonus"] == 0.20
 
 
-def test_pool_depth_boost_medium_pool(service):
-    """Verify +0.10 boost is applied for pools with 4-5 champions."""
+def test_pool_depth_boost_medium_pool_phase2(service):
+    """Verify +0.10 boost is applied for pools with 4-5 champions in Phase 2."""
     proficiency = {"score": 0.5, "games": 5, "confidence": "MEDIUM"}
     player = {"name": "TestPlayer", "role": "MID"}
 
     base_priority, _ = service._calculate_ban_priority(
         champion="Azir", player=player, proficiency=proficiency, pool_size=10,
+        is_phase_1=False,
     )
     medium_priority, components = service._calculate_ban_priority(
         champion="Azir", player=player, proficiency=proficiency, pool_size=5,
+        is_phase_1=False,
     )
 
     assert medium_priority == min(1.0, round(base_priority + 0.10, 3)), \
@@ -254,16 +259,18 @@ def test_pool_depth_boost_medium_pool(service):
     assert components["pool_depth_bonus"] == 0.10
 
 
-def test_pool_depth_no_boost_for_missing_data(service):
-    """Verify no boost when pool_size=0 (missing data)."""
+def test_pool_depth_no_boost_for_missing_data_phase2(service):
+    """Verify no boost when pool_size=0 (missing data) in Phase 2."""
     proficiency = {"score": 0.5, "games": 5, "confidence": "MEDIUM"}
     player = {"name": "TestPlayer", "role": "MID"}
 
     base_priority, _ = service._calculate_ban_priority(
         champion="Azir", player=player, proficiency=proficiency, pool_size=10,
+        is_phase_1=False,
     )
     no_data_priority, components = service._calculate_ban_priority(
         champion="Azir", player=player, proficiency=proficiency, pool_size=0,
+        is_phase_1=False,
     )
 
     assert no_data_priority == base_priority, \
@@ -271,22 +278,63 @@ def test_pool_depth_no_boost_for_missing_data(service):
     assert components["pool_depth_bonus"] == 0.0
 
 
-def test_pool_depth_no_boost_for_deep_pool(service):
-    """Verify no boost when pool_size >= 6."""
+def test_pool_depth_no_boost_for_deep_pool_phase2(service):
+    """Verify no boost when pool_size >= 6 in Phase 2."""
     proficiency = {"score": 0.5, "games": 5, "confidence": "MEDIUM"}
     player = {"name": "TestPlayer", "role": "MID"}
 
     priority_6, components_6 = service._calculate_ban_priority(
         champion="Azir", player=player, proficiency=proficiency, pool_size=6,
+        is_phase_1=False,
     )
     priority_10, components_10 = service._calculate_ban_priority(
         champion="Azir", player=player, proficiency=proficiency, pool_size=10,
+        is_phase_1=False,
     )
 
     assert priority_6 == priority_10, \
         f"Deep pools (6+) should have same priority: 6={priority_6}, 10={priority_10}"
     assert components_6["pool_depth_bonus"] == 0.0
     assert components_10["pool_depth_bonus"] == 0.0
+
+
+def test_pool_depth_boost_shallow_pool_phase1(service):
+    """Verify +0.08 boost is applied for shallow pools in Phase 1 tiered system."""
+    proficiency = {"score": 0.5, "games": 5, "confidence": "MEDIUM"}
+    player = {"name": "TestPlayer", "role": "MID"}
+
+    # Phase 1 uses tiered system with smaller pool bonuses
+    base_priority, _ = service._calculate_ban_priority(
+        champion="Azir", player=player, proficiency=proficiency, pool_size=10,
+        is_phase_1=True,
+    )
+    shallow_priority, components = service._calculate_ban_priority(
+        champion="Azir", player=player, proficiency=proficiency, pool_size=3,
+        is_phase_1=True,
+    )
+
+    assert shallow_priority == min(1.0, round(base_priority + 0.08, 3)), \
+        f"Expected +0.08 boost in Phase 1: base={base_priority}, shallow={shallow_priority}"
+    assert components["pool_depth_bonus"] == 0.08
+
+
+def test_pool_depth_boost_medium_pool_phase1(service):
+    """Verify +0.04 boost is applied for medium pools in Phase 1 tiered system."""
+    proficiency = {"score": 0.5, "games": 5, "confidence": "MEDIUM"}
+    player = {"name": "TestPlayer", "role": "MID"}
+
+    base_priority, _ = service._calculate_ban_priority(
+        champion="Azir", player=player, proficiency=proficiency, pool_size=10,
+        is_phase_1=True,
+    )
+    medium_priority, components = service._calculate_ban_priority(
+        champion="Azir", player=player, proficiency=proficiency, pool_size=5,
+        is_phase_1=True,
+    )
+
+    assert medium_priority == min(1.0, round(base_priority + 0.04, 3)), \
+        f"Expected +0.04 boost in Phase 1: base={base_priority}, medium={medium_priority}"
+    assert components["pool_depth_bonus"] == 0.04
 
 
 def test_get_presence_score_high_presence(service):
