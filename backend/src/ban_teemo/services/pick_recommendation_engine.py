@@ -336,50 +336,63 @@ class PickRecommendationEngine:
         our_picks: list[str],
         enemy_picks: list[str],
     ) -> float:
-        """Calculate archetype alignment and advantage score.
+        """Calculate phase-aware archetype score.
 
-        Two factors:
-        1. Alignment: Does adding this champion strengthen our team's archetype identity?
-        2. Advantage: Does our comp's archetype counter the enemy's archetype?
+        Scoring strategy changes by draft phase:
+        - Early draft (0-1 picks): Value raw strength + versatility bonus
+        - Mid draft (2-3 picks): Blend raw strength with team alignment
+        - Late draft (4+ picks): Weight alignment + counter-effectiveness
 
         Returns:
             Score from 0-1, where 0.5 is neutral.
         """
-        # Get champion's archetype contribution
-        champ_arch = self.archetype_service.get_champion_archetypes(champion)
-        if not champ_arch.get("primary"):
-            # No archetype data for this champion - return neutral
-            return 0.5
-
-        # Calculate team archetype WITH this champion
-        proposed_team = our_picks + [champion]
-        team_arch = self.archetype_service.calculate_team_archetype(proposed_team)
-
-        # Alignment score: how focused is the team on a single archetype?
-        # Higher alignment = more coherent team composition
-        alignment = team_arch.get("alignment", 0.0)
-
-        # If enemy has picks, factor in archetype effectiveness
-        effectiveness = 1.0
-        if enemy_picks:
-            advantage = self.archetype_service.calculate_comp_advantage(proposed_team, enemy_picks)
-            effectiveness = advantage.get("advantage", 1.0)
-
-        # Combine: alignment (0-1) and effectiveness (0.8-1.2 typically)
-        # Scale effectiveness to 0-1 range: (eff - 0.8) / 0.4 gives 0-1 for 0.8-1.2 range
-        effectiveness_normalized = min(1.0, max(0.0, (effectiveness - 0.8) / 0.4))
-
-        # Weight alignment more heavily early (building identity)
-        # Weight effectiveness more heavily late (countering enemy)
         pick_count = len(our_picks)
-        if pick_count <= 2:
-            # Early draft: focus on building coherent comp
-            score = alignment * 0.8 + effectiveness_normalized * 0.2
-        else:
-            # Late draft: balance coherence and counter-picking
-            score = alignment * 0.5 + effectiveness_normalized * 0.5
 
-        return round(score, 3)
+        # Get champion's archetype data
+        raw_strength = self.archetype_service.get_raw_strength(champion)
+        versatility = self.archetype_service.get_versatility_score(champion)
+
+        # PHASE 1: Early draft (0-1 picks) - Value versatility
+        if pick_count <= 1:
+            # Versatile champions are valuable - they hide strategy
+            versatility_bonus = versatility * 0.15
+            return min(1.0, raw_strength + versatility_bonus)
+
+        # PHASE 2+: Mid-late draft - Value alignment with team direction
+        team_arch = self.archetype_service.calculate_team_archetype(our_picks)
+        team_primary = team_arch.get("primary")
+
+        if not team_primary:
+            # No clear team direction yet - use raw strength
+            return raw_strength
+
+        # How much does this champion contribute to team's direction?
+        contribution = self.archetype_service.get_contribution_to_archetype(
+            champion, team_primary
+        )
+
+        # Blend contribution with raw strength
+        # More picks = weight contribution more heavily
+        alignment_weight = min(0.7, pick_count * 0.15)  # 0.30 at 2 picks -> 0.70 at 5
+        base_score = (
+            contribution * alignment_weight +
+            raw_strength * (1 - alignment_weight)
+        )
+
+        # PHASE 3: Factor in counter-effectiveness vs enemy (late draft)
+        if enemy_picks and pick_count >= 3:
+            advantage = self.archetype_service.calculate_comp_advantage(
+                our_picks + [champion], enemy_picks
+            )
+            effectiveness = advantage.get("advantage", 1.0)
+            # Normalize effectiveness (typically 0.8-1.2) to 0-1 scale
+            effectiveness_normalized = max(0.0, min(1.0, (effectiveness - 0.8) / 0.4))
+
+            # Weight effectiveness more as draft progresses
+            eff_weight = min(0.4, (pick_count - 2) * 0.1)  # 0.1 at 3 picks -> 0.4 at 5+
+            base_score = base_score * (1 - eff_weight) + effectiveness_normalized * eff_weight
+
+        return round(base_score, 3)
 
     def _choose_best_role(
         self,
@@ -473,8 +486,8 @@ class PickRecommendationEngine:
         Flex champions contribute fractionally based on their role probabilities.
         Pure role champions contribute 1.0 to their role.
 
-        Uses get_role_probabilities() for proper fallback to champion_role_history.json
-        when champions aren't in flex_champions.json.
+        Uses get_role_probabilities() which reads from champion_role_history.json
+        (the single source of truth for role data).
 
         Args:
             our_picks: List of pick dicts with 'champion' and 'role' keys

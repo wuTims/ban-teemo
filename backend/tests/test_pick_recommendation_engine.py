@@ -159,8 +159,8 @@ def test_unknown_champion_gets_deterministic_role(engine, sample_team_players):
 
 def test_excludes_champions_with_only_filled_roles(engine, sample_team_players):
     """Champions that can only play filled roles should be excluded."""
-    # Jinx is ADC-only (ADC: 1.0 in flex_champions.json)
-    # Aurora is MID/TOP flex (MID: 0.696, TOP: 0.304)
+    # Jinx is ADC-only based on champion_role_history.json
+    # Aurora is MID/TOP flex
     recs = engine.get_recommendations(
         team_players=sample_team_players,
         our_picks=["Kai'Sa"],  # ADC is filled
@@ -199,17 +199,20 @@ def test_flex_champions_remain_when_one_role_filled(engine, sample_team_players)
 def _write_engine_knowledge(
     tmp_path,
     *,
-    flex_picks,
     role_history,
     proficiencies,
     meta_stats=None,
     transfers=None,
+    flex_picks=None,  # Deprecated, ignored - role data now comes from role_history only
 ):
+    """Write test knowledge files.
+
+    Role data (probabilities, viable roles) should be in role_history.
+    The flex_picks parameter is deprecated and ignored - FlexResolver now uses
+    champion_role_history.json exclusively.
+    """
     knowledge_dir = tmp_path / "knowledge"
     knowledge_dir.mkdir()
-    (knowledge_dir / "flex_champions.json").write_text(
-        json.dumps({"flex_picks": flex_picks})
-    )
     (knowledge_dir / "champion_role_history.json").write_text(
         json.dumps({"champions": role_history})
     )
@@ -231,11 +234,11 @@ def test_role_fit_prefers_assigned_player_strength(tmp_path):
     """With decoupled role selection, role follows role_prob not player baseline."""
     knowledge_dir = _write_engine_knowledge(
         tmp_path,
-        flex_picks={
-            "FlexPick": {"is_flex": True, "MID": 0.6, "TOP": 0.4},
-        },
         role_history={
-            "FlexPick": {"current_viable_roles": ["MID", "TOP"]},
+            "FlexPick": {
+                "current_viable_roles": ["mid", "top"],
+                "current_distribution": {"MID": 0.6, "TOP": 0.4},
+            },
         },
         proficiencies={
             "TopPlayer": {
@@ -269,11 +272,11 @@ def test_role_fit_prefers_assigned_player_strength(tmp_path):
 def test_role_normalization_prevents_no_data(tmp_path):
     knowledge_dir = _write_engine_knowledge(
         tmp_path,
-        flex_picks={
-            "ADCChamp": {"is_flex": False, "ADC": 1.0},
-        },
         role_history={
-            "ADCChamp": {"current_viable_roles": ["BOT"]},
+            "ADCChamp": {
+                "current_viable_roles": ["bot"],
+                "current_distribution": {"ADC": 1.0},
+            },
         },
         proficiencies={
             "BotPlayer": {
@@ -736,3 +739,53 @@ def test_soft_role_fill_calculation(tmp_path):
     assert abs(role_fill.get("top", 0) - 0.5) < 0.01, f"Expected TOP=0.5, got {role_fill.get('top', 0)}"
     assert abs(role_fill.get("jungle", 0) - 0.5) < 0.01, f"Expected jungle=0.5, got {role_fill.get('jungle', 0)}"
     assert abs(role_fill.get("mid", 0) - 1.0) < 0.01, f"Expected MID=1.0, got {role_fill.get('mid', 0)}"
+
+
+# Phase-aware archetype scoring tests (Task 4)
+
+def test_archetype_score_early_draft_values_versatility():
+    """Early draft (0-1 picks) should value versatility."""
+    engine = PickRecommendationEngine()
+
+    # Orianna is versatile (3 archetypes), Azir is specialist (1 archetype)
+    ori_score = engine._calculate_archetype_score("Orianna", [], [])
+    azir_score = engine._calculate_archetype_score("Azir", [], [])
+
+    # In early draft, versatile champions should NOT be penalized
+    # They should score at least as high as specialists
+    assert ori_score >= azir_score - 0.1, (
+        f"Versatile Orianna ({ori_score}) should not be heavily penalized vs "
+        f"specialist Azir ({azir_score}) in early draft"
+    )
+
+
+def test_archetype_score_mid_draft_values_alignment():
+    """Mid draft (2+ picks) should value alignment with team direction."""
+    engine = PickRecommendationEngine()
+
+    # Team has picked J4 (engage) and Rumble (teamfight)
+    our_picks = ["Jarvan IV", "Rumble"]
+
+    # Orianna (teamfight) should score well with this team
+    ori_score = engine._calculate_archetype_score("Orianna", our_picks, [])
+
+    # Fiora (split) should score worse - doesn't fit teamfight direction
+    fiora_score = engine._calculate_archetype_score("Fiora", our_picks, [])
+
+    assert ori_score > fiora_score, (
+        f"Orianna ({ori_score}) should fit teamfight team better than "
+        f"Fiora ({fiora_score})"
+    )
+
+
+def test_archetype_score_versatile_not_penalized_first_pick():
+    """Versatile champions should get bonus in first pick scenario."""
+    engine = PickRecommendationEngine()
+
+    # First pick - no context
+    ori_score = engine._calculate_archetype_score("Orianna", [], [])
+
+    # Should be significantly higher than the old 0.5 penalty
+    assert ori_score >= 0.7, (
+        f"Versatile Orianna should score >= 0.7 in first pick, got {ori_score}"
+    )
