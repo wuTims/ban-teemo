@@ -141,3 +141,49 @@ def test_get_raw_strength_unknown():
     service = ArchetypeService()
     strength = service.get_raw_strength("NonexistentChamp")
     assert strength == 0.5
+
+
+# --- Relative comparison tests (robust against knowledge data changes) ---
+
+
+def test_get_versatility_score_relative():
+    """Multi-archetype champions should score higher than single-archetype."""
+    service = ArchetypeService()
+
+    # Get scores for two champions we know differ in archetype count
+    # (Don't hardcode expected values - compare relatively)
+    archetypes = service._champion_archetypes
+
+    # Find a single-archetype and multi-archetype champion dynamically
+    single_arch_champ = None
+    multi_arch_champ = None
+
+    for champ, scores in archetypes.items():
+        if len(scores) == 1 and single_arch_champ is None:
+            single_arch_champ = champ
+        elif len(scores) >= 3 and multi_arch_champ is None:
+            multi_arch_champ = champ
+        if single_arch_champ and multi_arch_champ:
+            break
+
+    if single_arch_champ and multi_arch_champ:
+        single_score = service.get_versatility_score(single_arch_champ)
+        multi_score = service.get_versatility_score(multi_arch_champ)
+
+        assert multi_score > single_score, (
+            f"Multi-archetype {multi_arch_champ} ({multi_score}) should score higher "
+            f"than single-archetype {single_arch_champ} ({single_score})"
+        )
+
+
+def test_get_raw_strength_returns_max():
+    """Raw strength should return max archetype value for any champion."""
+    service = ArchetypeService()
+
+    # Test with any champion that has archetype data
+    for champ, scores in list(service._champion_archetypes.items())[:5]:
+        expected_max = max(scores.values())
+        actual = service.get_raw_strength(champ)
+        assert actual == expected_max, (
+            f"{champ}: expected {expected_max}, got {actual}"
+        )

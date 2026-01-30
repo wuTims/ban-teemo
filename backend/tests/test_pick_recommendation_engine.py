@@ -946,3 +946,36 @@ def test_candidates_include_global_power_picks():
     assert "Azir" in candidates, "High-presence Azir should be in candidates"
     # Should have more than just role-specific meta picks
     assert len(candidates) >= 30, f"Should have broad candidate pool, got {len(candidates)}"
+
+
+# --- Relative comparison tests (robust against knowledge data changes) ---
+
+
+def test_archetype_score_versatile_vs_specialist_relative():
+    """Versatile champions should not be heavily penalized vs specialists in early draft."""
+    engine = PickRecommendationEngine()
+
+    # Find champions dynamically based on archetype count
+    arch_service = engine.archetype_service
+    archetypes = arch_service._champion_archetypes
+
+    specialist = None
+    versatile = None
+
+    for champ, scores in archetypes.items():
+        if len(scores) == 1 and specialist is None:
+            specialist = champ
+        elif len(scores) >= 3 and versatile is None:
+            versatile = champ
+        if specialist and versatile:
+            break
+
+    if specialist and versatile:
+        spec_score = engine._calculate_archetype_score(specialist, [], [])
+        vers_score = engine._calculate_archetype_score(versatile, [], [])
+
+        # Versatile should not be more than 0.15 below specialist
+        assert vers_score >= spec_score - 0.15, (
+            f"Versatile {versatile} ({vers_score}) should not be heavily penalized "
+            f"vs specialist {specialist} ({spec_score}) in early draft"
+        )
