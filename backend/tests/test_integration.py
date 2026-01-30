@@ -14,8 +14,8 @@ import tempfile
 from pathlib import Path
 
 import duckdb
+import httpx
 import pytest
-from fastapi.testclient import TestClient
 
 from ban_teemo.main import app
 from ban_teemo.repositories.draft_repository import DraftRepository
@@ -435,9 +435,10 @@ class TestCompleteDraftScenario:
         assert len(early_roles) >= 2
 
         # Mid draft - some roles filled
+        # Use pure role champions (not flex) so soft role fill closes roles completely
         mid_recs = engine.get_recommendations(
             team_players=team_players,
-            our_picks=["Jax", "Vi", "Orianna"],  # top, jungle, mid filled
+            our_picks=["Gnar", "Vi", "Orianna"],  # top, jungle, mid filled (non-flex)
             enemy_picks=["Rell", "Varus"],
             banned=["Aurora", "Yone"],
             limit=10
@@ -447,9 +448,10 @@ class TestCompleteDraftScenario:
         assert mid_roles.issubset({"bot", "support"})
 
         # Late draft - only one role left
+        # Use Jinx (pure ADC) instead of Ashe (flex ADC/SUP) for complete role fill
         late_recs = engine.get_recommendations(
             team_players=team_players,
-            our_picks=["Jax", "Vi", "Orianna", "Ashe"],  # Only support open
+            our_picks=["Gnar", "Vi", "Orianna", "Jinx"],  # Only support open
             enemy_picks=["Rell", "Varus", "Jayce", "Sejuani"],
             banned=["Aurora", "Yone", "K'Sante", "Azir", "Rumble"],
             limit=5
@@ -468,8 +470,8 @@ class TestAPIIntegration:
     """Tests for API endpoints with real (non-mocked) services."""
 
     @pytest.fixture
-    def integration_client(self, test_data_dir):
-        """Create test client with real services pointing to test data."""
+    async def integration_client(self, test_data_dir):
+        """Create async test client with real services pointing to test data."""
         # Clear any cached state
         if hasattr(app.state, "repository"):
             delattr(app.state, "repository")
@@ -486,11 +488,14 @@ class TestAPIIntegration:
             _sessions.clear()
             _session_locks.clear()
 
-        return TestClient(app)
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            yield client
 
-    def test_start_session_with_real_teams(self, integration_client):
+    @pytest.mark.anyio
+    async def test_start_session_with_real_teams(self, integration_client):
         """API should start session with real team data from CSV."""
-        response = integration_client.post(
+        response = await integration_client.post(
             "/api/simulator/sessions",
             json={
                 "blue_team_id": "oe:team:t1",
@@ -511,10 +516,11 @@ class TestAPIIntegration:
         blue_player_names = {p["name"] for p in data["blue_team"]["players"]}
         assert "Faker" in blue_player_names
 
-    def test_submit_action_updates_state(self, integration_client):
+    @pytest.mark.anyio
+    async def test_submit_action_updates_state(self, integration_client):
         """Submitting actions should correctly update draft state."""
         # Start session
-        start_resp = integration_client.post(
+        start_resp = await integration_client.post(
             "/api/simulator/sessions",
             json={
                 "blue_team_id": "oe:team:t1",
@@ -525,7 +531,7 @@ class TestAPIIntegration:
         session_id = start_resp.json()["session_id"]
 
         # Submit a ban
-        action_resp = integration_client.post(
+        action_resp = await integration_client.post(
             f"/api/simulator/sessions/{session_id}/actions",
             json={"champion": "Aurora"}
         )
@@ -536,10 +542,11 @@ class TestAPIIntegration:
         assert data["action"]["action_type"] == "ban"
         assert "Aurora" in data["draft_state"]["blue_bans"]
 
-    def test_get_recommendations_during_draft(self, integration_client):
+    @pytest.mark.anyio
+    async def test_get_recommendations_during_draft(self, integration_client):
         """API should return pick recommendations during draft."""
         # Start session
-        start_resp = integration_client.post(
+        start_resp = await integration_client.post(
             "/api/simulator/sessions",
             json={
                 "blue_team_id": "oe:team:t1",
@@ -550,14 +557,17 @@ class TestAPIIntegration:
         session_id = start_resp.json()["session_id"]
 
         # Fetch recommendations separately (CQRS refactor)
-        recs_resp = integration_client.get(f"/api/simulator/sessions/{session_id}/recommendations")
+        recs_resp = await integration_client.get(
+            f"/api/simulator/sessions/{session_id}/recommendations"
+        )
         data = recs_resp.json()
         assert "recommendations" in data
         assert "for_action_count" in data
 
-    def test_list_teams_returns_real_data(self, integration_client):
+    @pytest.mark.anyio
+    async def test_list_teams_returns_real_data(self, integration_client):
         """Teams list endpoint should return real team data."""
-        response = integration_client.get("/api/simulator/teams")
+        response = await integration_client.get("/api/simulator/teams")
 
         assert response.status_code == 200
         data = response.json()
