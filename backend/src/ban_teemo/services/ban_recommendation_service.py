@@ -2,7 +2,8 @@
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
-from ban_teemo.services.scorers import MatchupCalculator, MetaScorer, ProficiencyScorer
+from ban_teemo.services.archetype_service import ArchetypeService
+from ban_teemo.services.scorers import FlexResolver, MatchupCalculator, MetaScorer, ProficiencyScorer
 from ban_teemo.utils.role_normalizer import normalize_role
 
 if TYPE_CHECKING:
@@ -23,6 +24,8 @@ class BanRecommendationService:
         self.meta_scorer = MetaScorer(knowledge_dir)
         self.proficiency_scorer = ProficiencyScorer(knowledge_dir)
         self.matchup_calculator = MatchupCalculator(knowledge_dir)
+        self.flex_resolver = FlexResolver(knowledge_dir)
+        self.archetype_service = ArchetypeService(knowledge_dir)
         self._draft_repository = draft_repository
 
     def get_ban_recommendations(
@@ -328,3 +331,61 @@ class BanRecommendationService:
         meta_data = self.meta_scorer._meta_stats.get(champion, {})
         presence = meta_data.get("presence", 0)
         return presence  # Already 0-1 scale
+
+    def _get_flex_value(self, champion: str) -> float:
+        """Get champion's flex pick value based on role versatility.
+
+        Champions that can play multiple roles are harder to plan against
+        and more valuable to ban.
+
+        Returns:
+            Float 0.0-0.8 representing flex value
+        """
+        probs = self.flex_resolver.get_role_probabilities(champion)
+        if not probs:
+            return 0.2  # Unknown - assume single role
+
+        # Count roles with >= 15% probability (viable roles)
+        viable_roles = [r for r, p in probs.items() if p >= 0.15]
+
+        if len(viable_roles) >= 3:
+            return 0.8  # True flex (3+ roles)
+        elif len(viable_roles) >= 2:
+            return 0.5  # Dual flex
+        return 0.2  # Single role
+
+    def _get_archetype_counter_score(self, champion: str, enemy_picks: list[str]) -> float:
+        """Calculate how much banning this champion disrupts enemy's archetype.
+
+        Args:
+            champion: Champion to potentially ban
+            enemy_picks: Champions enemy has already picked
+
+        Returns:
+            Float 0.0-1.0 representing archetype disruption value
+        """
+        if not enemy_picks:
+            return 0.0
+
+        # Get enemy's emerging archetype
+        enemy_arch = self.archetype_service.calculate_team_archetype(enemy_picks)
+        enemy_primary = enemy_arch.get("primary")
+
+        if not enemy_primary:
+            return 0.0
+
+        # How much does this champion contribute to enemy's direction?
+        contribution = self.archetype_service.get_contribution_to_archetype(
+            champion, enemy_primary
+        )
+
+        # Also check alignment boost - would adding this champion increase enemy's alignment?
+        current_alignment = enemy_arch.get("alignment", 0)
+        with_champ = self.archetype_service.calculate_team_archetype(
+            enemy_picks + [champion]
+        )
+        new_alignment = with_champ.get("alignment", 0)
+        alignment_boost = max(0, new_alignment - current_alignment)
+
+        # Combine contribution and alignment boost
+        return round(contribution * 0.6 + alignment_boost * 0.4, 3)

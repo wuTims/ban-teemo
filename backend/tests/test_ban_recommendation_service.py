@@ -306,3 +306,43 @@ def test_get_presence_score_unknown(service):
     """Unknown champions return 0."""
     score = service._get_presence_score("NonexistentChamp")
     assert score == 0.0
+
+
+def test_get_flex_value_multi_role():
+    """Multi-role flex picks should have high flex value."""
+    service = BanRecommendationService()
+
+    # Aurora can go mid/top/jungle
+    value = service._get_flex_value("Aurora")
+    assert value >= 0.5, f"Flex Aurora should have value >= 0.5: {value}"
+
+
+def test_get_flex_value_single_role():
+    """Single-role champions should have low flex value."""
+    service = BanRecommendationService()
+
+    # Jinx is bot only
+    value = service._get_flex_value("Jinx")
+    assert value <= 0.3, f"Single-role Jinx should have value <= 0.3: {value}"
+
+
+def test_get_archetype_counter_score_matching():
+    """Banning a champion that fits enemy's archetype should score high."""
+    service = BanRecommendationService()
+
+    # Enemy has picked engage champions (J4, Vi)
+    enemy_picks = ["Jarvan IV", "Vi"]
+
+    # Orianna (teamfight/engage) would fit their engage comp
+    score = service._get_archetype_counter_score("Orianna", enemy_picks)
+
+    # Should have meaningful score since Orianna has engage archetype
+    assert score > 0.2, f"Orianna should counter engage comp: {score}"
+
+
+def test_get_archetype_counter_score_no_enemy():
+    """No enemy picks returns 0."""
+    service = BanRecommendationService()
+
+    score = service._get_archetype_counter_score("Orianna", [])
+    assert score == 0.0
