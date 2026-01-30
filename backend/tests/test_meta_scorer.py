@@ -144,3 +144,24 @@ def test_get_blind_pick_safety_unknown_neutral():
 
     safety = scorer.get_blind_pick_safety("NonexistentChamp")
     assert safety == 1.0, "Unknown should return neutral 1.0"
+
+
+def test_get_presence_high_presence_champion():
+    """High presence champion should return high score."""
+    scorer = MetaScorer()
+    presence = scorer.get_presence("Azir")
+    assert presence >= 0.30, f"Azir should have presence >= 0.30: {presence}"
+
+
+def test_get_presence_low_presence_champion():
+    """Low presence champion should return low score."""
+    scorer = MetaScorer()
+    presence = scorer.get_presence("Qiyana")
+    assert presence < 0.15, f"Qiyana should have presence < 0.15: {presence}"
+
+
+def test_get_presence_unknown_champion():
+    """Unknown champion returns 0."""
+    scorer = MetaScorer()
+    presence = scorer.get_presence("NonexistentChamp")
+    assert presence == 0.0

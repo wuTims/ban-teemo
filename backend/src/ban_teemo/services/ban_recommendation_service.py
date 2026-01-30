@@ -465,9 +465,7 @@ class BanRecommendationService:
         Returns:
             Float 0.0-1.0 representing presence
         """
-        meta_data = self.meta_scorer._meta_stats.get(champion, {})
-        presence = meta_data.get("presence", 0)
-        return presence  # Already 0-1 scale
+        return self.meta_scorer.get_presence(champion)
 
     def _get_flex_value(self, champion: str) -> float:
         """Get champion's flex pick value based on role versatility.

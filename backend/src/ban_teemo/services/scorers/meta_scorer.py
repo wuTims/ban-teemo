@@ -131,6 +131,18 @@ class MetaScorer:
 
         return False
 
+    def get_presence(self, champion_name: str) -> float:
+        """Get champion's presence rate (pick_rate + ban_rate).
+
+        Presence indicates how contested a champion is in the meta.
+
+        Returns:
+            Float 0.0-1.0 representing presence rate
+        """
+        if champion_name not in self._meta_stats:
+            return 0.0
+        return self._meta_stats[champion_name].get("presence", 0.0)
+
     def get_blind_pick_safety(self, champion_name: str) -> float:
         """Get blind pick safety factor for a champion.
 
