@@ -148,7 +148,7 @@ class BanRecommendationService:
                     "target_player": None,
                     "target_role": None,
                     "reasons": [f"{self.meta_scorer.get_meta_tier(champ) or 'High'}-tier meta pick"],
-                    "components": {"meta": round(priority, 3)},
+                    "components": {"meta": round(meta_score, 3)},  # Raw 0-1 score
                 })
 
         # Sort by priority
@@ -191,30 +191,33 @@ class BanRecommendationService:
             is_high_presence = presence >= 0.25
             is_in_pool = proficiency.get("games", 0) >= 2
 
-            # Base score (weights: prof 30%, meta 25%, presence 25%, flex 20%)
-            proficiency_component = prof_score * 0.30
-            meta_component = meta_score * 0.25
-            presence_component = presence * 0.25
-            flex_component = flex * 0.20
+            # Store RAW 0-1 scores for display, apply weights only for priority
+            # Weights: prof 30%, meta 25%, presence 25%, flex 20%
+            components["proficiency"] = round(prof_score, 3)  # Raw 0-1
+            components["meta"] = round(meta_score, 3)         # Raw 0-1
+            components["presence"] = round(presence, 3)       # Raw 0-1
+            components["flex"] = round(flex, 3)               # Raw 0-1
 
-            components["proficiency"] = round(proficiency_component, 3)
-            components["meta"] = round(meta_component, 3)
-            components["presence"] = round(presence_component, 3)
-            components["flex"] = round(flex_component, 3)
-
+            # Calculate weighted priority
             base_priority = (
-                proficiency_component
-                + meta_component
-                + presence_component
-                + flex_component
+                prof_score * 0.30
+                + meta_score * 0.25
+                + presence * 0.25
+                + flex * 0.20
             )
 
             # Apply tier bonuses
             tier_bonus = 0.0
+            meta_tier_bonus = 0.0
             if is_high_proficiency and is_high_presence and is_in_pool:
                 # TIER 1: High proficiency + high presence + in pool
+                # High-meta champions get extra weight in Tier 1 (worth banning even without
+                # perfect player targeting). Domain expert feedback: meta should influence
+                # which comfort picks are worth targeting.
                 tier_bonus = 0.15
+                meta_tier_bonus = meta_score * 0.10  # 10% additional meta weight for Tier 1
                 components["tier"] = "T1_POOL_AND_POWER"
+                components["meta_tier_bonus"] = round(meta_tier_bonus, 3)
             elif is_high_proficiency and is_in_pool:
                 # TIER 2: High proficiency, in pool (comfort pick targeting)
                 tier_bonus = 0.10
@@ -239,39 +242,39 @@ class BanRecommendationService:
                     pool_bonus = 0.04
             components["pool_depth_bonus"] = round(pool_bonus, 3)
 
-            priority = base_priority + tier_bonus + pool_bonus
+            priority = base_priority + tier_bonus + pool_bonus + meta_tier_bonus
         else:
-            # Phase 2: Keep original calculation for now (Task 14 will update)
-            proficiency_component = proficiency["score"] * 0.4
-            components["proficiency"] = round(proficiency_component, 3)
+            # Phase 2: Store RAW 0-1 scores for display, apply weights for priority
+            prof_score = proficiency["score"]
+            components["proficiency"] = round(prof_score, 3)  # Raw 0-1
 
             meta_score = self.meta_scorer.get_meta_score(champion)
-            meta_component = meta_score * 0.3
-            components["meta"] = round(meta_component, 3)
+            components["meta"] = round(meta_score, 3)  # Raw 0-1
 
             games = proficiency.get("games", 0)
             comfort = min(1.0, games / 10)
-            comfort_component = comfort * 0.2
-            components["comfort"] = round(comfort_component, 3)
+            components["comfort"] = round(comfort, 3)  # Raw 0-1
 
             conf = proficiency.get("confidence", "LOW")
-            conf_bonus = {"HIGH": 0.1, "MEDIUM": 0.05, "LOW": 0.0}.get(conf, 0)
-            components["confidence_bonus"] = round(conf_bonus, 3)
+            conf_value = {"HIGH": 1.0, "MEDIUM": 0.5, "LOW": 0.0}.get(conf, 0)
+            components["confidence"] = round(conf_value, 3)  # Raw 0-1
 
-            pool_bonus = 0.0
+            pool_depth = 0.0
             if pool_size >= 1:
                 if pool_size <= 3:
-                    pool_bonus = 0.20
+                    pool_depth = 1.0  # Shallow pool - high impact
                 elif pool_size <= 5:
-                    pool_bonus = 0.10
-            components["pool_depth_bonus"] = round(pool_bonus, 3)
+                    pool_depth = 0.5  # Medium pool
+                # Deep pools (6+) = 0
+            components["pool_depth"] = round(pool_depth, 3)  # Raw 0-1
 
+            # Weighted priority calculation (weights: prof 40%, meta 30%, comfort 15%, conf 10%, pool 5%)
             priority = (
-                proficiency_component
-                + meta_component
-                + comfort_component
-                + conf_bonus
-                + pool_bonus
+                prof_score * 0.40
+                + meta_score * 0.30
+                + comfort * 0.15
+                + conf_value * 0.10
+                + pool_depth * 0.05
             )
 
         return (round(min(1.0, priority), 3), components)
