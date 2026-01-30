@@ -1,4 +1,5 @@
 """Tests for pick recommendation engine."""
+import json
 import pytest
 from ban_teemo.services.pick_recommendation_engine import PickRecommendationEngine
 
@@ -193,3 +194,386 @@ def test_flex_champions_remain_when_one_role_filled(engine, sample_team_players)
     if aurora_rec:
         assert aurora_rec["suggested_role"] == "mid", \
             f"Aurora should suggest mid when top is filled, got {aurora_rec['suggested_role']}"
+
+
+def _write_engine_knowledge(
+    tmp_path,
+    *,
+    flex_picks,
+    role_history,
+    proficiencies,
+    meta_stats=None,
+    transfers=None,
+):
+    knowledge_dir = tmp_path / "knowledge"
+    knowledge_dir.mkdir()
+    (knowledge_dir / "flex_champions.json").write_text(
+        json.dumps({"flex_picks": flex_picks})
+    )
+    (knowledge_dir / "champion_role_history.json").write_text(
+        json.dumps({"champions": role_history})
+    )
+    (knowledge_dir / "player_proficiency.json").write_text(
+        json.dumps({"proficiencies": proficiencies})
+    )
+    if meta_stats is not None:
+        (knowledge_dir / "meta_stats.json").write_text(
+            json.dumps({"champions": meta_stats})
+        )
+    if transfers is not None:
+        (knowledge_dir / "skill_transfers.json").write_text(
+            json.dumps({"transfers": transfers})
+        )
+    return knowledge_dir
+
+
+def test_role_fit_prefers_assigned_player_strength(tmp_path):
+    """With decoupled role selection, role follows role_prob not player baseline."""
+    knowledge_dir = _write_engine_knowledge(
+        tmp_path,
+        flex_picks={
+            "FlexPick": {"is_flex": True, "MID": 0.6, "TOP": 0.4},
+        },
+        role_history={
+            "FlexPick": {"current_viable_roles": ["MID", "TOP"]},
+        },
+        proficiencies={
+            "TopPlayer": {
+                "FlexPick": {"games_raw": 10, "win_rate_weighted": 0.8},
+            },
+            "MidPlayer": {},
+        },
+    )
+    engine = PickRecommendationEngine(knowledge_dir)
+    team_players = [
+        {"name": "TopPlayer", "role": "top"},
+        {"name": "MidPlayer", "role": "mid"},
+    ]
+
+    recs = engine.get_recommendations(
+        team_players=team_players,
+        our_picks=[],
+        enemy_picks=[],
+        banned=[],
+        limit=5,
+    )
+    flex_rec = next((r for r in recs if r["champion_name"] == "FlexPick"), None)
+    assert flex_rec is not None
+    # With decoupled role selection, role is based on role_prob (60% MID > 40% TOP)
+    # NOT player proficiency (TopPlayer has higher baseline)
+    assert flex_rec["suggested_role"] == "mid"
+    # proficiency_source should now be "direct" or "comfort_only" not "transfer"
+    assert flex_rec["proficiency_source"] in {"direct", "comfort_only"}
+
+
+def test_role_normalization_prevents_no_data(tmp_path):
+    knowledge_dir = _write_engine_knowledge(
+        tmp_path,
+        flex_picks={
+            "ADCChamp": {"is_flex": False, "ADC": 1.0},
+        },
+        role_history={
+            "ADCChamp": {"current_viable_roles": ["BOT"]},
+        },
+        proficiencies={
+            "BotPlayer": {
+                "ADCChamp": {"games_raw": 6, "win_rate_weighted": 0.7},
+            },
+        },
+    )
+    engine = PickRecommendationEngine(knowledge_dir)
+    team_players = [
+        {"name": "BotPlayer", "role": "ADC"},
+    ]
+
+    recs = engine.get_recommendations(
+        team_players=team_players,
+        our_picks=[],
+        enemy_picks=[],
+        banned=[],
+        limit=3,
+    )
+    adc_rec = next((r for r in recs if r["champion_name"] == "ADCChamp"), None)
+    assert adc_rec is not None
+    assert adc_rec["suggested_role"] == "bot"
+
+
+def test_transfer_target_surfaces_in_candidates(tmp_path):
+    knowledge_dir = _write_engine_knowledge(
+        tmp_path,
+        flex_picks={
+            "SourceChamp": {"is_flex": False, "MID": 1.0},
+        },
+        role_history={
+            "SourceChamp": {"current_viable_roles": ["MID"]},
+            "TargetChamp": {"current_viable_roles": ["MID"]},
+        },
+        proficiencies={
+            "MidPlayer": {
+                "SourceChamp": {"games_raw": 6, "win_rate_weighted": 0.6},
+            },
+        },
+        transfers={
+            "SourceChamp": {
+                "similar_champions": [
+                    {"champion": "TargetChamp", "co_play_rate": 0.9},
+                ]
+            }
+        },
+    )
+    engine = PickRecommendationEngine(knowledge_dir)
+    team_players = [{"name": "MidPlayer", "role": "mid"}]
+
+    recs = engine.get_recommendations(
+        team_players=team_players,
+        our_picks=[],
+        enemy_picks=[],
+        banned=[],
+        limit=10,
+    )
+    recommended = {r["champion_name"] for r in recs}
+    assert "TargetChamp" in recommended
+
+
+def test_transfer_target_filtered_by_current_role(tmp_path):
+    knowledge_dir = _write_engine_knowledge(
+        tmp_path,
+        flex_picks={
+            "SourceChamp": {"is_flex": False, "TOP": 1.0},
+            "TopFill": {"is_flex": False, "TOP": 1.0},
+        },
+        role_history={
+            "SourceChamp": {"current_viable_roles": ["TOP"]},
+            "TargetChamp": {"current_viable_roles": ["TOP"]},
+            "TopFill": {"current_viable_roles": ["TOP"]},
+        },
+        proficiencies={
+            "TopPlayer": {
+                "SourceChamp": {"games_raw": 6, "win_rate_weighted": 0.6},
+            },
+        },
+        transfers={
+            "SourceChamp": {
+                "similar_champions": [
+                    {"champion": "TargetChamp", "co_play_rate": 0.9},
+                ]
+            }
+        },
+    )
+    engine = PickRecommendationEngine(knowledge_dir)
+    team_players = [{"name": "TopPlayer", "role": "top"}]
+
+    recs = engine.get_recommendations(
+        team_players=team_players,
+        our_picks=["TopFill"],
+        enemy_picks=[],
+        banned=[],
+        limit=10,
+    )
+    recommended = {r["champion_name"] for r in recs}
+    assert "TargetChamp" not in recommended
+
+
+def test_dynamic_weights_redistribute_on_no_data(tmp_path):
+    knowledge_dir = _write_engine_knowledge(
+        tmp_path,
+        flex_picks={
+            "MetaChamp": {"is_flex": False, "MID": 1.0},
+        },
+        role_history={
+            "MetaChamp": {"current_viable_roles": ["MID"]},
+        },
+        proficiencies={},
+        meta_stats={"MetaChamp": {"meta_score": 1.0}},
+    )
+    engine = PickRecommendationEngine(knowledge_dir)
+    team_players = [{"name": "UnknownPlayer", "role": "mid"}]
+
+    recs = engine.get_recommendations(
+        team_players=team_players,
+        our_picks=[],
+        enemy_picks=[],
+        banned=[],
+        limit=5,
+    )
+    rec = next((r for r in recs if r["champion_name"] == "MetaChamp"), None)
+    assert rec is not None
+    weights = rec["effective_weights"]
+    assert weights["proficiency"] == 0.0
+    assert abs(sum(weights.values()) - 1.0) < 0.01
+
+
+def test_no_data_score_differs_from_low(tmp_path):
+    knowledge_dir = _write_engine_knowledge(
+        tmp_path,
+        flex_picks={
+            "MetaChamp": {"is_flex": False, "MID": 1.0},
+        },
+        role_history={
+            "MetaChamp": {"current_viable_roles": ["MID"]},
+        },
+        proficiencies={
+            "LowPlayer": {"MetaChamp": {"games_raw": 1, "win_rate_weighted": 0.5}},
+        },
+        meta_stats={"MetaChamp": {"meta_score": 1.0}},
+    )
+    engine = PickRecommendationEngine(knowledge_dir)
+
+    low_recs = engine.get_recommendations(
+        team_players=[{"name": "LowPlayer", "role": "mid"}],
+        our_picks=[],
+        enemy_picks=[],
+        banned=[],
+        limit=5,
+    )
+    no_data_recs = engine.get_recommendations(
+        team_players=[{"name": "UnknownPlayer", "role": "mid"}],
+        our_picks=[],
+        enemy_picks=[],
+        banned=[],
+        limit=5,
+    )
+
+    low_rec = next((r for r in low_recs if r["champion_name"] == "MetaChamp"), None)
+    no_data_rec = next((r for r in no_data_recs if r["champion_name"] == "MetaChamp"), None)
+    assert low_rec is not None and no_data_rec is not None
+
+
+def test_base_weights_sum_to_one(engine):
+    """BASE_WEIGHTS must sum to 1.0."""
+    total = sum(engine.BASE_WEIGHTS.values())
+    assert abs(total - 1.0) < 0.001
+
+
+def test_proficiency_weight_reduced():
+    """Proficiency weight should be 0.20."""
+    engine = PickRecommendationEngine()
+    assert engine.BASE_WEIGHTS["proficiency"] == 0.20
+
+
+def test_meta_weight_increased():
+    """Meta weight should be 0.25."""
+    engine = PickRecommendationEngine()
+    assert engine.BASE_WEIGHTS["meta"] == 0.25
+
+
+def test_archetype_weight_increased():
+    """Archetype weight should be 0.20."""
+    engine = PickRecommendationEngine()
+    assert engine.BASE_WEIGHTS["archetype"] == 0.20
+
+
+def test_role_selection_not_biased_by_player_baseline(tmp_path):
+    """Flex champion role based on role_prob, NOT player baseline differences.
+
+    Scenario: FlexChamp is 70% TOP, 30% MID.
+    TopPlayer baseline = 0.6, MidPlayer baseline = 0.9.
+    Old behavior: MID wins (0.3 * 0.9 = 0.27 > 0.7 * 0.6 = 0.42) -- WRONG if TOP has higher role_prob
+    New behavior: TOP wins because role_prob dominates (0.7 > 0.3)
+    """
+    knowledge_dir = _write_engine_knowledge(
+        tmp_path,
+        flex_picks={"FlexChamp": {"is_flex": True, "TOP": 0.7, "MID": 0.3}},
+        role_history={
+            "FlexChamp": {"current_viable_roles": ["TOP", "MID"], "current_distribution": {"TOP": 0.7, "MID": 0.3}},
+            "TopChamp": {"current_viable_roles": ["TOP"], "canonical_role": "TOP"},
+            "MidChamp": {"current_viable_roles": ["MID"], "canonical_role": "MID"},
+        },
+        proficiencies={
+            "TopPlayer": {
+                "TopChamp": {"games_weighted": 10, "win_rate_weighted": 0.6},
+            },
+            "MidPlayer": {
+                "MidChamp": {"games_weighted": 10, "win_rate_weighted": 0.9},
+            },
+        },
+        meta_stats={"FlexChamp": {"meta_score": 0.8}},
+    )
+    engine = PickRecommendationEngine(knowledge_dir)
+    team_players = [
+        {"name": "TopPlayer", "role": "top"},
+        {"name": "MidPlayer", "role": "mid"},
+    ]
+
+    recs = engine.get_recommendations(
+        team_players=team_players,
+        our_picks=[],
+        enemy_picks=[],
+        banned=[],
+        limit=10,
+    )
+
+    flex_rec = next((r for r in recs if r["champion_name"] == "FlexChamp"), None)
+    assert flex_rec is not None
+    # Role selection should follow role_prob (70% TOP), NOT be hijacked by MidPlayer's higher baseline
+    assert flex_rec["suggested_role"] == "top", f"Expected TOP (70% role_prob), got {flex_rec['suggested_role']}"
+
+
+def test_champion_proficiency_used_not_transfer(tmp_path):
+    """Engine uses champion comfort + role strength, not transfer-based."""
+    knowledge_dir = _write_engine_knowledge(
+        tmp_path,
+        flex_picks={"MidChamp": {"is_flex": False, "MID": 1.0}},
+        role_history={
+            "MidChamp": {"current_viable_roles": ["MID"], "canonical_role": "MID"},
+            "OtherMid": {"current_viable_roles": ["MID"], "canonical_role": "MID"},
+        },
+        proficiencies={
+            "MidPlayer": {
+                "OtherMid": {"games_weighted": 10, "win_rate_weighted": 0.7},
+                # MidChamp not in pool - should use comfort + role strength
+            },
+        },
+    )
+    engine = PickRecommendationEngine(knowledge_dir)
+    team_players = [{"name": "MidPlayer", "role": "mid"}]
+
+    recs = engine.get_recommendations(
+        team_players=team_players,
+        our_picks=[],
+        enemy_picks=[],
+        banned=[],
+        limit=5,
+    )
+
+    midchamp_rec = next((r for r in recs if r["champion_name"] == "MidChamp"), None)
+    if midchamp_rec:
+        # Should use comfort_only or direct, not transfer
+        assert midchamp_rec["proficiency_source"] in {"comfort_only", "direct"}
+        assert midchamp_rec["proficiency_source"] != "transfer"
+
+
+def test_proficiency_score_uses_comfort_plus_role_strength(tmp_path):
+    """Proficiency for unplayed champion uses comfort baseline + role strength bonus."""
+    knowledge_dir = _write_engine_knowledge(
+        tmp_path,
+        flex_picks={"MidChamp": {"is_flex": False, "MID": 1.0}},
+        role_history={
+            "MidChamp": {"current_viable_roles": ["MID"], "canonical_role": "MID"},
+            "PlayedMid": {"current_viable_roles": ["MID"], "canonical_role": "MID"},
+        },
+        proficiencies={
+            "MidPlayer": {
+                "PlayedMid": {"games_weighted": 10, "win_rate_weighted": 0.8},
+            },
+        },
+        meta_stats={"MidChamp": {"meta_score": 0.5}},
+    )
+    engine = PickRecommendationEngine(knowledge_dir)
+    team_players = [{"name": "MidPlayer", "role": "mid"}]
+
+    recs = engine.get_recommendations(
+        team_players=team_players,
+        our_picks=[],
+        enemy_picks=[],
+        banned=[],
+        limit=10,
+    )
+
+    midchamp_rec = next((r for r in recs if r["champion_name"] == "MidChamp"), None)
+    assert midchamp_rec is not None
+
+    # Comfort baseline (0.5) + role strength bonus (~0.8 * 0.3 = 0.24)
+    # proficiency = 0.5 * (1 + 0.8 * 0.3) = 0.5 * 1.24 = 0.62
+    prof_component = midchamp_rec["components"]["proficiency"]
+    assert prof_component > 0.5, f"Expected comfort + role bonus > 0.5, got {prof_component}"

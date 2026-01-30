@@ -3,24 +3,31 @@ from pathlib import Path
 from typing import Optional
 
 from ban_teemo.services.archetype_service import ArchetypeService
-from ban_teemo.services.scorers import MetaScorer, FlexResolver, ProficiencyScorer, MatchupCalculator
+from ban_teemo.services.scorers import (
+    MetaScorer,
+    FlexResolver,
+    ProficiencyScorer,
+    MatchupCalculator,
+    SkillTransferService,
+)
 from ban_teemo.services.synergy_service import SynergyService
-from ban_teemo.utils.role_normalizer import CANONICAL_ROLES, normalize_role
+from ban_teemo.utils.role_normalizer import CANONICAL_ROLES
 
 
 class PickRecommendationEngine:
     """Generates pick recommendations using weighted multi-factor scoring."""
 
-    # Weights sum to 1.0 - archetype adds team composition coherence
+    # Weights sum to 1.0 - meta and archetype emphasized
     BASE_WEIGHTS = {
-        "meta": 0.20,
-        "proficiency": 0.30,
-        "matchup": 0.20,
-        "counter": 0.15,
-        "archetype": 0.15,  # Team composition alignment
+        "meta": 0.25,         # Champion's current meta strength
+        "proficiency": 0.20,  # Player expertise (comfort + role strength)
+        "matchup": 0.20,      # Lane matchup win rates
+        "counter": 0.15,      # Team-level counter value
+        "archetype": 0.20,    # Team composition alignment
     }
     SYNERGY_MULTIPLIER_RANGE = 0.3
     ALL_ROLES = CANONICAL_ROLES  # {top, jungle, mid, bot, support}
+    TRANSFER_EXPANSION_LIMIT = 2
 
     def __init__(self, knowledge_dir: Optional[Path] = None):
         self.meta_scorer = MetaScorer(knowledge_dir)
@@ -29,6 +36,7 @@ class PickRecommendationEngine:
         self.matchup_calculator = MatchupCalculator(knowledge_dir)
         self.synergy_service = SynergyService(knowledge_dir)
         self.archetype_service = ArchetypeService(knowledge_dir)
+        self.skill_transfer_service = SkillTransferService(knowledge_dir)
 
     def get_recommendations(
         self,
@@ -81,6 +89,9 @@ class PickRecommendationEngine:
                 "confidence": result["confidence"],
                 "suggested_role": result["suggested_role"],
                 "components": result["components"],
+                "effective_weights": result.get("effective_weights"),
+                "proficiency_source": result.get("proficiency_source"),
+                "proficiency_player": result.get("proficiency_player"),
                 "flag": self._compute_flag(result),
                 "reasons": self._generate_reasons(champ, result)
             })
@@ -125,6 +136,7 @@ class PickRecommendationEngine:
         """
         filled_roles = self.ALL_ROLES - unfilled_roles
         all_champions = set()
+        base_candidates = set()
 
         # Collect champions from player pools
         for player in team_players:
@@ -132,14 +144,25 @@ class PickRecommendationEngine:
             for entry in pool[:15]:
                 champ = entry["champion"]
                 if champ not in unavailable:
-                    all_champions.add(champ)
+                    base_candidates.add(champ)
 
         # Collect meta picks for unfilled roles
         for role in unfilled_roles:
             meta_picks = self.meta_scorer.get_top_meta_champions(role=role, limit=10)
             for champ in meta_picks:
                 if champ not in unavailable:
-                    all_champions.add(champ)
+                    base_candidates.add(champ)
+
+        all_champions.update(base_candidates)
+
+        # Expand candidates with transfer targets (one-hop)
+        for champ in base_candidates:
+            for transfer in self.skill_transfer_service.get_similar_champions(
+                champ, limit=self.TRANSFER_EXPANSION_LIMIT
+            ):
+                target = transfer.get("champion")
+                if target and target not in unavailable:
+                    all_champions.add(target)
 
         # Include enemy picks for lane matchup filtering in _calculate_score
         all_champions.update(enemy_picks)
@@ -186,6 +209,19 @@ class PickRecommendationEngine:
                     if probs:
                         candidates.add(champ)
 
+        # 3. One-hop transfer targets for candidate expansion
+        base_candidates = set(candidates)
+        for champ in base_candidates:
+            for transfer in self.skill_transfer_service.get_similar_champions(
+                champ, limit=self.TRANSFER_EXPANSION_LIMIT
+            ):
+                target = transfer.get("champion")
+                if not target or target in unavailable or target in candidates:
+                    continue
+                probs = role_cache.get(target, {})
+                if probs:
+                    candidates.add(target)
+
         return list(candidates)
 
     def _calculate_score(
@@ -205,24 +241,23 @@ class PickRecommendationEngine:
 
         # Use cached role probabilities for suggested_role
         probs = role_cache.get(champion, {})
-        suggested_role = None
-        if probs:
-            suggested_role = max(probs, key=probs.get)
+        (
+            suggested_role,
+            role_prof_score,
+            role_prof_conf,
+            prof_source,
+            prof_player,
+        ) = self._choose_best_role(champion, probs, team_players, role_fill=None)
         suggested_role = suggested_role or "mid"
 
         # Meta
         components["meta"] = self.meta_scorer.get_meta_score(champion)
 
-        # Proficiency - best across all team players
-        best_prof = 0.0
-        best_conf = "NO_DATA"
-        for player in team_players:
-            score, conf = self.proficiency_scorer.get_proficiency_score(player["name"], champion)
-            if score > best_prof:
-                best_prof = score
-                best_conf = conf
-        components["proficiency"] = best_prof
-        prof_conf_val = {"HIGH": 1.0, "MEDIUM": 0.8, "LOW": 0.5, "NO_DATA": 0.3}.get(best_conf, 0.5)
+        # Proficiency - role-assigned player only
+        components["proficiency"] = role_prof_score
+        prof_conf_val = {"HIGH": 1.0, "MEDIUM": 0.8, "LOW": 0.5, "NO_DATA": 0.3}.get(
+            role_prof_conf, 0.5
+        )
 
         # Matchup (lane) - USE CACHE for enemy role probabilities
         matchup_scores = []
@@ -251,12 +286,13 @@ class PickRecommendationEngine:
         components["archetype"] = archetype_score
 
         # Base score
+        effective_weights = self._get_effective_weights(role_prof_conf)
         base_score = (
-            components["meta"] * self.BASE_WEIGHTS["meta"] +
-            components["proficiency"] * self.BASE_WEIGHTS["proficiency"] +
-            components["matchup"] * self.BASE_WEIGHTS["matchup"] +
-            components["counter"] * self.BASE_WEIGHTS["counter"] +
-            components["archetype"] * self.BASE_WEIGHTS["archetype"]
+            components["meta"] * effective_weights["meta"] +
+            components["proficiency"] * effective_weights["proficiency"] +
+            components["matchup"] * effective_weights["matchup"] +
+            components["counter"] * effective_weights["counter"] +
+            components["archetype"] * effective_weights["archetype"]
         )
 
         total_score = base_score * synergy_multiplier
@@ -268,7 +304,10 @@ class PickRecommendationEngine:
             "synergy_multiplier": round(synergy_multiplier, 3),
             "confidence": round(confidence, 3),
             "suggested_role": suggested_role,
-            "components": {k: round(v, 3) for k, v in components.items()}
+            "components": {k: round(v, 3) for k, v in components.items()},
+            "effective_weights": {k: round(v, 3) for k, v in effective_weights.items()},
+            "proficiency_source": prof_source,
+            "proficiency_player": prof_player,
         }
 
     def _calculate_archetype_score(
@@ -321,6 +360,93 @@ class PickRecommendationEngine:
             score = alignment * 0.5 + effectiveness_normalized * 0.5
 
         return round(score, 3)
+
+    def _choose_best_role(
+        self,
+        champion: str,
+        role_probs: dict[str, float],
+        team_players: list[dict],
+        role_fill: Optional[dict[str, float]] = None,
+    ) -> tuple[str, float, str, str, Optional[str]]:
+        """Choose role based on role_prob and role_need, NOT player proficiency.
+
+        Role selection is decoupled from player baseline to prevent misassignment.
+        Proficiency is calculated AFTER role is chosen.
+
+        For flex champs: if best role is filled, re-evaluate among unfilled roles
+        instead of dropping the champion entirely.
+        """
+        if not role_probs:
+            return "mid", 0.5, "NO_DATA", "none", None
+
+        # If no role_fill provided, assume all roles unfilled
+        if role_fill is None:
+            role_fill = {}
+
+        # Get unfilled roles (< 0.9 threshold)
+        ROLE_FILL_THRESHOLD = 0.9
+        unfilled_roles = set()
+        for role in role_probs:
+            fill = role_fill.get(role, 0.0)
+            if fill < ROLE_FILL_THRESHOLD:
+                unfilled_roles.add(role)
+
+        # Filter to only consider unfilled roles (but keep all if none unfilled)
+        candidate_roles = {r: p for r, p in role_probs.items() if r in unfilled_roles}
+        if not candidate_roles:
+            # All roles filled - fall back to original probs (will likely be filtered out later)
+            candidate_roles = role_probs
+
+        # Calculate role need weights for candidate roles
+        role_need = {}
+        for role in candidate_roles:
+            fill = role_fill.get(role, 0.0)
+            # Role need decreases as fill increases; 0 at >= 0.9
+            role_need[role] = max(0.0, 1.0 - fill / ROLE_FILL_THRESHOLD)
+
+        # Select role based on role_prob × role_need (NOT player proficiency)
+        best_role = None
+        best_score = -1.0
+
+        for role, prob in candidate_roles.items():
+            need_weight = role_need.get(role, 1.0)
+            score = prob * need_weight
+
+            if score > best_score:
+                best_role = role
+                best_score = score
+
+        if not best_role:
+            best_role = max(candidate_roles, key=candidate_roles.get)
+
+        # NOW calculate proficiency for the chosen role
+        prof_score, conf, player_name, source = (
+            self.proficiency_scorer.get_champion_proficiency(
+                champion, best_role, team_players
+            )
+        )
+
+        return best_role, prof_score, conf, source, player_name
+
+    def _get_effective_weights(self, prof_conf: str) -> dict[str, float]:
+        """Redistribute proficiency weight when confidence is NO_DATA."""
+        weights = dict(self.BASE_WEIGHTS)
+        if prof_conf != "NO_DATA":
+            return weights
+
+        prof_weight = weights.get("proficiency", 0.0)
+        if prof_weight <= 0:
+            return weights
+
+        remaining = 1.0 - prof_weight
+        if remaining <= 0:
+            return {k: (0.0 if k == "proficiency" else 0.0) for k in weights}
+
+        scale = 1.0 / remaining
+        return {
+            key: (0.0 if key == "proficiency" else value * scale)
+            for key, value in weights.items()
+        }
 
     def _compute_flag(self, result: dict) -> str | None:
         """Compute recommendation flag for UI badges.
