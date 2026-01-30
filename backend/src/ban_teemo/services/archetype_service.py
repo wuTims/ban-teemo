@@ -40,6 +40,31 @@ class ArchetypeService:
             "scores": scores
         }
 
+    def get_versatility_score(self, champion: str) -> float:
+        """Calculate versatility score based on archetype diversity.
+
+        Champions with multiple significant archetypes (>= 0.4) are more versatile,
+        meaning they can fit multiple team compositions and are harder to read.
+
+        Returns:
+            Float 0.0-1.0 where higher = more versatile
+        """
+        if champion not in self._champion_archetypes:
+            return 0.0
+
+        scores = self._champion_archetypes[champion]
+        # Count archetypes with meaningful contribution (>= 0.4)
+        significant_archetypes = [v for v in scores.values() if v >= 0.4]
+        num_significant = len(significant_archetypes)
+
+        if num_significant >= 3:
+            return 0.8  # Highly versatile (3+ archetypes)
+        elif num_significant >= 2:
+            return 0.5  # Moderately versatile (2 archetypes)
+        elif num_significant >= 1:
+            return 0.2  # Focused (1 archetype)
+        return 0.0  # No archetype data
+
     def calculate_team_archetype(self, picks: list[str]) -> dict:
         """Calculate aggregate archetype for a team composition."""
         if not picks:

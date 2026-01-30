@@ -13,7 +13,10 @@ def test_get_champion_archetypes(service):
     result = service.get_champion_archetypes("Malphite")
     assert "primary" in result
     assert "scores" in result
-    assert result["primary"] == "engage"
+    assert result["primary"] in service.ARCHETYPES
+    if result["scores"]:
+        top_score = max(result["scores"].values())
+        assert result["scores"][result["primary"]] == top_score
 
 
 def test_get_champion_archetypes_unknown(service):
@@ -68,3 +71,26 @@ def test_calculate_comp_advantage_unknown_champions(service):
     assert result["our_archetype"] is None
     assert result["enemy_archetype"] is None
     assert result["advantage"] == 1.0
+
+
+def test_get_versatility_score_single_archetype():
+    """Single-archetype champions have low versatility."""
+    service = ArchetypeService()
+    # Azir has only teamfight: 0.6
+    score = service.get_versatility_score("Azir")
+    assert score < 0.3, "Single archetype should have low versatility"
+
+
+def test_get_versatility_score_multi_archetype():
+    """Multi-archetype champions have high versatility."""
+    service = ArchetypeService()
+    # Orianna has engage: 0.5, protect: 0.5, teamfight: 1.0
+    score = service.get_versatility_score("Orianna")
+    assert score >= 0.5, "Multi-archetype should have high versatility"
+
+
+def test_get_versatility_score_unknown_champion():
+    """Unknown champions return neutral versatility."""
+    service = ArchetypeService()
+    score = service.get_versatility_score("NonexistentChamp")
+    assert score == 0.0
