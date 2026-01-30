@@ -306,7 +306,11 @@ class PickRecommendationEngine:
         components["archetype"] = archetype_score
 
         # Base score
-        effective_weights = self._get_effective_weights(role_prof_conf)
+        effective_weights = self._get_effective_weights(
+            role_prof_conf,
+            pick_count=len(our_picks),
+            has_enemy_picks=len(enemy_picks) > 0
+        )
         base_score = (
             components["meta"] * effective_weights["meta"] +
             components["proficiency"] * effective_weights["proficiency"] +
@@ -460,25 +464,52 @@ class PickRecommendationEngine:
 
         return best_role, prof_score, conf, source, player_name
 
-    def _get_effective_weights(self, prof_conf: str) -> dict[str, float]:
-        """Redistribute proficiency weight when confidence is NO_DATA."""
+    def _get_effective_weights(
+        self,
+        prof_conf: str,
+        pick_count: int = 0,
+        has_enemy_picks: bool = False
+    ) -> dict[str, float]:
+        """Get context-adjusted scoring weights.
+
+        Adjustments:
+        - First pick (pick_count=0, no enemy): reduce proficiency, boost meta
+        - Counter-pick (late draft, has enemy): boost matchup
+        - NO_DATA proficiency: redistribute to other components
+
+        Args:
+            prof_conf: Proficiency confidence level
+            pick_count: Number of picks our team has made
+            has_enemy_picks: Whether enemy has revealed picks
+
+        Returns:
+            Dict of component weights summing to ~1.0
+        """
         weights = dict(self.BASE_WEIGHTS)
-        if prof_conf != "NO_DATA":
-            return weights
 
-        prof_weight = weights.get("proficiency", 0.0)
-        if prof_weight <= 0:
-            return weights
+        # First pick context: reduce proficiency, increase meta
+        # Rationale: First picks are about power level, not player comfort
+        if pick_count == 0 and not has_enemy_picks:
+            redistribution = 0.08  # Take from proficiency
+            weights["proficiency"] -= redistribution
+            weights["meta"] += redistribution
 
-        remaining = 1.0 - prof_weight
-        if remaining <= 0:
-            return {k: (0.0 if k == "proficiency" else 0.0) for k in weights}
+        # Counter-pick context: increase matchup weight
+        # Rationale: Late picks should exploit matchup knowledge
+        elif has_enemy_picks and pick_count >= 3:
+            redistribution = 0.05
+            weights["meta"] -= redistribution
+            weights["matchup"] += redistribution
 
-        scale = 1.0 / remaining
-        return {
-            key: (0.0 if key == "proficiency" else value * scale)
-            for key, value in weights.items()
-        }
+        # Handle NO_DATA proficiency - redistribute most of its weight
+        if prof_conf == "NO_DATA":
+            redistribute = weights["proficiency"] * 0.8
+            weights["proficiency"] = weights["proficiency"] * 0.2
+            # Distribute evenly to other components
+            for key in ["meta", "matchup", "counter", "archetype"]:
+                weights[key] += redistribute / 4
+
+        return weights
 
     def _calculate_role_fill(self, our_picks: list[dict]) -> dict[str, float]:
         """Calculate cumulative role fill from existing picks.

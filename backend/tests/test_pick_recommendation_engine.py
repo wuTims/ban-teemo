@@ -402,7 +402,9 @@ def test_dynamic_weights_redistribute_on_no_data(tmp_path):
     rec = next((r for r in recs if r["champion_name"] == "MetaChamp"), None)
     assert rec is not None
     weights = rec["effective_weights"]
-    assert weights["proficiency"] == 0.0
+    # NO_DATA keeps 20% of proficiency weight, and first-pick reduces it further
+    # Expected: (0.20 - 0.08) * 0.2 = 0.024
+    assert weights["proficiency"] < 0.05, f"NO_DATA should heavily reduce proficiency, got {weights['proficiency']}"
     assert abs(sum(weights.values()) - 1.0) < 0.01
 
 
@@ -789,3 +791,42 @@ def test_archetype_score_versatile_not_penalized_first_pick():
     assert ori_score >= 0.7, (
         f"Versatile Orianna should score >= 0.7 in first pick, got {ori_score}"
     )
+
+
+# Context-aware weight adjustment tests (Task 5)
+
+def test_get_effective_weights_first_pick_reduces_proficiency():
+    """First pick should reduce proficiency weight, increase meta."""
+    engine = PickRecommendationEngine()
+
+    # First pick scenario: no picks, no enemy picks
+    weights = engine._get_effective_weights("HIGH", pick_count=0, has_enemy_picks=False)
+
+    # Proficiency should be reduced from base 0.20
+    assert weights["proficiency"] < 0.20, "First pick should reduce proficiency weight"
+    # Meta should be increased from base 0.25
+    assert weights["meta"] > 0.25, "First pick should increase meta weight"
+
+
+def test_get_effective_weights_counter_pick_increases_matchup():
+    """Counter-pick scenario should increase matchup weight."""
+    engine = PickRecommendationEngine()
+
+    # Late draft with enemy picks visible
+    weights = engine._get_effective_weights("HIGH", pick_count=4, has_enemy_picks=True)
+
+    # Matchup should be increased for counter-picking
+    assert weights["matchup"] >= 0.20, "Counter-pick should maintain/increase matchup weight"
+
+
+def test_get_effective_weights_no_data_redistributes():
+    """NO_DATA proficiency should redistribute weight to other components."""
+    engine = PickRecommendationEngine()
+
+    weights = engine._get_effective_weights("NO_DATA", pick_count=2, has_enemy_picks=False)
+
+    # Proficiency weight should be heavily reduced
+    assert weights["proficiency"] < 0.10, "NO_DATA should reduce proficiency weight"
+    # Total should still sum to ~1.0
+    total = sum(weights.values())
+    assert 0.99 <= total <= 1.01, f"Weights should sum to 1.0, got {total}"
