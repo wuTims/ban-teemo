@@ -316,3 +316,15 @@ class BanRecommendationService:
             })
 
         return players
+
+    def _get_presence_score(self, champion: str) -> float:
+        """Get champion's presence rate as a score.
+
+        Presence = pick_rate + ban_rate (how contested is this pick?)
+
+        Returns:
+            Float 0.0-1.0 representing presence
+        """
+        meta_data = self.meta_scorer._meta_stats.get(champion, {})
+        presence = meta_data.get("presence", 0)
+        return presence  # Already 0-1 scale

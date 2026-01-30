@@ -287,3 +287,22 @@ def test_pool_depth_no_boost_for_deep_pool(service):
         f"Deep pools (6+) should have same priority: 6={priority_6}, 10={priority_10}"
     assert components_6["pool_depth_bonus"] == 0.0
     assert components_10["pool_depth_bonus"] == 0.0
+
+
+def test_get_presence_score_high_presence(service):
+    """High presence champions should have high presence score."""
+    # Azir has ~39% presence
+    score = service._get_presence_score("Azir")
+    assert score >= 0.3, f"High presence Azir should score >= 0.3: {score}"
+
+
+def test_get_presence_score_low_presence(service):
+    """Low presence champions should have low presence score."""
+    score = service._get_presence_score("Qiyana")  # ~7% presence
+    assert score < 0.15, f"Low presence Qiyana should score < 0.15: {score}"
+
+
+def test_get_presence_score_unknown(service):
+    """Unknown champions return 0."""
+    score = service._get_presence_score("NonexistentChamp")
+    assert score == 0.0
