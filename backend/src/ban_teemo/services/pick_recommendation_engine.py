@@ -11,7 +11,10 @@ from ban_teemo.services.scorers import (
     SkillTransferService,
 )
 from ban_teemo.services.synergy_service import SynergyService
-from ban_teemo.utils.role_normalizer import CANONICAL_ROLES
+from ban_teemo.utils.role_normalizer import CANONICAL_ROLES, normalize_role
+
+# Soft role fill threshold - role considered "filled" at this confidence
+ROLE_FILL_THRESHOLD = 0.9
 
 
 class PickRecommendationEngine:
@@ -41,7 +44,7 @@ class PickRecommendationEngine:
     def get_recommendations(
         self,
         team_players: list[dict],
-        our_picks: list[str],
+        our_picks: list,
         enemy_picks: list[str],
         banned: list[str],
         limit: int = 5,
@@ -50,7 +53,8 @@ class PickRecommendationEngine:
 
         Args:
             team_players: List of player dicts with 'name' and 'role' keys
-            our_picks: Champions already picked by our team
+            our_picks: Champions already picked - list of strings OR list of dicts
+                       with 'champion' and 'role' keys (for soft role fill)
             enemy_picks: Champions already picked by enemy team
             banned: Champions already banned
             limit: Maximum recommendations to return
@@ -58,9 +62,23 @@ class PickRecommendationEngine:
         Returns:
             List of recommendations with champion_name, score, suggested_role, etc.
         """
-        unavailable = set(banned) | set(our_picks) | set(enemy_picks)
-        filled_roles = self._infer_filled_roles(our_picks)
-        unfilled_roles = self.ALL_ROLES - filled_roles
+        # Normalize our_picks: extract champion names for unavailable set
+        our_pick_names = []
+        our_picks_normalized = []
+        for pick in our_picks:
+            if isinstance(pick, dict):
+                champ = pick.get("champion", "")
+                our_pick_names.append(champ)
+                our_picks_normalized.append(pick)
+            else:
+                our_pick_names.append(pick)
+                our_picks_normalized.append({"champion": pick, "role": None})
+
+        unavailable = set(banned) | set(our_pick_names) | set(enemy_picks)
+
+        # Calculate soft role fill from picks
+        role_fill = self._calculate_role_fill(our_picks_normalized)
+        unfilled_roles = self._get_unfilled_roles(role_fill)
 
         if not unfilled_roles:
             return []
@@ -79,7 +97,7 @@ class PickRecommendationEngine:
         recommendations = []
         for champ in candidates:
             result = self._calculate_score(
-                champ, team_players, unfilled_roles, our_picks, enemy_picks, role_cache
+                champ, team_players, unfilled_roles, our_pick_names, enemy_picks, role_cache, role_fill
             )
             recommendations.append({
                 "champion_name": champ,
@@ -97,6 +115,7 @@ class PickRecommendationEngine:
             })
 
         # Safety filter: ensure no recommendations for already-filled roles
+        filled_roles = {r for r in self.ALL_ROLES if r not in unfilled_roles}
         recommendations = [r for r in recommendations if r["suggested_role"] not in filled_roles]
 
         recommendations.sort(key=lambda x: -x["score"])
@@ -232,6 +251,7 @@ class PickRecommendationEngine:
         our_picks: list[str],
         enemy_picks: list[str],
         role_cache: dict[str, dict[str, float]],
+        role_fill: Optional[dict[str, float]] = None,
     ) -> dict:
         """Calculate score using base factors + synergy multiplier.
 
@@ -247,7 +267,7 @@ class PickRecommendationEngine:
             role_prof_conf,
             prof_source,
             prof_player,
-        ) = self._choose_best_role(champion, probs, team_players, role_fill=None)
+        ) = self._choose_best_role(champion, probs, team_players, role_fill=role_fill)
         suggested_role = suggested_role or "mid"
 
         # Meta
@@ -383,8 +403,7 @@ class PickRecommendationEngine:
         if role_fill is None:
             role_fill = {}
 
-        # Get unfilled roles (< 0.9 threshold)
-        ROLE_FILL_THRESHOLD = 0.9
+        # Get unfilled roles (< threshold)
         unfilled_roles = set()
         for role in role_probs:
             fill = role_fill.get(role, 0.0)
@@ -447,6 +466,63 @@ class PickRecommendationEngine:
             key: (0.0 if key == "proficiency" else value * scale)
             for key, value in weights.items()
         }
+
+    def _calculate_role_fill(self, our_picks: list[dict]) -> dict[str, float]:
+        """Calculate cumulative role fill from existing picks.
+
+        Flex champions contribute fractionally based on their role probabilities.
+        Pure role champions contribute 1.0 to their role.
+
+        Args:
+            our_picks: List of pick dicts with 'champion' and 'role' keys
+
+        Returns:
+            Dict mapping role -> fill confidence (0.0 to 1.0+)
+        """
+        role_fill: dict[str, float] = {}
+
+        for pick in our_picks:
+            champion = pick.get("champion") if isinstance(pick, dict) else pick
+            assigned_role = pick.get("role") if isinstance(pick, dict) else None
+
+            if not champion:
+                continue
+
+            # Get flex probabilities for this champion
+            flex_data = self.flex_resolver._flex_data.get(champion, {})
+            is_flex = flex_data.get("is_flex", False)
+
+            if is_flex:
+                # Flex champion: distribute based on role probabilities from flex data
+                for key, value in flex_data.items():
+                    if key in ("is_flex", "games_total", "kb_positions"):
+                        continue
+                    if isinstance(value, (int, float)) and value > 0:
+                        normalized = normalize_role(key)
+                        if normalized:
+                            role_fill[normalized] = role_fill.get(normalized, 0.0) + value
+            else:
+                # Pure role champion: 1.0 to assigned or inferred role
+                role_to_fill = assigned_role
+                if not role_to_fill:
+                    # Infer role from flex data (highest probability)
+                    best_role, best_prob = None, 0.0
+                    for key, value in flex_data.items():
+                        if key in ("is_flex", "games_total", "kb_positions"):
+                            continue
+                        if isinstance(value, (int, float)) and value > best_prob:
+                            best_role, best_prob = key, value
+                    role_to_fill = best_role
+                if role_to_fill:
+                    normalized_role = normalize_role(role_to_fill)
+                    if normalized_role:
+                        role_fill[normalized_role] = role_fill.get(normalized_role, 0.0) + 1.0
+
+        return role_fill
+
+    def _get_unfilled_roles(self, role_fill: dict[str, float]) -> set[str]:
+        """Get roles that are not yet filled (< ROLE_FILL_THRESHOLD)."""
+        return {role for role in self.ALL_ROLES if role_fill.get(role, 0.0) < ROLE_FILL_THRESHOLD}
 
     def _compute_flag(self, result: dict) -> str | None:
         """Compute recommendation flag for UI badges.
