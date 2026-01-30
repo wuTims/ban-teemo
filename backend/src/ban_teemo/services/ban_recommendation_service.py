@@ -93,6 +93,22 @@ class BanRecommendationService:
                         "components": components,
                     })
 
+        # ALWAYS add global power picks for Phase 1 (regardless of player data)
+        if is_phase_1:
+            global_power_bans = self._get_global_power_bans(unavailable)
+            for power_ban in global_power_bans:
+                existing = next(
+                    (c for c in ban_candidates if c["champion_name"] == power_ban["champion_name"]),
+                    None
+                )
+                if existing:
+                    # Boost if already targeted AND high presence
+                    existing["priority"] = min(1.0, existing["priority"] + 0.1)
+                    if power_ban["reasons"]:
+                        existing["reasons"].extend(power_ban["reasons"])
+                else:
+                    ban_candidates.append(power_ban)
+
         # Phase 2: Add contextual bans (archetype, synergy, role denial)
         if not is_phase_1:
             contextual_bans = self._get_contextual_phase2_bans(
@@ -284,6 +300,56 @@ class BanRecommendationService:
             reasons.append("High priority target")
 
         return reasons if reasons else ["General ban recommendation"]
+
+    def _get_global_power_bans(self, unavailable: set[str]) -> list[dict]:
+        """Get high-presence power picks as ban candidates.
+
+        These are always considered regardless of enemy player pool data.
+
+        Returns:
+            List of ban candidates based on global meta presence
+        """
+        candidates = []
+
+        for champ in self.meta_scorer.get_top_meta_champions(limit=15):
+            if champ in unavailable:
+                continue
+
+            meta_score = self.meta_scorer.get_meta_score(champ)
+            presence = self._get_presence_score(champ)
+            flex_value = self._get_flex_value(champ)
+
+            # Only include if high enough presence (>= 20%)
+            if presence < 0.20:
+                continue
+
+            # Calculate priority: presence(40%) + meta(35%) + flex(25%)
+            priority = presence * 0.40 + meta_score * 0.35 + flex_value * 0.25
+
+            reasons = []
+            tier = self.meta_scorer.get_meta_tier(champ)
+            if tier in ["S", "A"]:
+                reasons.append(f"{tier}-tier power pick")
+            if presence >= 0.30:
+                reasons.append(f"High presence ({presence:.0%})")
+            if flex_value >= 0.5:
+                reasons.append("Role flex value")
+
+            candidates.append({
+                "champion_name": champ,
+                "priority": round(priority, 3),
+                "target_player": None,
+                "target_role": None,
+                "reasons": reasons if reasons else ["Global power ban"],
+                "components": {
+                    "presence": round(presence * 0.40, 3),
+                    "meta": round(meta_score * 0.35, 3),
+                    "flex": round(flex_value * 0.25, 3),
+                    "tier": "T3_GLOBAL_POWER",
+                },
+            })
+
+        return sorted(candidates, key=lambda x: -x["priority"])[:10]
 
     def _get_counter_pick_bans(
         self,
