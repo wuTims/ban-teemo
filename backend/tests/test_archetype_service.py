@@ -94,3 +94,50 @@ def test_get_versatility_score_unknown_champion():
     service = ArchetypeService()
     score = service.get_versatility_score("NonexistentChamp")
     assert score == 0.0
+
+
+def test_get_contribution_to_archetype_matching():
+    """Champion contributes to team's primary archetype."""
+    service = ArchetypeService()
+    # Orianna has teamfight: 1.0, adding to teamfight team should score high
+    score = service.get_contribution_to_archetype("Orianna", "teamfight")
+    assert score >= 0.8, "Orianna should contribute highly to teamfight"
+
+
+def test_get_contribution_to_archetype_mismatched():
+    """Champion doesn't contribute to unrelated archetype."""
+    service = ArchetypeService()
+    # Orianna has no split archetype
+    score = service.get_contribution_to_archetype("Orianna", "split")
+    assert score == 0.0, "Orianna should not contribute to split"
+
+
+def test_get_contribution_to_archetype_partial():
+    """Champion partially contributes to secondary archetype."""
+    service = ArchetypeService()
+    # Orianna has engage: 0.5
+    score = service.get_contribution_to_archetype("Orianna", "engage")
+    assert 0.3 <= score <= 0.7, "Orianna should partially contribute to engage"
+
+
+def test_get_raw_strength_returns_max_score():
+    """Raw strength is the maximum archetype score."""
+    service = ArchetypeService()
+    # Orianna has engage: 0.5, protect: 0.5, teamfight: 1.0
+    strength = service.get_raw_strength("Orianna")
+    assert strength == 1.0, "Should return max archetype score"
+
+
+def test_get_raw_strength_single_archetype():
+    """Single archetype champion returns that score."""
+    service = ArchetypeService()
+    # Azir has teamfight: 0.6
+    strength = service.get_raw_strength("Azir")
+    assert strength == 0.6
+
+
+def test_get_raw_strength_unknown():
+    """Unknown champion returns 0.5 neutral."""
+    service = ArchetypeService()
+    strength = service.get_raw_strength("NonexistentChamp")
+    assert strength == 0.5

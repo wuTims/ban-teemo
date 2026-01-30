@@ -65,6 +65,38 @@ class ArchetypeService:
             return 0.2  # Focused (1 archetype)
         return 0.0  # No archetype data
 
+    def get_contribution_to_archetype(self, champion: str, archetype: str) -> float:
+        """Get how much a champion contributes to a specific archetype.
+
+        Args:
+            champion: Champion name
+            archetype: Target archetype (engage, split, teamfight, protect, pick)
+
+        Returns:
+            Float 0.0-1.0 representing contribution strength
+        """
+        if champion not in self._champion_archetypes:
+            return 0.0
+
+        scores = self._champion_archetypes[champion]
+        return scores.get(archetype, 0.0)
+
+    def get_raw_strength(self, champion: str) -> float:
+        """Get champion's raw archetype strength (max of all archetypes).
+
+        This avoids the normalization penalty for versatile champions.
+
+        Returns:
+            Float 0.0-1.0, or 0.5 for unknown champions
+        """
+        if champion not in self._champion_archetypes:
+            return 0.5  # Neutral for unknown
+
+        scores = self._champion_archetypes[champion]
+        if not scores:
+            return 0.5
+        return max(scores.values())
+
     def calculate_team_archetype(self, picks: list[str]) -> dict:
         """Calculate aggregate archetype for a team composition."""
         if not picks:
