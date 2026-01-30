@@ -1,0 +1,4467 @@
+[
+  {
+    "id": "orianna_nocturne",
+    "champions": [
+      "Orianna",
+      "Nocturne"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "ball_delivery",
+    "strength": "S",
+    "confidence": "high",
+    "description": "Orianna attaches ball to Nocturne. Nocturne R delivers guaranteed Orianna R to backline.",
+    "mechanic_explanation": "Ball follows allied champion through dashes and blinks",
+    "comp_archetypes": [
+      "dive",
+      "teamfight"
+    ],
+    "execution_notes": [
+      "Shield Nocturne before he ults",
+      "Communicate primary target",
+      "Best when enemies are grouped"
+    ],
+    "timing": null,
+    "countered_by": [
+      "Janna R",
+      "Tahm Kench W",
+      "Lulu R"
+    ],
+    "historical_name": null,
+    "similar_synergies": [
+      "orianna_jarvan",
+      "orianna_malphite",
+      "orianna_camille"
+    ],
+    "source": "curated"
+  },
+  {
+    "id": "orianna_jarvan",
+    "champions": [
+      "Orianna",
+      "Jarvan IV"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "zone_trap",
+    "strength": "A",
+    "confidence": "high",
+    "description": "Jarvan R traps enemies in Cataclysm, guaranteeing Orianna R hits multiple targets.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "dive",
+      "teamfight"
+    ],
+    "execution_notes": [
+      "Jarvan engages first",
+      "Orianna follows with ball + R"
+    ],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "curated"
+  },
+  {
+    "id": "yasuo_knockup",
+    "champions": [
+      "Yasuo"
+    ],
+    "partner_requirement": "knockup",
+    "best_partners": [
+      {
+        "champion": "Malphite",
+        "ability": "Unstoppable Force",
+        "rating": "S",
+        "reason": null
+      },
+      {
+        "champion": "Diana",
+        "ability": "Moonfall",
+        "rating": "S",
+        "reason": null
+      },
+      {
+        "champion": "Yone",
+        "ability": "Fate Sealed",
+        "rating": "S",
+        "reason": null
+      },
+      {
+        "champion": "Gragas",
+        "ability": "Explosive Cask",
+        "rating": "A",
+        "reason": null
+      },
+      {
+        "champion": "Alistar",
+        "ability": "Pulverize",
+        "rating": "A",
+        "reason": null
+      },
+      {
+        "champion": "Rakan",
+        "ability": "Grand Entrance",
+        "rating": "A",
+        "reason": null
+      },
+      {
+        "champion": "Rell",
+        "ability": "Magnet Storm",
+        "rating": "A",
+        "reason": null
+      },
+      {
+        "champion": "Jarvan IV",
+        "ability": "Dragon Strike + Flag",
+        "rating": "A",
+        "reason": null
+      },
+      {
+        "champion": "Ornn",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Sion",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Zyra",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Rek'Sai",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Wukong",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Zaahen",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Samira",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      }
+    ],
+    "type": "ability_requirement",
+    "category": null,
+    "strength": "S",
+    "confidence": "high",
+    "description": "Yasuo R requires airborne targets. Any knockup champion dramatically increases effectiveness.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "dive",
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "curated,rules"
+  },
+  {
+    "id": "lulu_kogmaw",
+    "champions": [
+      "Lulu",
+      "Kog'Maw"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "protect_synergy",
+    "category": "hypercarry_enabler",
+    "strength": "S",
+    "confidence": "high",
+    "description": "Lulu provides attack speed (W), shields (E), peel (polymorph), and emergency health (R).",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "protect"
+    ],
+    "execution_notes": [
+      "Max W for attack speed buff",
+      "Save polymorph for divers",
+      "Ult Kog'Maw when focused"
+    ],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": "Juggermaw",
+    "similar_synergies": [],
+    "source": "curated"
+  },
+  {
+    "id": "nocturne_shen",
+    "champions": [
+      "Nocturne",
+      "Shen"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "global_combo",
+    "category": "dive_enabler",
+    "strength": "A",
+    "confidence": "high",
+    "description": "Nocturne dives with R, Shen follows with R to shield and join. Creates unavoidable 2v1.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "dive",
+      "pick"
+    ],
+    "execution_notes": [
+      "Coordinate target",
+      "Shen R during Nocturne flight"
+    ],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "curated"
+  },
+  {
+    "id": "kalista_thresh",
+    "champions": [
+      "Kalista",
+      "Thresh"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "champion_design",
+    "category": "engage_combo",
+    "strength": "S",
+    "confidence": "high",
+    "description": "Kalista R launches bound Thresh into enemy team for massive CC chain.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "dive",
+      "pick"
+    ],
+    "execution_notes": [
+      "Thresh charges Flay during flight",
+      "Hook immediately on landing"
+    ],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "curated"
+  },
+  {
+    "id": "mf_amumu",
+    "champions": [
+      "Miss Fortune",
+      "Amumu"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "A",
+    "confidence": "high",
+    "description": "Amumu R roots enemies in place for full Miss Fortune R channel.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "curated"
+  },
+  {
+    "id": "twitch_lulu",
+    "champions": [
+      "Twitch",
+      "Lulu"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "protect_synergy",
+    "category": "stealth_hypercarry",
+    "strength": "S",
+    "confidence": "high",
+    "description": "Twitch invisible engage + Lulu attack speed + Pix damage = devastating teamfight.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "protect",
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "curated"
+  },
+  {
+    "id": "galio_dive",
+    "champions": [
+      "Galio"
+    ],
+    "partner_requirement": "dive_engage",
+    "best_partners": [
+      {
+        "champion": "Nocturne",
+        "ability": "Paranoia",
+        "rating": "S",
+        "reason": null
+      },
+      {
+        "champion": "Camille",
+        "ability": "Hextech Ultimatum",
+        "rating": "A",
+        "reason": null
+      },
+      {
+        "champion": "Jarvan IV",
+        "ability": "Cataclysm",
+        "rating": "A",
+        "reason": null
+      },
+      {
+        "champion": "Vi",
+        "ability": "Cease and Desist",
+        "rating": "A",
+        "reason": null
+      }
+    ],
+    "type": "ability_requirement",
+    "category": null,
+    "strength": "A",
+    "confidence": "high",
+    "description": "Galio R follows any ally dive, providing damage reduction and knockup on landing.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "dive"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "curated"
+  },
+  {
+    "id": "samira_cc_chain",
+    "champions": [
+      "Samira"
+    ],
+    "partner_requirement": "hard_cc",
+    "best_partners": [
+      {
+        "champion": "Nautilus",
+        "ability": "Multiple CC abilities",
+        "rating": "S",
+        "reason": null
+      },
+      {
+        "champion": "Leona",
+        "ability": "Stun chain",
+        "rating": "S",
+        "reason": null
+      },
+      {
+        "champion": "Rell",
+        "ability": "Mount up + Magnet Storm",
+        "rating": "A",
+        "reason": null
+      },
+      {
+        "champion": "Thresh",
+        "ability": "Hook + Flay",
+        "rating": "A",
+        "reason": null
+      }
+    ],
+    "type": "ability_requirement",
+    "category": null,
+    "strength": "A",
+    "confidence": "high",
+    "description": "Samira passive extends CC duration when attacking CC'd targets, building S rank faster.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "dive",
+      "pick"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "curated"
+  },
+  {
+    "id": "xayah_rakan",
+    "champions": [
+      "Xayah",
+      "Rakan"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "champion_design",
+    "category": "designed_pair",
+    "strength": "S",
+    "confidence": "high",
+    "description": "Riot-designed lovers duo. Shared recall animation, Rakan W range extended toward Xayah, Xayah E buffs Rakan.",
+    "mechanic_explanation": "Rakan's Grand Entrance has bonus range when dashing to Xayah. Both gain movement speed when near each other.",
+    "comp_archetypes": [
+      "teamfight",
+      "pick"
+    ],
+    "execution_notes": [
+      "Rakan can engage from further away with Xayah nearby",
+      "Use shared recall for faster rotations",
+      "Coordinate Rakan engage with Xayah feather setup"
+    ],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": "The Rebel and the Charmer",
+    "similar_synergies": [],
+    "source": "curated"
+  },
+  {
+    "id": "senna_tahmkench",
+    "champions": [
+      "Senna",
+      "Tahm Kench"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "champion_design",
+    "category": "fasting_senna",
+    "strength": "S",
+    "confidence": "high",
+    "description": "Fasting Senna meta - Tahm Kench farms while Senna scales via soul collection without CS.",
+    "mechanic_explanation": "Senna gains souls from minions she doesn't kill. Tahm Kench provides protection and engage while taking farm.",
+    "comp_archetypes": [
+      "protect",
+      "pick"
+    ],
+    "execution_notes": [
+      "Tahm Kench takes all CS",
+      "Senna focuses on poking and soul collection",
+      "Tahm W saves Senna from ganks"
+    ],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": "Fasting Senna",
+    "similar_synergies": [],
+    "source": "curated"
+  },
+  {
+    "id": "taric_masteryi",
+    "champions": [
+      "Taric",
+      "Master Yi"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "protect_synergy",
+    "category": "funnel_comp",
+    "strength": "S",
+    "confidence": "high",
+    "description": "Funnel comp - Taric R makes Yi invulnerable during his Alpha Strike resets.",
+    "mechanic_explanation": "Taric ult grants invulnerability. Yi's resets during teamfights become unstoppable when timed with Cosmic Radiance.",
+    "comp_archetypes": [
+      "protect",
+      "dive"
+    ],
+    "execution_notes": [
+      "Taric ults as Yi engages",
+      "Yi must time Alpha Strike with Taric R delay",
+      "Mid Yi with support Taric or jungle funnel"
+    ],
+    "timing": null,
+    "countered_by": [
+      "Heavy CC chains",
+      "Burst before Taric R activates"
+    ],
+    "historical_name": "Funnel Comp",
+    "similar_synergies": [],
+    "source": "curated"
+  },
+  {
+    "id": "zilean_hypercarry",
+    "champions": [
+      "Zilean"
+    ],
+    "partner_requirement": "hypercarry",
+    "best_partners": [
+      {
+        "champion": "Kog'Maw",
+        "ability": null,
+        "rating": "S",
+        "reason": "Immobile, benefits from speed and revive"
+      },
+      {
+        "champion": "Jinx",
+        "ability": null,
+        "rating": "S",
+        "reason": "Reset champion, revive enables more resets"
+      },
+      {
+        "champion": "Twitch",
+        "ability": null,
+        "rating": "A",
+        "reason": "Stealth + speed for flanks, revive for safety"
+      },
+      {
+        "champion": "Aphelios",
+        "ability": null,
+        "rating": "A",
+        "reason": "Immobile, needs protection"
+      },
+      {
+        "champion": "Vayne",
+        "ability": null,
+        "rating": "A",
+        "reason": "Speed enhances kiting, revive extends fights"
+      }
+    ],
+    "type": "protect_synergy",
+    "category": "double_life",
+    "strength": "S",
+    "confidence": "high",
+    "description": "Zilean provides speed boost for kiting and ultimate gives hypercarries a second life.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "protect"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "curated"
+  },
+  {
+    "id": "jarvan_rumble",
+    "champions": [
+      "Jarvan IV",
+      "Rumble"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "zone_trap",
+    "strength": "A",
+    "confidence": "high",
+    "description": "Cataclysm traps enemies inside Equalizer for maximum burn damage.",
+    "mechanic_explanation": "Jarvan R creates impassable terrain, forcing enemies to stay in Rumble R AoE.",
+    "comp_archetypes": [
+      "dive",
+      "teamfight"
+    ],
+    "execution_notes": [
+      "Rumble ults first, Jarvan follows with Cataclysm",
+      "Enemies must flash or die in the fire",
+      "Works best in narrow jungle corridors"
+    ],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "curated"
+  },
+  {
+    "id": "braum_lucian",
+    "champions": [
+      "Braum",
+      "Lucian"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "champion_design",
+    "category": "passive_proc",
+    "strength": "A",
+    "confidence": "high",
+    "description": "Lucian's double-tap passive instantly procs Braum's Concussive Blows for easy stuns.",
+    "mechanic_explanation": "Braum passive requires 4 hits to stun. Lucian's passive fires two shots, accelerating the proc significantly.",
+    "comp_archetypes": [
+      "pick",
+      "teamfight"
+    ],
+    "execution_notes": [
+      "Braum Q applies first stack",
+      "Lucian passive adds 2 stacks instantly",
+      "One more auto from either completes stun"
+    ],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "curated"
+  },
+  {
+    "id": "rengar_yuumi",
+    "champions": [
+      "Rengar",
+      "Yuumi"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "champion_design",
+    "category": "stealth_attach",
+    "strength": "A",
+    "confidence": "high",
+    "description": "Yuumi attached to Rengar remains invisible during his ultimate leap assassination.",
+    "mechanic_explanation": "Yuumi's attachment persists through stealth. Rengar leaps from invisibility with Yuumi healing and buffing.",
+    "comp_archetypes": [
+      "pick",
+      "dive"
+    ],
+    "execution_notes": [
+      "Yuumi stays attached during Rengar R",
+      "Both appear when Rengar leaps",
+      "Yuumi R can follow up for CC"
+    ],
+    "timing": null,
+    "countered_by": [
+      "Pink wards",
+      "Oracle Lens",
+      "True sight abilities"
+    ],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "curated"
+  },
+  {
+    "id": "leona_missfortune",
+    "champions": [
+      "Leona",
+      "Miss Fortune"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "lockdown_channel",
+    "strength": "A",
+    "confidence": "high",
+    "description": "Leona E+Q+R chain lockdown guarantees full Miss Fortune Bullet Time channel.",
+    "mechanic_explanation": "Leona provides 2-3 seconds of hard CC, more than enough for MF's full R duration.",
+    "comp_archetypes": [
+      "teamfight",
+      "pick"
+    ],
+    "execution_notes": [
+      "Leona engages with E",
+      "Q stun into R for extended lockdown",
+      "MF Rs immediately after Leona CC lands"
+    ],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "curated"
+  },
+  {
+    "id": "yone_yasuo",
+    "champions": [
+      "Yone",
+      "Yasuo"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "champion_design",
+    "category": "brothers",
+    "strength": "A",
+    "confidence": "high",
+    "description": "Lore brothers with shared knockup synergy - either can set up the other's ultimate.",
+    "mechanic_explanation": "Both have knockups (Yone R, Yasuo Q3). Either knockup enables the other's ult. Yone R can set up Yasuo R.",
+    "comp_archetypes": [
+      "dive",
+      "teamfight"
+    ],
+    "execution_notes": [
+      "Yone R knockup enables Yasuo R",
+      "Yasuo Q3 enables Yone R follow-up",
+      "Both scale well, double crit threat"
+    ],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "curated"
+  },
+  {
+    "id": "ashe_zyra",
+    "champions": [
+      "Ashe",
+      "Zyra"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "poke_catch",
+    "strength": "B",
+    "confidence": "high",
+    "description": "Double poke lane with strong catch potential from Ashe R into Zyra root.",
+    "mechanic_explanation": "Ashe slow enables Zyra E root. Ashe R stun guarantees Zyra full combo.",
+    "comp_archetypes": [
+      "poke",
+      "pick"
+    ],
+    "execution_notes": [
+      "Poke with Ashe W and Zyra Q/E",
+      "Ashe R for hard engage when needed",
+      "Zyra plants zone enemies"
+    ],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "curated"
+  },
+  {
+    "id": "thresh_lantern",
+    "champions": [
+      "Thresh"
+    ],
+    "partner_requirement": "engage_diver",
+    "best_partners": [
+      {
+        "champion": "Lee Sin",
+        "ability": null,
+        "rating": "S",
+        "reason": "Insec kick + lantern escape"
+      },
+      {
+        "champion": "Jarvan IV",
+        "ability": null,
+        "rating": "A",
+        "reason": "Flag-drag combo + lantern for team"
+      },
+      {
+        "champion": "Nocturne",
+        "ability": null,
+        "rating": "A",
+        "reason": "R in, lantern out if needed"
+      },
+      {
+        "champion": "Camille",
+        "ability": null,
+        "rating": "A",
+        "reason": "Hookshot engage + lantern follow"
+      }
+    ],
+    "type": "ability_requirement",
+    "category": "lantern_delivery",
+    "strength": "A",
+    "confidence": "high",
+    "description": "Thresh lantern can deliver divers into backline or extract carries from danger.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "dive",
+      "pick"
+    ],
+    "execution_notes": [
+      "Throw lantern before ally engages",
+      "Can pull ally through walls",
+      "Use for tower dives - lantern to safety"
+    ],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "curated"
+  },
+  {
+    "id": "shen_splitpush",
+    "champions": [
+      "Shen"
+    ],
+    "partner_requirement": "splitpusher",
+    "best_partners": [
+      {
+        "champion": "Fiora",
+        "ability": null,
+        "rating": "S",
+        "reason": "Strong duelist, Shen R enables 1v2"
+      },
+      {
+        "champion": "Jax",
+        "ability": null,
+        "rating": "S",
+        "reason": "Scales hard, Shen enables safe splits"
+      },
+      {
+        "champion": "Tryndamere",
+        "ability": null,
+        "rating": "A",
+        "reason": "Can dive with Shen backup"
+      },
+      {
+        "champion": "Camille",
+        "ability": null,
+        "rating": "A",
+        "reason": "Lockdown + Shen shield"
+      }
+    ],
+    "type": "global_combo",
+    "category": "split_safety",
+    "strength": "A",
+    "confidence": "high",
+    "description": "Shen R saves splitpushers when collapsed on, enabling aggressive 1-3-1.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "splitpush"
+    ],
+    "execution_notes": [
+      "Shen groups with team while splitpusher pushes",
+      "R to splitpusher if they get collapsed",
+      "Can turn 1v2 into 2v2 instantly"
+    ],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "curated"
+  },
+  {
+    "id": "samira_hard_cc",
+    "champions": [
+      "Samira"
+    ],
+    "partner_requirement": "hard_cc",
+    "best_partners": [
+      {
+        "champion": "Alistar",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Amumu",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Leona",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Maokai",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Nautilus",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Rell",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Blitzcrank",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Braum",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Rakan",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Thresh",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      }
+    ],
+    "type": "ability_requirement",
+    "category": null,
+    "strength": "A",
+    "confidence": "medium",
+    "description": "Samira benefits from allies who can lock targets in place.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "kalista_melee_engage_support",
+    "champions": [
+      "Kalista"
+    ],
+    "partner_requirement": "melee_engage_support",
+    "best_partners": [
+      {
+        "champion": "Alistar",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Amumu",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Leona",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Maokai",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Nautilus",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Rell",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Braum",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Tahm Kench",
+        "ability": null,
+        "rating": "B",
+        "reason": "Reliable engage or crowd control setup"
+      }
+    ],
+    "type": "champion_design",
+    "category": null,
+    "strength": "A",
+    "confidence": "medium",
+    "description": "Kalista's ultimate is strongest with melee engage supports.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "galio_dive_engage",
+    "champions": [
+      "Galio"
+    ],
+    "partner_requirement": "dive_engage",
+    "best_partners": [
+      {
+        "champion": "Leona",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Nautilus",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Ornn",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Poppy",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Sion",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Briar",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Sejuani",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Thresh",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Vi",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Ivern",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      }
+    ],
+    "type": "ability_requirement",
+    "category": null,
+    "strength": "A",
+    "confidence": "medium",
+    "description": "Galio follows diving allies to start fights.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "orianna_ball_delivery",
+    "champions": [
+      "Orianna"
+    ],
+    "partner_requirement": "ball_delivery",
+    "best_partners": [
+      {
+        "champion": "Galio",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Leona",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Nautilus",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Ornn",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Poppy",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Sion",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Briar",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Rakan",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Sejuani",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      },
+      {
+        "champion": "Thresh",
+        "ability": null,
+        "rating": "A",
+        "reason": "Reliable engage or crowd control setup"
+      }
+    ],
+    "type": "ability_combo",
+    "category": null,
+    "strength": "A",
+    "confidence": "medium",
+    "description": "Orianna's ball can be delivered by diving allies.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "ahri_akali",
+    "champions": [
+      "Ahri",
+      "Akali"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Ahri can lock multiple targets for Akali's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "ahri_akshan",
+    "champions": [
+      "Ahri",
+      "Akshan"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Ahri can lock multiple targets for Akshan's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "ahri_alistar",
+    "champions": [
+      "Ahri",
+      "Alistar"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Ahri can lock multiple targets for Alistar's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "ahri_ambessa",
+    "champions": [
+      "Ahri",
+      "Ambessa"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Ahri can lock multiple targets for Ambessa's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "ahri_amumu",
+    "champions": [
+      "Ahri",
+      "Amumu"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Ahri can lock multiple targets for Amumu's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "ahri_annie",
+    "champions": [
+      "Ahri",
+      "Annie"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Ahri can lock multiple targets for Annie's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "ahri_aurelion_sol",
+    "champions": [
+      "Ahri",
+      "Aurelion Sol"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Ahri can lock multiple targets for Aurelion Sol's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "ahri_bel_veth",
+    "champions": [
+      "Ahri",
+      "Bel'Veth"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Ahri can lock multiple targets for Bel'Veth's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "ahri_blitzcrank",
+    "champions": [
+      "Ahri",
+      "Blitzcrank"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Ahri can lock multiple targets for Blitzcrank's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "ahri_brand",
+    "champions": [
+      "Ahri",
+      "Brand"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Ahri can lock multiple targets for Brand's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "ahri_briar",
+    "champions": [
+      "Ahri",
+      "Briar"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Ahri can lock multiple targets for Briar's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "akali_annie",
+    "champions": [
+      "Annie",
+      "Akali"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Annie can lock multiple targets for Akali's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "akshan_annie",
+    "champions": [
+      "Annie",
+      "Akshan"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Annie can lock multiple targets for Akshan's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "alistar_annie",
+    "champions": [
+      "Annie",
+      "Alistar"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Annie can lock multiple targets for Alistar's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "ambessa_annie",
+    "champions": [
+      "Annie",
+      "Ambessa"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Annie can lock multiple targets for Ambessa's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "amumu_annie",
+    "champions": [
+      "Annie",
+      "Amumu"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Annie can lock multiple targets for Amumu's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "annie_aurelion_sol",
+    "champions": [
+      "Annie",
+      "Aurelion Sol"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Annie can lock multiple targets for Aurelion Sol's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "annie_bel_veth",
+    "champions": [
+      "Annie",
+      "Bel'Veth"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Annie can lock multiple targets for Bel'Veth's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "annie_blitzcrank",
+    "champions": [
+      "Annie",
+      "Blitzcrank"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Annie can lock multiple targets for Blitzcrank's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "annie_brand",
+    "champions": [
+      "Annie",
+      "Brand"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Annie can lock multiple targets for Brand's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "annie_briar",
+    "champions": [
+      "Annie",
+      "Briar"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Annie can lock multiple targets for Briar's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "ahri_aphelios",
+    "champions": [
+      "Aphelios",
+      "Ahri"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Aphelios can lock multiple targets for Ahri's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "akali_aphelios",
+    "champions": [
+      "Aphelios",
+      "Akali"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Aphelios can lock multiple targets for Akali's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "akshan_aphelios",
+    "champions": [
+      "Aphelios",
+      "Akshan"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Aphelios can lock multiple targets for Akshan's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "alistar_aphelios",
+    "champions": [
+      "Aphelios",
+      "Alistar"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Aphelios can lock multiple targets for Alistar's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "ambessa_aphelios",
+    "champions": [
+      "Aphelios",
+      "Ambessa"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Aphelios can lock multiple targets for Ambessa's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "amumu_aphelios",
+    "champions": [
+      "Aphelios",
+      "Amumu"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Aphelios can lock multiple targets for Amumu's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "annie_aphelios",
+    "champions": [
+      "Aphelios",
+      "Annie"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Aphelios can lock multiple targets for Annie's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "aphelios_aurelion_sol",
+    "champions": [
+      "Aphelios",
+      "Aurelion Sol"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Aphelios can lock multiple targets for Aurelion Sol's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "aphelios_bel_veth",
+    "champions": [
+      "Aphelios",
+      "Bel'Veth"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Aphelios can lock multiple targets for Bel'Veth's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "aphelios_blitzcrank",
+    "champions": [
+      "Aphelios",
+      "Blitzcrank"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Aphelios can lock multiple targets for Blitzcrank's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "aphelios_brand",
+    "champions": [
+      "Aphelios",
+      "Brand"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Aphelios can lock multiple targets for Brand's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "aphelios_briar",
+    "champions": [
+      "Aphelios",
+      "Briar"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Aphelios can lock multiple targets for Briar's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "akali_brand",
+    "champions": [
+      "Brand",
+      "Akali"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Brand can lock multiple targets for Akali's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "akshan_brand",
+    "champions": [
+      "Brand",
+      "Akshan"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Brand can lock multiple targets for Akshan's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "alistar_brand",
+    "champions": [
+      "Brand",
+      "Alistar"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Brand can lock multiple targets for Alistar's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "ambessa_brand",
+    "champions": [
+      "Brand",
+      "Ambessa"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Brand can lock multiple targets for Ambessa's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "amumu_brand",
+    "champions": [
+      "Brand",
+      "Amumu"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Brand can lock multiple targets for Amumu's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "aurelion_sol_brand",
+    "champions": [
+      "Brand",
+      "Aurelion Sol"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Brand can lock multiple targets for Aurelion Sol's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "bel_veth_brand",
+    "champions": [
+      "Brand",
+      "Bel'Veth"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Brand can lock multiple targets for Bel'Veth's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "blitzcrank_brand",
+    "champions": [
+      "Brand",
+      "Blitzcrank"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Brand can lock multiple targets for Blitzcrank's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "brand_briar",
+    "champions": [
+      "Brand",
+      "Briar"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Brand can lock multiple targets for Briar's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "ahri_fiddlesticks",
+    "champions": [
+      "Fiddlesticks",
+      "Ahri"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Fiddlesticks can lock multiple targets for Ahri's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "akali_fiddlesticks",
+    "champions": [
+      "Fiddlesticks",
+      "Akali"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Fiddlesticks can lock multiple targets for Akali's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "akshan_fiddlesticks",
+    "champions": [
+      "Fiddlesticks",
+      "Akshan"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Fiddlesticks can lock multiple targets for Akshan's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "alistar_fiddlesticks",
+    "champions": [
+      "Fiddlesticks",
+      "Alistar"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Fiddlesticks can lock multiple targets for Alistar's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "ambessa_fiddlesticks",
+    "champions": [
+      "Fiddlesticks",
+      "Ambessa"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Fiddlesticks can lock multiple targets for Ambessa's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "amumu_fiddlesticks",
+    "champions": [
+      "Fiddlesticks",
+      "Amumu"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Fiddlesticks can lock multiple targets for Amumu's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "annie_fiddlesticks",
+    "champions": [
+      "Fiddlesticks",
+      "Annie"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Fiddlesticks can lock multiple targets for Annie's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "aurelion_sol_fiddlesticks",
+    "champions": [
+      "Fiddlesticks",
+      "Aurelion Sol"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Fiddlesticks can lock multiple targets for Aurelion Sol's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "bel_veth_fiddlesticks",
+    "champions": [
+      "Fiddlesticks",
+      "Bel'Veth"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Fiddlesticks can lock multiple targets for Bel'Veth's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "blitzcrank_fiddlesticks",
+    "champions": [
+      "Fiddlesticks",
+      "Blitzcrank"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Fiddlesticks can lock multiple targets for Blitzcrank's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "brand_fiddlesticks",
+    "champions": [
+      "Fiddlesticks",
+      "Brand"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Fiddlesticks can lock multiple targets for Brand's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "briar_fiddlesticks",
+    "champions": [
+      "Fiddlesticks",
+      "Briar"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Fiddlesticks can lock multiple targets for Briar's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "ahri_galio",
+    "champions": [
+      "Galio",
+      "Ahri"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Galio can lock multiple targets for Ahri's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "akali_galio",
+    "champions": [
+      "Galio",
+      "Akali"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Galio can lock multiple targets for Akali's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "akshan_galio",
+    "champions": [
+      "Galio",
+      "Akshan"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Galio can lock multiple targets for Akshan's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "alistar_galio",
+    "champions": [
+      "Galio",
+      "Alistar"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Galio can lock multiple targets for Alistar's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "ambessa_galio",
+    "champions": [
+      "Galio",
+      "Ambessa"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Galio can lock multiple targets for Ambessa's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "amumu_galio",
+    "champions": [
+      "Galio",
+      "Amumu"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Galio can lock multiple targets for Amumu's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "annie_galio",
+    "champions": [
+      "Galio",
+      "Annie"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Galio can lock multiple targets for Annie's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "aurelion_sol_galio",
+    "champions": [
+      "Galio",
+      "Aurelion Sol"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Galio can lock multiple targets for Aurelion Sol's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "bel_veth_galio",
+    "champions": [
+      "Galio",
+      "Bel'Veth"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Galio can lock multiple targets for Bel'Veth's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "blitzcrank_galio",
+    "champions": [
+      "Galio",
+      "Blitzcrank"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Galio can lock multiple targets for Blitzcrank's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "brand_galio",
+    "champions": [
+      "Galio",
+      "Brand"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Galio can lock multiple targets for Brand's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "briar_galio",
+    "champions": [
+      "Galio",
+      "Briar"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Galio can lock multiple targets for Briar's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "ahri_kha_zix",
+    "champions": [
+      "Kha'Zix",
+      "Ahri"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Kha'Zix can lock multiple targets for Ahri's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "akali_kha_zix",
+    "champions": [
+      "Kha'Zix",
+      "Akali"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Kha'Zix can lock multiple targets for Akali's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "akshan_kha_zix",
+    "champions": [
+      "Kha'Zix",
+      "Akshan"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Kha'Zix can lock multiple targets for Akshan's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "alistar_kha_zix",
+    "champions": [
+      "Kha'Zix",
+      "Alistar"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Kha'Zix can lock multiple targets for Alistar's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "ambessa_kha_zix",
+    "champions": [
+      "Kha'Zix",
+      "Ambessa"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Kha'Zix can lock multiple targets for Ambessa's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "amumu_kha_zix",
+    "champions": [
+      "Kha'Zix",
+      "Amumu"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Kha'Zix can lock multiple targets for Amumu's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "annie_kha_zix",
+    "champions": [
+      "Kha'Zix",
+      "Annie"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Kha'Zix can lock multiple targets for Annie's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "aurelion_sol_kha_zix",
+    "champions": [
+      "Kha'Zix",
+      "Aurelion Sol"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Kha'Zix can lock multiple targets for Aurelion Sol's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "bel_veth_kha_zix",
+    "champions": [
+      "Kha'Zix",
+      "Bel'Veth"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Kha'Zix can lock multiple targets for Bel'Veth's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "blitzcrank_kha_zix",
+    "champions": [
+      "Kha'Zix",
+      "Blitzcrank"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Kha'Zix can lock multiple targets for Blitzcrank's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "brand_kha_zix",
+    "champions": [
+      "Kha'Zix",
+      "Brand"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Kha'Zix can lock multiple targets for Brand's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "briar_kha_zix",
+    "champions": [
+      "Kha'Zix",
+      "Briar"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Kha'Zix can lock multiple targets for Briar's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "ahri_malzahar",
+    "champions": [
+      "Malzahar",
+      "Ahri"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Malzahar can lock multiple targets for Ahri's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "akali_malzahar",
+    "champions": [
+      "Malzahar",
+      "Akali"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Malzahar can lock multiple targets for Akali's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "akshan_malzahar",
+    "champions": [
+      "Malzahar",
+      "Akshan"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Malzahar can lock multiple targets for Akshan's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "alistar_malzahar",
+    "champions": [
+      "Malzahar",
+      "Alistar"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Malzahar can lock multiple targets for Alistar's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "ambessa_malzahar",
+    "champions": [
+      "Malzahar",
+      "Ambessa"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Malzahar can lock multiple targets for Ambessa's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "amumu_malzahar",
+    "champions": [
+      "Malzahar",
+      "Amumu"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Malzahar can lock multiple targets for Amumu's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "annie_malzahar",
+    "champions": [
+      "Malzahar",
+      "Annie"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Malzahar can lock multiple targets for Annie's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "aurelion_sol_malzahar",
+    "champions": [
+      "Malzahar",
+      "Aurelion Sol"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Malzahar can lock multiple targets for Aurelion Sol's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "bel_veth_malzahar",
+    "champions": [
+      "Malzahar",
+      "Bel'Veth"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Malzahar can lock multiple targets for Bel'Veth's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "blitzcrank_malzahar",
+    "champions": [
+      "Malzahar",
+      "Blitzcrank"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Malzahar can lock multiple targets for Blitzcrank's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "brand_malzahar",
+    "champions": [
+      "Malzahar",
+      "Brand"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Malzahar can lock multiple targets for Brand's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "briar_malzahar",
+    "champions": [
+      "Malzahar",
+      "Briar"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Malzahar can lock multiple targets for Briar's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "ahri_rek_sai",
+    "champions": [
+      "Rek'Sai",
+      "Ahri"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Rek'Sai can lock multiple targets for Ahri's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "akali_rek_sai",
+    "champions": [
+      "Rek'Sai",
+      "Akali"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Rek'Sai can lock multiple targets for Akali's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "akshan_rek_sai",
+    "champions": [
+      "Rek'Sai",
+      "Akshan"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Rek'Sai can lock multiple targets for Akshan's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "alistar_rek_sai",
+    "champions": [
+      "Rek'Sai",
+      "Alistar"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Rek'Sai can lock multiple targets for Alistar's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "ambessa_rek_sai",
+    "champions": [
+      "Rek'Sai",
+      "Ambessa"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Rek'Sai can lock multiple targets for Ambessa's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "amumu_rek_sai",
+    "champions": [
+      "Rek'Sai",
+      "Amumu"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Rek'Sai can lock multiple targets for Amumu's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "annie_rek_sai",
+    "champions": [
+      "Rek'Sai",
+      "Annie"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Rek'Sai can lock multiple targets for Annie's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "aurelion_sol_rek_sai",
+    "champions": [
+      "Rek'Sai",
+      "Aurelion Sol"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Rek'Sai can lock multiple targets for Aurelion Sol's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "bel_veth_rek_sai",
+    "champions": [
+      "Rek'Sai",
+      "Bel'Veth"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Rek'Sai can lock multiple targets for Bel'Veth's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "blitzcrank_rek_sai",
+    "champions": [
+      "Rek'Sai",
+      "Blitzcrank"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Rek'Sai can lock multiple targets for Blitzcrank's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "brand_rek_sai",
+    "champions": [
+      "Rek'Sai",
+      "Brand"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Rek'Sai can lock multiple targets for Brand's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "briar_rek_sai",
+    "champions": [
+      "Rek'Sai",
+      "Briar"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Rek'Sai can lock multiple targets for Briar's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "ahri_shaco",
+    "champions": [
+      "Shaco",
+      "Ahri"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Shaco can lock multiple targets for Ahri's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "akali_shaco",
+    "champions": [
+      "Shaco",
+      "Akali"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Shaco can lock multiple targets for Akali's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "akshan_shaco",
+    "champions": [
+      "Shaco",
+      "Akshan"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Shaco can lock multiple targets for Akshan's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "alistar_shaco",
+    "champions": [
+      "Shaco",
+      "Alistar"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Shaco can lock multiple targets for Alistar's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "ambessa_shaco",
+    "champions": [
+      "Shaco",
+      "Ambessa"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Shaco can lock multiple targets for Ambessa's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "amumu_shaco",
+    "champions": [
+      "Shaco",
+      "Amumu"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Shaco can lock multiple targets for Amumu's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "annie_shaco",
+    "champions": [
+      "Shaco",
+      "Annie"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Shaco can lock multiple targets for Annie's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "aurelion_sol_shaco",
+    "champions": [
+      "Shaco",
+      "Aurelion Sol"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Shaco can lock multiple targets for Aurelion Sol's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "bel_veth_shaco",
+    "champions": [
+      "Shaco",
+      "Bel'Veth"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Shaco can lock multiple targets for Bel'Veth's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "blitzcrank_shaco",
+    "champions": [
+      "Shaco",
+      "Blitzcrank"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Shaco can lock multiple targets for Blitzcrank's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "brand_shaco",
+    "champions": [
+      "Shaco",
+      "Brand"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Shaco can lock multiple targets for Brand's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "briar_shaco",
+    "champions": [
+      "Shaco",
+      "Briar"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Shaco can lock multiple targets for Briar's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "ahri_skarner",
+    "champions": [
+      "Skarner",
+      "Ahri"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Skarner can lock multiple targets for Ahri's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "akali_skarner",
+    "champions": [
+      "Skarner",
+      "Akali"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Skarner can lock multiple targets for Akali's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "akshan_skarner",
+    "champions": [
+      "Skarner",
+      "Akshan"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Skarner can lock multiple targets for Akshan's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "alistar_skarner",
+    "champions": [
+      "Skarner",
+      "Alistar"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Skarner can lock multiple targets for Alistar's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "ambessa_skarner",
+    "champions": [
+      "Skarner",
+      "Ambessa"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Skarner can lock multiple targets for Ambessa's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "amumu_skarner",
+    "champions": [
+      "Skarner",
+      "Amumu"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Skarner can lock multiple targets for Amumu's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "annie_skarner",
+    "champions": [
+      "Skarner",
+      "Annie"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Skarner can lock multiple targets for Annie's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "aurelion_sol_skarner",
+    "champions": [
+      "Skarner",
+      "Aurelion Sol"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Skarner can lock multiple targets for Aurelion Sol's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "bel_veth_skarner",
+    "champions": [
+      "Skarner",
+      "Bel'Veth"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Skarner can lock multiple targets for Bel'Veth's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "blitzcrank_skarner",
+    "champions": [
+      "Skarner",
+      "Blitzcrank"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Skarner can lock multiple targets for Blitzcrank's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "brand_skarner",
+    "champions": [
+      "Skarner",
+      "Brand"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Skarner can lock multiple targets for Brand's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "briar_skarner",
+    "champions": [
+      "Skarner",
+      "Briar"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Skarner can lock multiple targets for Briar's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "ahri_udyr",
+    "champions": [
+      "Udyr",
+      "Ahri"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Udyr can lock multiple targets for Ahri's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "akali_udyr",
+    "champions": [
+      "Udyr",
+      "Akali"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Udyr can lock multiple targets for Akali's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "akshan_udyr",
+    "champions": [
+      "Udyr",
+      "Akshan"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Udyr can lock multiple targets for Akshan's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "alistar_udyr",
+    "champions": [
+      "Udyr",
+      "Alistar"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Udyr can lock multiple targets for Alistar's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "ambessa_udyr",
+    "champions": [
+      "Udyr",
+      "Ambessa"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Udyr can lock multiple targets for Ambessa's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "amumu_udyr",
+    "champions": [
+      "Udyr",
+      "Amumu"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Udyr can lock multiple targets for Amumu's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "annie_udyr",
+    "champions": [
+      "Udyr",
+      "Annie"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Udyr can lock multiple targets for Annie's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "aurelion_sol_udyr",
+    "champions": [
+      "Udyr",
+      "Aurelion Sol"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Udyr can lock multiple targets for Aurelion Sol's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "bel_veth_udyr",
+    "champions": [
+      "Udyr",
+      "Bel'Veth"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Udyr can lock multiple targets for Bel'Veth's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "blitzcrank_udyr",
+    "champions": [
+      "Udyr",
+      "Blitzcrank"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Udyr can lock multiple targets for Blitzcrank's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "brand_udyr",
+    "champions": [
+      "Udyr",
+      "Brand"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Udyr can lock multiple targets for Brand's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  },
+  {
+    "id": "briar_udyr",
+    "champions": [
+      "Udyr",
+      "Briar"
+    ],
+    "partner_requirement": null,
+    "best_partners": [],
+    "type": "ability_combo",
+    "category": "wombo_combo",
+    "strength": "B",
+    "confidence": "low",
+    "description": "Udyr can lock multiple targets for Briar's AoE damage follow-up.",
+    "mechanic_explanation": null,
+    "comp_archetypes": [
+      "teamfight"
+    ],
+    "execution_notes": [],
+    "timing": null,
+    "countered_by": [],
+    "historical_name": null,
+    "similar_synergies": [],
+    "source": "rules"
+  }
+]

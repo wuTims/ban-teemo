@@ -1,0 +1,655 @@
+{
+  "archetype_fixes": {
+    "Xin Zhao": {
+      "current": {
+        "split": 0.4,
+        "engage": 0.32
+      },
+      "suggested": {
+        "split": 0.4,
+        "engage": 0.62
+      },
+      "issues": [
+        "missing_expected"
+      ]
+    },
+    "Nocturne": {
+      "current": {
+        "engage": 0.9,
+        "pick": 0.5,
+        "split": 0.5
+      },
+      "suggested": {
+        "engage": 0.9,
+        "pick": 0.5
+      },
+      "issues": [
+        "unexpected_high"
+      ]
+    },
+    "Nautilus": {
+      "current": {
+        "teamfight": 0.6,
+        "pick": 0.5,
+        "protect": 0.15
+      },
+      "suggested": {
+        "teamfight": 0.6,
+        "pick": 0.5,
+        "protect": 0.15,
+        "engage": 0.6
+      },
+      "issues": [
+        "missing_expected"
+      ]
+    },
+    "Sejuani": {
+      "current": {
+        "teamfight": 0.6,
+        "engage": 0.2
+      },
+      "suggested": {
+        "teamfight": 0.6,
+        "engage": 0.6
+      },
+      "issues": [
+        "missing_expected"
+      ]
+    },
+    "Amumu": {
+      "current": {
+        "teamfight": 1.0,
+        "protect": 0.15
+      },
+      "suggested": {
+        "teamfight": 1.0,
+        "protect": 0.15,
+        "engage": 0.6
+      },
+      "issues": [
+        "missing_expected"
+      ]
+    },
+    "Malphite": {
+      "current": {
+        "teamfight": 0.6,
+        "protect": 0.15
+      },
+      "suggested": {
+        "teamfight": 0.6,
+        "protect": 0.15,
+        "engage": 0.6
+      },
+      "issues": [
+        "missing_expected"
+      ]
+    },
+    "Ornn": {
+      "current": {
+        "teamfight": 0.9,
+        "protect": 0.15
+      },
+      "suggested": {
+        "teamfight": 0.9,
+        "protect": 0.15,
+        "engage": 0.6
+      },
+      "issues": [
+        "missing_expected"
+      ]
+    },
+    "Maokai": {
+      "current": {
+        "teamfight": 0.9,
+        "protect": 0.15
+      },
+      "suggested": {
+        "teamfight": 0.9,
+        "protect": 0.15,
+        "engage": 0.6
+      },
+      "issues": [
+        "missing_expected"
+      ]
+    },
+    "Camille": {
+      "current": {
+        "engage": 0.9,
+        "split": 0.9,
+        "pick": 0.2
+      },
+      "suggested": {
+        "engage": 0.9,
+        "pick": 0.2
+      },
+      "issues": [
+        "unexpected_high"
+      ]
+    },
+    "Yone": {
+      "current": {
+        "teamfight": 0.5,
+        "pick": 0.2
+      },
+      "suggested": {
+        "teamfight": 0.5,
+        "pick": 0.2,
+        "engage": 0.6
+      },
+      "issues": [
+        "missing_expected"
+      ]
+    },
+    "Yasuo": {
+      "current": {
+        "teamfight": 0.5,
+        "pick": 0.2
+      },
+      "suggested": {
+        "teamfight": 0.5,
+        "pick": 0.2,
+        "engage": 0.6
+      },
+      "issues": [
+        "missing_expected"
+      ]
+    },
+    "Gragas": {
+      "current": {
+        "teamfight": 0.5,
+        "engage": 0.2,
+        "protect": 0.15
+      },
+      "suggested": {
+        "teamfight": 0.5,
+        "engage": 0.6,
+        "protect": 0.15
+      },
+      "issues": [
+        "missing_expected"
+      ]
+    },
+    "Kayle": {
+      "current": {
+        "teamfight": 0.75,
+        "protect": 0.2
+      },
+      "suggested": {
+        "teamfight": 0.75,
+        "protect": 0.2,
+        "split": 0.5
+      },
+      "issues": [
+        "missing_expected"
+      ]
+    },
+    "Karma": {
+      "current": {
+        "teamfight": 0.75
+      },
+      "suggested": {
+        "teamfight": 0.75,
+        "protect": 0.5
+      },
+      "issues": [
+        "missing_expected"
+      ]
+    },
+    "Zilean": {
+      "current": {
+        "teamfight": 0.6,
+        "protect": 0.2
+      },
+      "suggested": {
+        "teamfight": 0.6,
+        "protect": 0.5
+      },
+      "issues": [
+        "missing_expected"
+      ]
+    },
+    "Yuumi": {
+      "current": {
+        "teamfight": 0.5,
+        "protect": 0.2
+      },
+      "suggested": {
+        "teamfight": 0.5,
+        "protect": 0.5
+      },
+      "issues": [
+        "missing_expected"
+      ]
+    },
+    "Kennen": {
+      "current": {
+        "split": 0.6,
+        "teamfight": 1.0
+      },
+      "suggested": {
+        "teamfight": 1.0
+      },
+      "issues": [
+        "unexpected_high"
+      ]
+    },
+    "Galio": {
+      "current": {
+        "engage": 0.7,
+        "pick": 0.5,
+        "split": 0.5,
+        "protect": 0.15
+      },
+      "suggested": {
+        "engage": 0.7,
+        "pick": 0.5,
+        "split": 0.5,
+        "protect": 0.15,
+        "teamfight": 0.5
+      },
+      "issues": [
+        "missing_expected",
+        "unexpected_high"
+      ]
+    },
+    "Syndra": {
+      "current": {
+        "teamfight": 0.75
+      },
+      "suggested": {
+        "teamfight": 0.75,
+        "pick": 0.5
+      },
+      "issues": [
+        "missing_expected"
+      ]
+    }
+  },
+  "synergy_fixes": [
+    {
+      "champion1": "Yasuo",
+      "champion2": "Malphite",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Knockup enables Last Breath"
+    },
+    {
+      "champion1": "Yasuo",
+      "champion2": "Gragas",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Knockup enables Last Breath"
+    },
+    {
+      "champion1": "Yasuo",
+      "champion2": "Diana",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Knockup enables Last Breath"
+    },
+    {
+      "champion1": "Yasuo",
+      "champion2": "Alistar",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Knockup enables Last Breath"
+    },
+    {
+      "champion1": "Yasuo",
+      "champion2": "Ornn",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Knockup enables Last Breath"
+    },
+    {
+      "champion1": "Yasuo",
+      "champion2": "Rakan",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Knockup enables Last Breath"
+    },
+    {
+      "champion1": "Yasuo",
+      "champion2": "Jarvan IV",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Knockup enables Last Breath"
+    },
+    {
+      "champion1": "Yasuo",
+      "champion2": "Vi",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Knockup enables Last Breath"
+    },
+    {
+      "champion1": "Yasuo",
+      "champion2": "Rell",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Knockup enables Last Breath"
+    },
+    {
+      "champion1": "Yasuo",
+      "champion2": "Nautilus",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Knockup enables Last Breath"
+    },
+    {
+      "champion1": "Yasuo",
+      "champion2": "Braum",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Knockup enables Last Breath"
+    },
+    {
+      "champion1": "Yasuo",
+      "champion2": "Xin Zhao",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Knockup enables Last Breath"
+    },
+    {
+      "champion1": "Yone",
+      "champion2": "Malphite",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Knockup enables Last Breath"
+    },
+    {
+      "champion1": "Yone",
+      "champion2": "Gragas",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Knockup enables Last Breath"
+    },
+    {
+      "champion1": "Yone",
+      "champion2": "Diana",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Knockup enables Last Breath"
+    },
+    {
+      "champion1": "Yone",
+      "champion2": "Alistar",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Knockup enables Last Breath"
+    },
+    {
+      "champion1": "Yone",
+      "champion2": "Ornn",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Knockup enables Last Breath"
+    },
+    {
+      "champion1": "Yone",
+      "champion2": "Rakan",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Knockup enables Last Breath"
+    },
+    {
+      "champion1": "Yone",
+      "champion2": "Jarvan IV",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Knockup enables Last Breath"
+    },
+    {
+      "champion1": "Yone",
+      "champion2": "Vi",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Knockup enables Last Breath"
+    },
+    {
+      "champion1": "Yone",
+      "champion2": "Rell",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Knockup enables Last Breath"
+    },
+    {
+      "champion1": "Yone",
+      "champion2": "Nautilus",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Knockup enables Last Breath"
+    },
+    {
+      "champion1": "Yone",
+      "champion2": "Braum",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Knockup enables Last Breath"
+    },
+    {
+      "champion1": "Yone",
+      "champion2": "Xin Zhao",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Knockup enables Last Breath"
+    },
+    {
+      "champion1": "Orianna",
+      "champion2": "Vi",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Ball delivery for Shockwave"
+    },
+    {
+      "champion1": "Orianna",
+      "champion2": "Xin Zhao",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Ball delivery for Shockwave"
+    },
+    {
+      "champion1": "Orianna",
+      "champion2": "Camille",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Ball delivery for Shockwave"
+    },
+    {
+      "champion1": "Orianna",
+      "champion2": "Renekton",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Ball delivery for Shockwave"
+    },
+    {
+      "champion1": "Orianna",
+      "champion2": "Wukong",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Ball delivery for Shockwave"
+    },
+    {
+      "champion1": "Orianna",
+      "champion2": "Malphite",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Ball delivery for Shockwave"
+    },
+    {
+      "champion1": "Orianna",
+      "champion2": "Rell",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Ball delivery for Shockwave"
+    },
+    {
+      "champion1": "Orianna",
+      "champion2": "Leona",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Ball delivery for Shockwave"
+    },
+    {
+      "champion1": "Orianna",
+      "champion2": "Alistar",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Ball delivery for Shockwave"
+    },
+    {
+      "champion1": "Kalista",
+      "champion2": "Alistar",
+      "current_score": null,
+      "suggested_score": 0.65,
+      "reason": "Fate's Call engage"
+    },
+    {
+      "champion1": "Kalista",
+      "champion2": "Leona",
+      "current_score": null,
+      "suggested_score": 0.65,
+      "reason": "Fate's Call engage"
+    },
+    {
+      "champion1": "Kalista",
+      "champion2": "Nautilus",
+      "current_score": null,
+      "suggested_score": 0.65,
+      "reason": "Fate's Call engage"
+    },
+    {
+      "champion1": "Kalista",
+      "champion2": "Rell",
+      "current_score": null,
+      "suggested_score": 0.65,
+      "reason": "Fate's Call engage"
+    },
+    {
+      "champion1": "Kalista",
+      "champion2": "Rakan",
+      "current_score": null,
+      "suggested_score": 0.65,
+      "reason": "Fate's Call engage"
+    },
+    {
+      "champion1": "Kalista",
+      "champion2": "Braum",
+      "current_score": null,
+      "suggested_score": 0.65,
+      "reason": "Fate's Call engage"
+    },
+    {
+      "champion1": "Kalista",
+      "champion2": "Tahm Kench",
+      "current_score": null,
+      "suggested_score": 0.65,
+      "reason": "Fate's Call engage"
+    },
+    {
+      "champion1": "Seraphine",
+      "champion2": "Miss Fortune",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "AoE ult combos"
+    },
+    {
+      "champion1": "Seraphine",
+      "champion2": "Amumu",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "AoE ult combos"
+    },
+    {
+      "champion1": "Seraphine",
+      "champion2": "Jarvan IV",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "AoE ult combos"
+    },
+    {
+      "champion1": "Seraphine",
+      "champion2": "Orianna",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "AoE ult combos"
+    },
+    {
+      "champion1": "Sona",
+      "champion2": "Miss Fortune",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "AoE ult combos"
+    },
+    {
+      "champion1": "Sona",
+      "champion2": "Amumu",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "AoE ult combos"
+    },
+    {
+      "champion1": "Sona",
+      "champion2": "Jarvan IV",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "AoE ult combos"
+    },
+    {
+      "champion1": "Sona",
+      "champion2": "Orianna",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "AoE ult combos"
+    },
+    {
+      "champion1": "Renata Glasc",
+      "champion2": "Jinx",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Bailout + hypercarry"
+    },
+    {
+      "champion1": "Renata Glasc",
+      "champion2": "Kog'Maw",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Bailout + hypercarry"
+    },
+    {
+      "champion1": "Renata Glasc",
+      "champion2": "Twitch",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Bailout + hypercarry"
+    },
+    {
+      "champion1": "Renata Glasc",
+      "champion2": "Aphelios",
+      "current_score": null,
+      "suggested_score": 0.6,
+      "reason": "Bailout + hypercarry"
+    },
+    {
+      "champion1": "Lulu",
+      "champion2": "Jinx",
+      "current_score": null,
+      "suggested_score": 0.65,
+      "reason": "Protect the carry"
+    },
+    {
+      "champion1": "Lulu",
+      "champion2": "Vayne",
+      "current_score": null,
+      "suggested_score": 0.65,
+      "reason": "Protect the carry"
+    },
+    {
+      "champion1": "Lulu",
+      "champion2": "Kai'Sa",
+      "current_score": null,
+      "suggested_score": 0.65,
+      "reason": "Protect the carry"
+    }
+  ]
+}
