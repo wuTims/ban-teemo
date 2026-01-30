@@ -158,3 +158,219 @@ def test_calculate_role_strength_uses_win_rate_only(tmp_path):
     assert strength_a > strength_b
     assert abs(strength_a - 0.8) < 0.01
     assert abs(strength_b - 0.5) < 0.01
+
+
+# ======================================================================
+# Champion Proficiency (Comfort + Role Strength) Tests
+# ======================================================================
+
+
+def test_get_champion_proficiency_comfort_scales_with_games(tmp_path):
+    """Champion comfort scales from 0.5 baseline based on games played."""
+    knowledge_dir = _write_proficiency_data(
+        tmp_path,
+        proficiencies={
+            "MidPlayer": {
+                "Azir": {"games_weighted": 10, "win_rate_weighted": 0.7},
+                "Syndra": {"games_weighted": 8, "win_rate_weighted": 0.65},
+                "Viktor": {"games_weighted": 2, "win_rate_weighted": 0.5},
+            },
+        },
+        role_history={
+            "Azir": {"canonical_role": "MID"},
+            "Syndra": {"canonical_role": "MID"},
+            "Viktor": {"canonical_role": "MID"},
+        },
+    )
+    scorer = ProficiencyScorer(knowledge_dir)
+    team_players = [{"name": "MidPlayer", "role": "mid"}]
+
+    # Azir: 10 games (>= G_FULL=8) -> full comfort scaling
+    azir_score, azir_conf, _, _ = scorer.get_champion_proficiency(
+        "Azir", "mid", team_players
+    )
+
+    # Viktor: 2 games -> partial comfort scaling
+    viktor_score, viktor_conf, _, _ = scorer.get_champion_proficiency(
+        "Viktor", "mid", team_players
+    )
+
+    assert azir_score > viktor_score
+    assert azir_conf == "HIGH"
+    assert viktor_conf == "LOW"
+
+
+def test_get_champion_proficiency_unplayed_uses_comfort_baseline(tmp_path):
+    """Unplayed champion starts at 0.5 comfort baseline with role strength bonus."""
+    knowledge_dir = _write_proficiency_data(
+        tmp_path,
+        proficiencies={
+            "MidPlayer": {
+                "Azir": {"games_weighted": 10, "win_rate_weighted": 0.7},
+            },
+        },
+        role_history={
+            "Azir": {"canonical_role": "MID"},
+            "Syndra": {"canonical_role": "MID"},
+        },
+    )
+    scorer = ProficiencyScorer(knowledge_dir)
+    team_players = [{"name": "MidPlayer", "role": "mid"}]
+
+    # Syndra: no games -> 0.5 comfort + role strength bonus
+    syndra_score, syndra_conf, player, source = scorer.get_champion_proficiency(
+        "Syndra", "mid", team_players
+    )
+
+    # With role_strength ~0.7 and ROLE_STRENGTH_BONUS=0.3:
+    # comfort = 0.5, proficiency = 0.5 * (1 + 0.7 * 0.3) = 0.5 * 1.21 = 0.605
+    assert syndra_score > 0.5  # Should have role strength bonus
+    assert syndra_score < 0.7  # But not too high without games
+    assert syndra_conf == "LOW"
+    assert player == "MidPlayer"
+    assert source == "comfort_only"
+
+
+def test_get_champion_proficiency_no_role_strength_comfort_only(tmp_path):
+    """Player with no role data gets comfort-only score (no role bonus), still capped."""
+    knowledge_dir = _write_proficiency_data(
+        tmp_path,
+        proficiencies={
+            "TopPlayer": {
+                "Aatrox": {"games_weighted": 10, "win_rate_weighted": 0.7},
+            },
+        },
+        role_history={
+            "Aatrox": {"canonical_role": "TOP"},
+            "Azir": {"canonical_role": "MID"},
+        },
+    )
+    scorer = ProficiencyScorer(knowledge_dir)
+    # TopPlayer is assigned mid but has no mid data (no role strength)
+    team_players = [{"name": "TopPlayer", "role": "mid"}]
+
+    score, conf, player, source = scorer.get_champion_proficiency(
+        "Azir", "mid", team_players
+    )
+
+    # Comfort baseline only (0.5), no role strength bonus, no games on Azir
+    assert score == 0.5
+    assert conf == "LOW"
+    assert source == "comfort_only"
+
+
+def test_get_champion_proficiency_comfort_only_capped(tmp_path):
+    """Comfort-only score is still capped at PROFICIENCY_CAP even without role strength."""
+    knowledge_dir = _write_proficiency_data(
+        tmp_path,
+        proficiencies={
+            "TopPlayer": {
+                "Aatrox": {"games_weighted": 10, "win_rate_weighted": 0.7},
+                "Azir": {"games_weighted": 100, "win_rate_weighted": 0.8},  # Many games on Azir
+            },
+        },
+        role_history={
+            "Aatrox": {"canonical_role": "TOP"},
+            # Azir deliberately NOT in role_history, so no role_strength for mid
+        },
+    )
+    scorer = ProficiencyScorer(knowledge_dir)
+    # TopPlayer is assigned mid but has no mid champions in role data (Aatrox=TOP, Azir has no role)
+    # This means role_strength for mid is None (comfort_only mode)
+    team_players = [{"name": "TopPlayer", "role": "mid"}]
+
+    score, conf, player, source = scorer.get_champion_proficiency(
+        "Azir", "mid", team_players
+    )
+
+    # Comfort would be 1.0 (100 games >> G_FULL), but should be capped at 0.95
+    assert score <= 0.95
+    assert source == "comfort_only"
+
+
+def test_get_champion_proficiency_no_player_data_returns_no_data(tmp_path):
+    """Unknown player returns NO_DATA."""
+    knowledge_dir = _write_proficiency_data(
+        tmp_path,
+        proficiencies={},
+        role_history={"Azir": {"canonical_role": "MID"}},
+    )
+    scorer = ProficiencyScorer(knowledge_dir)
+    team_players = [{"name": "UnknownPlayer", "role": "mid"}]
+
+    score, conf, player, source = scorer.get_champion_proficiency(
+        "Azir", "mid", team_players
+    )
+
+    assert score == 0.5
+    assert conf == "NO_DATA"
+    assert source == "none"
+
+
+def test_get_champion_proficiency_monotonic_with_games(tmp_path):
+    """More games always produces higher or equal proficiency."""
+    knowledge_dir = _write_proficiency_data(
+        tmp_path,
+        proficiencies={
+            "MidPlayer": {
+                "Azir": {"games_weighted": 10, "win_rate_weighted": 0.7},
+                "Syndra": {"games_weighted": 8, "win_rate_weighted": 0.6},
+                "Viktor": {"games_weighted": 4, "win_rate_weighted": 0.6},
+                "Orianna": {"games_weighted": 1, "win_rate_weighted": 0.6},
+            },
+        },
+        role_history={
+            "Azir": {"canonical_role": "MID"},
+            "Syndra": {"canonical_role": "MID"},
+            "Viktor": {"canonical_role": "MID"},
+            "Orianna": {"canonical_role": "MID"},
+            "Ahri": {"canonical_role": "MID"},
+        },
+    )
+    scorer = ProficiencyScorer(knowledge_dir)
+    team_players = [{"name": "MidPlayer", "role": "mid"}]
+
+    # Test with a champion not in player data (uses comfort baseline)
+    ahri_score, _, _, _ = scorer.get_champion_proficiency(
+        "Ahri", "mid", team_players
+    )
+
+    orianna_score, _, _, _ = scorer.get_champion_proficiency(
+        "Orianna", "mid", team_players
+    )
+    viktor_score, _, _, _ = scorer.get_champion_proficiency(
+        "Viktor", "mid", team_players
+    )
+    syndra_score, _, _, _ = scorer.get_champion_proficiency(
+        "Syndra", "mid", team_players
+    )
+
+    # More games should mean higher score (monotonic)
+    assert ahri_score <= orianna_score
+    assert orianna_score <= viktor_score
+    assert viktor_score <= syndra_score
+
+
+def test_get_champion_proficiency_cap_respected(tmp_path):
+    """Proficiency never exceeds PROFICIENCY_CAP."""
+    knowledge_dir = _write_proficiency_data(
+        tmp_path,
+        proficiencies={
+            "ElitePlayer": {
+                "Azir": {"games_weighted": 100, "win_rate_weighted": 0.9},
+                "Syndra": {"games_weighted": 100, "win_rate_weighted": 0.9},
+            },
+        },
+        role_history={
+            "Azir": {"canonical_role": "MID"},
+            "Syndra": {"canonical_role": "MID"},
+        },
+    )
+    scorer = ProficiencyScorer(knowledge_dir)
+    team_players = [{"name": "ElitePlayer", "role": "mid"}]
+
+    score, _, _, _ = scorer.get_champion_proficiency(
+        "Azir", "mid", team_players
+    )
+
+    assert score <= 0.95  # PROFICIENCY_CAP

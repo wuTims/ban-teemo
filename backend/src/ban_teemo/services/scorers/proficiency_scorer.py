@@ -14,6 +14,12 @@ class ProficiencyScorer:
     CONFIDENCE_THRESHOLDS = {"HIGH": 8, "MEDIUM": 4, "LOW": 1}
     TRANSFER_MAX_WEIGHT = 0.5
 
+    # Champion Comfort + Role Strength constants
+    COMFORT_BASELINE = 0.5  # Starting comfort for all unplayed champions
+    G_FULL = 8  # Games for full comfort scaling
+    PROFICIENCY_CAP = 0.95  # Prevent perfect scores
+    ROLE_STRENGTH_BONUS = 0.3  # Max bonus from role strength
+
     def __init__(self, knowledge_dir: Optional[Path] = None):
         if knowledge_dir is None:
             knowledge_dir = Path(__file__).parents[5] / "knowledge"
@@ -117,6 +123,73 @@ class ProficiencyScorer:
         total_weight = sum(games for _, games in role_champions)
         weighted_sum = sum(win_rate * games for win_rate, games in role_champions)
         return round(weighted_sum / total_weight, 3)
+
+    def get_champion_proficiency(
+        self,
+        champion_name: str,
+        role: str,
+        team_players: list[dict],
+    ) -> tuple[float, str, Optional[str], str]:
+        """Calculate proficiency using champion comfort + role strength.
+
+        Formula:
+            comfort = COMFORT_BASELINE + (1 - COMFORT_BASELINE) * min(1.0, games / G_FULL)
+            proficiency = comfort * (1 + role_strength * ROLE_STRENGTH_BONUS)
+            proficiency = min(PROFICIENCY_CAP, proficiency)
+
+        Returns:
+            (score, confidence, player_name, source)
+            source: "direct" | "comfort_only" | "none"
+
+        Invariants:
+            - Comfort starts at 0.5 for unplayed champions
+            - More games -> higher comfort (monotonic)
+            - Role strength provides additive bonus
+            - Result capped at PROFICIENCY_CAP
+            - NO_DATA only when player is unknown
+        """
+        normalized_role = normalize_role(role)
+        if not normalized_role:
+            return 0.5, "NO_DATA", None, "none"
+
+        # Find player assigned to this role
+        player = next(
+            (p for p in team_players if normalize_role(p.get("role")) == normalized_role),
+            None,
+        )
+        if not player:
+            return 0.5, "NO_DATA", None, "none"
+
+        player_name = player["name"]
+
+        # Check if player exists in data
+        if player_name not in self._proficiency_data:
+            return 0.5, "NO_DATA", player_name, "none"
+
+        # Calculate champion comfort (0.5 baseline + games scaling)
+        player_data = self._proficiency_data.get(player_name, {})
+        champ_data = player_data.get(champion_name, {})
+        games = champ_data.get("games_weighted", champ_data.get("games_raw", 0))
+
+        scalar = min(1.0, games / self.G_FULL) if games > 0 else 0.0
+        comfort = self.COMFORT_BASELINE + (1 - self.COMFORT_BASELINE) * scalar
+
+        # Calculate role strength (may be None if no role data)
+        role_strength = self.calculate_role_strength(player_name, normalized_role)
+
+        if role_strength is None:
+            # No role data -> comfort only, no bonus (still capped)
+            comfort = min(self.PROFICIENCY_CAP, comfort)
+            confidence = self._games_to_confidence(int(games)) if games > 0 else "LOW"
+            return round(comfort, 3), confidence, player_name, "comfort_only"
+
+        # Apply role strength bonus
+        proficiency = comfort * (1 + role_strength * self.ROLE_STRENGTH_BONUS)
+        proficiency = min(self.PROFICIENCY_CAP, proficiency)
+
+        confidence = self._games_to_confidence(int(games)) if games > 0 else "LOW"
+        source = "direct" if games > 0 else "comfort_only"
+        return round(proficiency, 3), confidence, player_name, source
 
     def get_role_proficiency_with_transfer(
         self,
