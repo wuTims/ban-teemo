@@ -107,6 +107,8 @@ export default function App() {
             <RecommendationPanel
               recommendationHistory={replay.recommendationHistory}
               isLive={replay.status === "playing"}
+              blueTeam={replay.blueTeam}
+              redTeam={replay.redTeam}
             />
           </>
         ) : (

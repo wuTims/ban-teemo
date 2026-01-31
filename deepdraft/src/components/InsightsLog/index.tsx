@@ -1,14 +1,171 @@
 // deepdraft/src/components/InsightsLog/index.tsx
-import { useEffect, useRef } from "react";
-import type { InsightEntry } from "../../types";
+import { useEffect, useRef, useState } from "react";
+import type { InsightEntry, PickRecommendation, BanRecommendation, TeamContext } from "../../types";
+import { ChampionPortrait } from "../shared/ChampionPortrait";
+import { RoleRecommendationPanel } from "../recommendations/RoleRecommendationPanel";
 
 interface InsightsLogProps {
   entries: InsightEntry[];
   isLive: boolean;
+  blueTeam?: TeamContext | null;
+  redTeam?: TeamContext | null;
 }
 
-export function InsightsLog({ entries, isLive }: InsightsLogProps) {
+// Helper to format component scores with color
+function ScoreCell({ label, value }: { label: string; value: number | undefined }) {
+  if (value === undefined) return null;
+  const color =
+    value >= 0.7 ? "text-success" :
+    value >= 0.5 ? "text-warning" : "text-danger";
+  return (
+    <div className="flex justify-between text-[10px]">
+      <span className="text-text-tertiary">{label}</span>
+      <span className={`font-mono ${color}`}>{value.toFixed(2)}</span>
+    </div>
+  );
+}
+
+const BAN_COMPONENT_LABELS: Record<string, string> = {
+  presence: "pres",
+  flex: "flex",
+  archetype_counter: "arch",
+  synergy_denial: "syn",
+  role_denial: "role",
+  counter: "cntr",
+  proficiency: "prof",
+  meta: "meta",
+  comfort: "comf",
+  confidence_bonus: "conf",
+  pool_depth_bonus: "pool",
+};
+
+function getTopBanComponents(
+  components?: Record<string, number>,
+  limit: number = 5
+): Array<{ label: string; value: number }> {
+  if (!components) return [];
+  return Object.entries(components)
+    .filter(([key, value]) => BAN_COMPONENT_LABELS[key] && value !== undefined)
+    .map(([key, value]) => ({
+      label: BAN_COMPONENT_LABELS[key],
+      value,
+    }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, limit);
+}
+
+// Compact recommendation card showing champion + all scores
+function CompactRecommendationCard({
+  champion,
+  score,
+  role,
+  components,
+  isMatch,
+  isPick,
+}: {
+  champion: string;
+  score: number;
+  role?: string | null;
+  components?: Record<string, number>;
+  isMatch: boolean;
+  isPick: boolean;
+}) {
+  const scoreColor =
+    score >= 0.7 ? "text-success" :
+    score >= 0.5 ? "text-warning" : "text-danger";
+
+  return (
+    <div
+      className={`
+        rounded border p-1.5 min-w-[100px] flex-1
+        ${isMatch
+          ? "border-success bg-success/10"
+          : "border-gold-dim/30 bg-lol-dark/50"
+        }
+      `}
+    >
+      {/* Header: champion + score */}
+      <div className="flex items-center gap-1.5 mb-1">
+        <ChampionPortrait
+          championName={champion}
+          state="picked"
+          className="w-5 h-5 rounded-sm"
+        />
+        <div className="flex-1 min-w-0">
+          <div className="text-[10px] font-medium text-gold-bright truncate">
+            {champion}
+          </div>
+          {isPick && role && (
+            <div className="text-[9px] text-magic uppercase">{role}</div>
+          )}
+        </div>
+        <span className={`text-xs font-bold ${scoreColor}`}>
+          {Math.round(score * 100)}
+        </span>
+        {isMatch && <span className="text-success text-[10px]">✓</span>}
+      </div>
+
+      {/* Component scores */}
+      {components && (
+        <div className="space-y-0 border-t border-gold-dim/20 pt-1">
+          {isPick ? (
+            <>
+              <ScoreCell label="meta" value={components.meta} />
+              <ScoreCell label="prof" value={components.proficiency} />
+              <ScoreCell label="match" value={components.matchup} />
+              <ScoreCell label="count" value={components.counter} />
+              <ScoreCell label="arch" value={components.archetype} />
+              <ScoreCell label="syn" value={components.synergy} />
+            </>
+          ) : (
+            <>
+              {getTopBanComponents(components).map((item) => (
+                <ScoreCell key={item.label} label={item.label} value={item.value} />
+              ))}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Calculate ban/pick number based on sequence
+function calculateActionNumber(sequence: number, isBan: boolean): number {
+  // LoL Draft sequence (1-indexed):
+  // 1-6: Ban Phase 1 (alternating: R, B, R, B, R, B = 3 each)
+  // 7-12: Pick Phase 1 (R, B, B, R, R, B)
+  // 13-16: Ban Phase 2 (R, B, R, B = 2 each)
+  // 17-20: Pick Phase 2 (B, R, R, B)
+
+  if (isBan) {
+    if (sequence >= 1 && sequence <= 6) {
+      // Ban Phase 1: sequences 1-6
+      // Each team bans 3: Ban #1 at seq 1 or 2, #2 at seq 3 or 4, #3 at seq 5 or 6
+      return Math.ceil(sequence / 2);
+    } else if (sequence >= 13 && sequence <= 16) {
+      // Ban Phase 2: sequences 13-16
+      // Each team bans 2: Ban #4 at seq 13 or 14, #5 at seq 15 or 16
+      return 3 + Math.ceil((sequence - 12) / 2);
+    }
+  } else {
+    if (sequence >= 7 && sequence <= 12) {
+      // Pick Phase 1: sequences 7-12 (6 picks total)
+      // Each team picks 3: Pick #1, #2, #3
+      return Math.ceil((sequence - 6) / 2);
+    } else if (sequence >= 17 && sequence <= 20) {
+      // Pick Phase 2: sequences 17-20 (4 picks total)
+      // Each team picks 2: Pick #4, #5
+      return 3 + Math.ceil((sequence - 16) / 2);
+    }
+  }
+  return 1;
+}
+
+export function InsightsLog({ entries, isLive, blueTeam, redTeam }: InsightsLogProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  // Toggle for role-grouped view - defaults to OFF (primary view)
+  const [showRoleGrouped, setShowRoleGrouped] = useState(false);
 
   // Auto-scroll to top when new entries arrive (most recent is on top)
   useEffect(() => {
@@ -30,6 +187,18 @@ export function InsightsLog({ entries, isLive }: InsightsLogProps) {
   // Reverse entries so most recent is on top
   const reversedEntries = [...entries].reverse();
 
+  // Get the latest action entry for role-grouped display
+  const latestActionEntry = reversedEntries.find(e => e.kind === "action");
+  const latestRoleGrouped = latestActionEntry?.kind === "action"
+    ? latestActionEntry.recommendations?.role_grouped
+    : null;
+
+  // Determine which team to show role-grouped for (from latest recommendation)
+  const latestForTeam = latestActionEntry?.kind === "action"
+    ? latestActionEntry.recommendations?.for_team
+    : null;
+  const ourTeam = latestForTeam === "blue" ? blueTeam : latestForTeam === "red" ? redTeam : null;
+
   return (
     <div className="bg-lol-dark rounded-lg p-4">
       {/* Header */}
@@ -37,91 +206,88 @@ export function InsightsLog({ entries, isLive }: InsightsLogProps) {
         <h2 className="font-semibold text-lg uppercase tracking-wide text-gold-bright">
           Draft Insights
         </h2>
-        {isLive && (
-          <span className="text-xs text-magic animate-pulse">● LIVE</span>
-        )}
+        <div className="flex items-center gap-3">
+          {/* Role-grouped toggle - only show if we have role_grouped data */}
+          {latestRoleGrouped && ourTeam && (
+            <button
+              onClick={() => setShowRoleGrouped(!showRoleGrouped)}
+              className={`
+                text-xs px-2 py-1 rounded transition-colors
+                ${showRoleGrouped
+                  ? "bg-magic/20 text-magic border border-magic/40"
+                  : "bg-lol-light text-text-tertiary hover:text-text-secondary"
+                }
+              `}
+            >
+              By Role
+            </button>
+          )}
+          {isLive && (
+            <span className="text-xs text-magic animate-pulse">● LIVE</span>
+          )}
+        </div>
       </div>
+
+      {/* Role-Grouped Panel (supplemental view) */}
+      {showRoleGrouped && latestRoleGrouped && ourTeam && (
+        <div className="mb-4">
+          <RoleRecommendationPanel
+            roleGrouped={latestRoleGrouped}
+            ourTeam={ourTeam}
+          />
+        </div>
+      )}
 
       {/* Scrollable log - most recent on top */}
       <div
         ref={scrollRef}
-        className="space-y-3 max-h-[500px] overflow-y-auto pr-2"
+        className="space-y-3 max-h-[600px] overflow-y-auto pr-2"
       >
         {reversedEntries.map((entry, idx) => {
-          const isLatest = idx === 0; // First item is now the latest
+          const isLatest = idx === 0;
+          if (entry.kind === "marker") {
+            const markerBorder = entry.winnerSide === "blue"
+              ? "border-blue-team/60"
+              : entry.winnerSide === "red"
+                ? "border-red-team/60"
+                : "border-gold-dim/20";
+            return (
+              <div
+                key={`${entry.sessionId}-marker-${entry.timestamp}-${idx}`}
+                className={`text-[11px] text-text-tertiary uppercase tracking-wide px-2 py-1 rounded bg-lol-darkest/70 border ${markerBorder}`}
+              >
+                <div>{entry.label}</div>
+                {entry.score && (
+                  <div className="text-[10px] text-text-secondary">
+                    Score {entry.score.blue} - {entry.score.red}
+                  </div>
+                )}
+              </div>
+            );
+          }
+
           const isBan = entry.action.action_type === "ban";
+          const actionTeam = entry.action.team_side;
+          const teamColor = actionTeam === "blue" ? "blue-team" : "red-team";
+          const teamLabel = actionTeam === "blue" ? "Blue" : "Red";
 
-          // Team for the RECOMMENDATIONS (next team to act), not the action that just happened
-          const recTeam = entry.recommendations?.for_team ?? entry.action.team_side;
-          const teamColor = recTeam === "blue" ? "blue-team" : "red-team";
-          const teamLabel = recTeam === "blue" ? "Blue" : "Red";
+          // Calculate action number using the actual action sequence and type
+          const actionNum = calculateActionNumber(entry.action.sequence, isBan);
 
-          // Get recommendations - prefer whichever array has data
-          // (recommendations are for NEXT action, not based on previous action type)
-          const hasBanRecs = (entry.recommendations?.bans?.length ?? 0) > 0;
-          const hasPickRecs = (entry.recommendations?.picks?.length ?? 0) > 0;
-          const recs = hasBanRecs
+          // Get recommendations - use the correct array based on action type
+          const recs: (PickRecommendation | BanRecommendation)[] = isBan
             ? entry.recommendations?.bans ?? []
             : entry.recommendations?.picks ?? [];
-          const isRecsForBan = hasBanRecs;
-          const top3 = recs.slice(0, 3);
+          const top5 = recs.slice(0, 5);
+          const hasRecommendations = top5.length > 0;
 
-          // STEAL/DENY DETECTION: Check if this action took something from the OTHER team's recommendations
-          // Look at the PREVIOUS entry (which has recommendations for the team that just acted)
-          const prevEntry = reversedEntries[idx + 1]; // Next in reversed = previous chronologically
-          const prevRecs = prevEntry?.recommendations;
-          const prevForTeam = prevRecs?.for_team;
-          const actionTeam = entry.action.team_side;
-
-          // If the previous recommendations were for a DIFFERENT team than who just acted,
-          // check if the action champion was in those recommendations (steal scenario)
-          let stealInfo: { rank: number; score: number; reasons: string[] } | null = null;
-          if (prevRecs && prevForTeam && prevForTeam !== actionTeam) {
-            const prevPickRecs = prevRecs.picks ?? [];
-            const prevBanRecs = prevRecs.bans ?? [];
-            const allPrevRecs = isBan ? prevBanRecs : prevPickRecs;
-
-            const stolenRec = allPrevRecs.find(r => r.champion_name === entry.action.champion_name);
-            if (stolenRec) {
-              const recIndex = allPrevRecs.indexOf(stolenRec);
-              const score = "priority" in stolenRec ? stolenRec.priority : stolenRec.confidence;
-              stealInfo = {
-                rank: recIndex + 1,
-                score: score,
-                reasons: stolenRec.reasons ?? [],
-              };
-            }
-          }
-
-          // Calculate action number for the NEXT action (what recommendations are for)
-          // LoL Draft (1-indexed sequence):
-          //   Seq 1-6: Ban Phase 1 (3 per team, alternating)
-          //   Seq 7-12: Pick Phase 1 (6 picks)
-          //   Seq 13-16: Ban Phase 2 (2 per team)
-          //   Seq 17-20: Pick Phase 2 (4 picks)
-          const nextSeq = entry.action.sequence + 1;
-          let actionNum: number;
-          if (isRecsForBan) {
-            if (nextSeq <= 6) {
-              actionNum = Math.ceil(nextSeq / 2);
-            } else if (nextSeq >= 13 && nextSeq <= 16) {
-              actionNum = 3 + Math.ceil((nextSeq - 12) / 2);
-            } else {
-              actionNum = 1;
-            }
-          } else {
-            if (nextSeq >= 7 && nextSeq <= 12) {
-              actionNum = Math.ceil((nextSeq - 6) / 2);
-            } else if (nextSeq >= 17 && nextSeq <= 20) {
-              actionNum = 3 + Math.ceil((nextSeq - 16) / 2);
-            } else {
-              actionNum = 1;
-            }
-          }
+          // Check if actual champion was recommended
+          const actualChampion = entry.action.champion_name;
+          const matchedRec = recs.find(r => r.champion_name === actualChampion);
 
           return (
             <div
-              key={entry.action.sequence}
+              key={`${entry.sessionId}-${entry.action.sequence}`}
               className={`
                 rounded-lg border p-3
                 ${isLatest && isLive
@@ -137,7 +303,7 @@ export function InsightsLog({ entries, isLive }: InsightsLogProps) {
                     {teamLabel}
                   </span>
                   <span className="text-sm text-text-primary font-medium">
-                    {isRecsForBan ? "Ban" : "Pick"} #{actionNum}
+                    {isBan ? "Ban" : "Pick"} #{actionNum}
                   </span>
                 </div>
                 {isLatest && isLive && (
@@ -148,57 +314,60 @@ export function InsightsLog({ entries, isLive }: InsightsLogProps) {
               </div>
 
               {/* What actually happened */}
-              <div className="text-xs text-text-tertiary mb-2">
-                Actual: <span className="text-gold-bright font-medium">{entry.action.champion_name}</span>
-                {stealInfo && (
-                  <span className="ml-2 text-warning font-medium">
-                    ⚠️ DENY (was #{stealInfo.rank} for {prevForTeam === "blue" ? "Blue" : "Red"})
-                  </span>
-                )}
+              <div className="flex items-center gap-2 mb-2 p-2 rounded bg-lol-dark/50">
+                <ChampionPortrait
+                  championName={actualChampion}
+                  state="picked"
+                  className="w-8 h-8 rounded"
+                />
+                <div className="flex-1">
+                  <span className="text-gold-bright font-medium">{actualChampion}</span>
+                  {matchedRec && (
+                    <span className="ml-2 text-success text-xs">
+                      ✓ #{recs.indexOf(matchedRec) + 1} recommended
+                    </span>
+                  )}
+                  {!matchedRec && hasRecommendations && (
+                    <span className="ml-2 text-warning text-xs">
+                      ✗ Not in top 5
+                    </span>
+                  )}
+                </div>
               </div>
 
-              {/* Steal context - show why the other team wanted this pick */}
-              {stealInfo && (
-                <div className="text-xs bg-warning/10 border border-warning/30 rounded px-2 py-1.5 mb-2">
-                  <div className="text-warning font-medium mb-1">
-                    Denied from {prevForTeam === "blue" ? "Blue" : "Red"} Team
+              {/* Top 5 recommendations as horizontal row */}
+              {hasRecommendations ? (
+                <div>
+                  <div className="text-[10px] text-text-tertiary uppercase mb-1.5">
+                    Top 5 Recommendations
                   </div>
-                  <div className="text-text-secondary">
-                    Score: {Math.round(stealInfo.score * 100)}%
-                    {stealInfo.reasons[0] && ` • ${stealInfo.reasons[0]}`}
+                  <div className="flex gap-1.5 overflow-x-auto pb-1">
+                    {top5.map((rec) => {
+                      const isPick = "score" in rec;
+                      const score = isPick
+                        ? (rec as PickRecommendation).score ?? (rec as PickRecommendation).confidence
+                        : (rec as BanRecommendation).priority;
+                      const role = isPick ? (rec as PickRecommendation).suggested_role : null;
+
+                      return (
+                        <CompactRecommendationCard
+                          key={rec.champion_name}
+                          champion={rec.champion_name}
+                          score={score}
+                          role={role}
+                          components={rec.components}
+                          isMatch={rec.champion_name === actualChampion}
+                          isPick={isPick}
+                        />
+                      );
+                    })}
                   </div>
                 </div>
+              ) : (
+                <div className="text-xs text-text-tertiary italic">
+                  No recommendations available (draft complete)
+                </div>
               )}
-
-              {/* Top 3 recommendations */}
-              <div className="space-y-1.5">
-                {top3.map((rec, i) => {
-                  const score = "priority" in rec ? rec.priority : ("confidence" in rec ? rec.confidence : 0);
-                  const scorePercent = Math.round(score * 100);
-                  const isMatch = rec.champion_name === entry.action.champion_name;
-
-                  return (
-                    <div
-                      key={rec.champion_name}
-                      className={`text-xs ${isMatch ? "text-success" : "text-text-secondary"}`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-gold-dim w-4">{i + 1}.</span>
-                        <span className={`font-medium ${isMatch ? "text-success" : "text-text-primary"}`}>
-                          {rec.champion_name}
-                        </span>
-                        <span className="text-text-tertiary">({scorePercent}%)</span>
-                        {isMatch && <span className="text-success">✓</span>}
-                      </div>
-                      {rec.reasons[0] && (
-                        <div className="ml-6 text-text-tertiary truncate">
-                          {rec.reasons[0]}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
             </div>
           );
         })}

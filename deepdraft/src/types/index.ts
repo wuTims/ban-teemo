@@ -79,6 +79,7 @@ export interface Recommendations {
   for_team: Team;
   picks: PickRecommendation[];
   bans: BanRecommendation[];
+  role_grouped?: RoleGroupedRecommendations;
 }
 
 // === WebSocket Messages ===
