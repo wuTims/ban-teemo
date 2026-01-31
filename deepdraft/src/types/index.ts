@@ -61,6 +61,9 @@ export interface PickRecommendation {
   base_score?: number | null;
   synergy_multiplier?: number | null;
   components?: Record<string, number>;
+  // Proficiency tracking
+  proficiency_source?: string | null;
+  proficiency_player?: string | null;
 }
 
 export interface BanRecommendation {
@@ -82,10 +85,16 @@ export interface Recommendations {
 export interface SessionStartMessage {
   type: "session_start";
   session_id: string;
+  series_id: string;
+  game_number: number;
   blue_team: TeamContext;
   red_team: TeamContext;
   total_actions: number;
   patch: string | null;
+  series_score_before?: { blue: number; red: number } | null;
+  series_score_after?: { blue: number; red: number } | null;
+  winner_team_id?: string | null;
+  winner_side?: Team | null;
 }
 
 export interface DraftActionMessage {
@@ -284,10 +293,19 @@ export interface TeamListItem {
 
 // === Stage 5: New Query Response Types ===
 
+export interface RoleGroupedRecommendations {
+  view_type?: "supplemental";
+  description?: string;
+  by_role: {
+    [role: string]: SimulatorPickRecommendation[];
+  };
+}
+
 export interface RecommendationsResponse {
   for_action_count: number;
   phase: DraftPhase;
   recommendations: SimulatorRecommendation[];
+  role_grouped?: RoleGroupedRecommendations;
 }
 
 export interface EvaluationResponse {
@@ -299,7 +317,28 @@ export interface EvaluationResponse {
 }
 
 // === Replay Insights ===
-export interface InsightEntry {
+export interface ReplayLogMarker {
+  kind: "marker";
+  sessionId: string;
+  label: string;
+  timestamp: number;
+  winnerSide?: Team | null;
+  score?: { blue: number; red: number } | null;
+}
+
+export interface InsightActionEntry {
+  kind: "action";
+  sessionId: string;
   action: DraftAction;
   recommendations: Recommendations | null;
 }
+
+export type InsightEntry = InsightActionEntry | ReplayLogMarker;
+
+export interface ActionLogEntry {
+  kind: "action";
+  sessionId: string;
+  action: DraftAction;
+}
+
+export type ReplayActionLogEntry = ActionLogEntry | ReplayLogMarker;
