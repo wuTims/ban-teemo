@@ -137,6 +137,7 @@ export default function App() {
                   coachingSide={simulator.coachingSide!}
                   draftState={simulator.draftState}
                   recommendations={simulator.recommendations}
+                  roleGroupedRecommendations={simulator.roleGroupedRecommendations}
                   isOurTurn={simulator.isOurTurn}
                   isEnemyThinking={simulator.isEnemyThinking}
                   gameNumber={simulator.gameNumber}

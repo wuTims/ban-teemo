@@ -1,7 +1,8 @@
 // deepdraft/src/components/SimulatorView/index.tsx
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { PhaseIndicator, TeamPanel, BanRow } from "../draft";
 import { ChampionPool } from "../ChampionPool";
+import { RoleRecommendationPanel } from "../recommendations/RoleRecommendationPanel";
 import { RECOMMENDATION_ICON_SIZE_CLASS } from "../shared";
 import { ChampionPortrait } from "../shared/ChampionPortrait";
 import { getAllChampionNames } from "../../utils/dataDragon";
@@ -13,6 +14,7 @@ import type {
   SimulatorBanRecommendation,
   FearlessBlocked,
   DraftMode,
+  RoleGroupedRecommendations,
 } from "../../types";
 
 // Champion list derived from Data Dragon mapping
@@ -35,6 +37,7 @@ function getTopFactors(components: Record<string, number>): Array<{ name: string
     matchup: "Matchup",
     counter: "Counter",
     synergy: "Synergy",
+    archetype: "Archetype",
   };
 
   return Object.entries(components)
@@ -55,6 +58,7 @@ interface SimulatorViewProps {
   coachingSide: "blue" | "red";
   draftState: DraftState;
   recommendations: SimulatorRecommendation[] | null;
+  roleGroupedRecommendations: RoleGroupedRecommendations | null;
   isOurTurn: boolean;
   isEnemyThinking: boolean;
   gameNumber: number;
@@ -188,6 +192,7 @@ export function SimulatorView({
   coachingSide,
   draftState,
   recommendations,
+  roleGroupedRecommendations,
   isOurTurn,
   isEnemyThinking,
   gameNumber,
@@ -196,6 +201,9 @@ export function SimulatorView({
   draftMode,
   onChampionSelect,
 }: SimulatorViewProps) {
+  // Toggle state for showing role-grouped view (default OFF as it's supplemental)
+  const [showRoleGrouped, setShowRoleGrouped] = useState(false);
+
   const unavailable = useMemo(() => {
     return new Set([
       ...draftState.blue_bans,
@@ -297,12 +305,29 @@ export function SimulatorView({
             <h3 className="text-sm font-semibold uppercase tracking-wide text-gold-bright">
               {isBanPhase ? "Ban" : "Pick"} Recommendations
             </h3>
-            <span className={`
-              text-xs font-medium uppercase px-2 py-0.5 rounded
-              ${coachingSide === "blue" ? "bg-blue-team/20 text-blue-team" : "bg-red-team/20 text-red-team"}
-            `}>
-              Your Turn
-            </span>
+            <div className="flex items-center gap-3">
+              {/* Role-Grouped Toggle - only show during pick phase */}
+              {!isBanPhase && roleGroupedRecommendations && (
+                <button
+                  onClick={() => setShowRoleGrouped(!showRoleGrouped)}
+                  className={`
+                    text-xs font-medium px-2 py-0.5 rounded border transition-colors
+                    ${showRoleGrouped
+                      ? "bg-gold-dim/20 border-gold-dim text-gold"
+                      : "bg-transparent border-gold-dim/30 text-text-tertiary hover:text-text-secondary hover:border-gold-dim/50"
+                    }
+                  `}
+                >
+                  {showRoleGrouped ? "Hide" : "Show"} By Role
+                </button>
+              )}
+              <span className={`
+                text-xs font-medium uppercase px-2 py-0.5 rounded
+                ${coachingSide === "blue" ? "bg-blue-team/20 text-blue-team" : "bg-red-team/20 text-red-team"}
+              `}>
+                Your Turn
+              </span>
+            </div>
           </div>
           <div className="grid grid-cols-5 gap-3">
             {recommendations.slice(0, 5).map((rec, i) => (
@@ -315,6 +340,17 @@ export function SimulatorView({
               />
             ))}
           </div>
+
+          {/* Role-Grouped Supplemental Panel */}
+          {!isBanPhase && showRoleGrouped && roleGroupedRecommendations && (
+            <div className="mt-4">
+              <RoleRecommendationPanel
+                roleGrouped={roleGroupedRecommendations}
+                ourTeam={coachingSide === "blue" ? blueTeam : redTeam}
+                onChampionClick={onChampionSelect}
+              />
+            </div>
+          )}
         </div>
       )}
 
