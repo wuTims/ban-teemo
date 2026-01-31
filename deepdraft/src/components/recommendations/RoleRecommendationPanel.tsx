@@ -1,5 +1,5 @@
 // deepdraft/src/components/recommendations/RoleRecommendationPanel.tsx
-import React, { useState } from "react";
+import { useState } from "react";
 import { ChampionPortrait } from "../shared/ChampionPortrait";
 import type { RoleGroupedRecommendations, SimulatorPickRecommendation, TeamContext } from "../../types";
 

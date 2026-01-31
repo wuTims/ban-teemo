@@ -283,8 +283,8 @@ def test_get_champion_proficiency_comfort_only_capped(tmp_path):
         "Azir", "mid", team_players
     )
 
-    # Comfort would be 1.0 (100 games >> G_FULL), but should be capped at 0.95
-    assert score <= 0.95
+    # Comfort would be 1.0 (100 games >> G_FULL), but should be capped at PROFICIENCY_CAP
+    assert score <= ProficiencyScorer.PROFICIENCY_CAP
     assert source == "comfort_only"
 
 
@@ -373,7 +373,7 @@ def test_get_champion_proficiency_cap_respected(tmp_path):
         "Azir", "mid", team_players
     )
 
-    assert score <= 0.95  # PROFICIENCY_CAP
+    assert score <= ProficiencyScorer.PROFICIENCY_CAP
 
 
 # ======================================================================
