@@ -369,6 +369,39 @@ export function useReplaySession() {
     }));
   }, []);
 
+  // Full reset - clears all state including board data (for series changes)
+  const resetSession = useCallback(() => {
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+    setState({
+      status: "idle",
+      sessionId: null,
+      seriesId: null,
+      gameNumber: null,
+      blueTeam: null,
+      redTeam: null,
+      draftState: null,
+      recommendations: null,
+      lastAction: null,
+      actionHistory: [],
+      recommendationHistory: [],
+      llmInsights: new Map(),
+      llmTimeouts: new Set(),
+      isWaitingForLLM: false,
+      waitingForActionCount: null,
+      totalActions: 0,
+      patch: null,
+      seriesScoreBefore: null,
+      seriesScoreAfter: null,
+      winnerSide: null,
+      error: null,
+      blueCompWithRoles: null,
+      redCompWithRoles: null,
+    });
+  }, []);
+
   const pauseReplay = useCallback(() => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: "pause" }));
@@ -396,5 +429,6 @@ export function useReplaySession() {
     stopReplay,
     pauseReplay,
     resumeReplay,
+    resetSession,
   };
 }

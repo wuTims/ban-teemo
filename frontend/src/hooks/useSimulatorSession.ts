@@ -84,6 +84,10 @@ export function useSimulatorSession() {
   const abortControllerRef = useRef<AbortController | null>(null);
   const sessionIdRef = useRef<string | null>(null);
   const llmApiKeyRef = useRef<string | null>(null);
+  const lastLlmRequestRef = useRef<{ sessionId: string | null; actionCount: number | null }>({
+    sessionId: null,
+    actionCount: null,
+  });
 
   // Keep sessionId ref in sync
   useEffect(() => {
@@ -106,6 +110,7 @@ export function useSimulatorSession() {
       }
     };
   }, []);
+
 
   const cancelPendingOperations = useCallback(() => {
     if (pendingTimerRef.current) {
@@ -150,7 +155,8 @@ export function useSimulatorSession() {
     actionCount: number,
     apiKey: string
   ) => {
-    setState((s) => ({ ...s, llmLoading: true, llmInsight: null }));
+    lastLlmRequestRef.current = { sessionId, actionCount };
+    setState((s) => ({ ...s, llmLoading: true }));
 
     try {
       const res = await fetch(`${API_BASE}/api/simulator/sessions/${sessionId}/insights`, {
@@ -165,13 +171,8 @@ export function useSimulatorSession() {
 
       const data: LLMInsightsResponse = await res.json();
 
-      // Only update if still relevant (action count matches)
       setState((s) => {
         if (s.sessionId !== sessionId) return s;
-        if (s.draftState?.action_count !== actionCount) {
-          // Stale response, ignore
-          return { ...s, llmLoading: false };
-        }
         return { ...s, llmLoading: false, llmInsight: data };
       });
     } catch (err) {
@@ -182,6 +183,29 @@ export function useSimulatorSession() {
       }));
     }
   }, []);
+
+  useEffect(() => {
+    if (!state.sessionId || !state.draftState) return;
+    if (!state.isOurTurn) return;
+    if (!state.llmApiKey) return;
+    if (state.llmLoading) return;
+    const lastRequest = lastLlmRequestRef.current;
+    if (lastRequest.sessionId === state.sessionId &&
+        lastRequest.actionCount === state.draftState.action_count) {
+      return;
+    }
+    if (state.llmInsight?.action_count === state.draftState.action_count) return;
+
+    fetchLlmInsights(state.sessionId, state.draftState.action_count, state.llmApiKey);
+  }, [
+    state.sessionId,
+    state.draftState,
+    state.isOurTurn,
+    state.llmApiKey,
+    state.llmLoading,
+    state.llmInsight,
+    fetchLlmInsights,
+  ]);
 
   const setLlmApiKey = useCallback((apiKey: string | null) => {
     setState((s) => ({ ...s, llmApiKey: apiKey }));
@@ -361,7 +385,7 @@ export function useSimulatorSession() {
 
       // Fetch LLM insights if API key is set
       const currentApiKey = llmApiKeyRef.current;
-      if (currentApiKey && !isComplete) {
+      if (currentApiKey && data.is_our_turn && !isComplete) {
         fetchLlmInsights(currentSessionId, incomingCount, currentApiKey);
       }
 
