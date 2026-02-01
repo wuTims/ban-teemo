@@ -226,7 +226,7 @@ deepdraft/src/components/
 
 ```bash
 uv run python scripts/build_tournament_meta.py \
-  --input 2026_winter_tournaments.csv \
+  --input data/input/2026_winter_tournaments.csv \
   --patch 26.1 \
   --output knowledge/tournament_meta.json
 ```

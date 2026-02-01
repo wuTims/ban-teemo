@@ -95,7 +95,7 @@ This section clarifies what happens to the existing implementations from the pre
 ```python
 # Champion Comfort constants
 COMFORT_BASELINE = 0.5        # Starting comfort for all unplayed champions
-G_FULL = 8                    # Games needed for full comfort scaling
+G_FULL = 10                   # Games needed for full comfort scaling
 PROFICIENCY_CAP = 0.95        # Prevent perfect scores
 
 # Role Strength constants
@@ -818,7 +818,7 @@ class ProficiencyScorer:
 
     # Champion Comfort + Role Strength constants
     COMFORT_BASELINE = 0.5        # Starting comfort for all unplayed champions
-    G_FULL = 8                    # Games for full comfort scaling
+    G_FULL = 10                   # Games for full comfort scaling
     PROFICIENCY_CAP = 0.95        # Prevent perfect scores
     ROLE_STRENGTH_BONUS = 0.3     # Max bonus from role strength
 ```

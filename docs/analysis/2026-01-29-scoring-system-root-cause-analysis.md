@@ -402,3 +402,49 @@ role_score = role_prob × role_need_weight
 - **Unknown player → NO_DATA** (weights redistributed)
 - **Known player, no role data → comfort_only** (capped at 0.95)
 - Meta and archetype now dominate recommendations
+
+---
+
+## Data Consolidation (2026-01-30)
+
+### Problem: Conflicting Role Data Sources
+
+`FlexResolver` was using two data files that could conflict:
+- `flex_champions.json` - Role probabilities from **all-time** pro play data
+- `champion_role_history.json` - Role viability from **recent patches**
+
+When a champion's historical role differed from current meta (e.g., Talon: historically JUNGLE, currently MID), the champion would be dropped entirely because the intersection of valid roles was empty.
+
+### Solution: Single Source of Truth
+
+Consolidated to `champion_role_history.json` only:
+- Removed `flex_champions.json` from codebase
+- Removed `build_flex_champions()` from build script
+- Updated `FlexResolver` to use `champion_role_history.json` exclusively
+- Derived `is_flex_pick()` from `current_viable_roles` count
+
+### Data Flow (After Consolidation)
+
+```
+player_game_stats.csv
+         │
+         ▼
+champion_role_history.json  ← Single source for all role data
+         │
+         ├── current_viable_roles (recent meta)
+         ├── current_distribution (recent probabilities)
+         ├── all_time_distribution (historical fallback)
+         └── canonical_role (knowledge_base fallback)
+         │
+         ▼
+    FlexResolver
+         │
+         ├── get_role_probabilities()
+         └── is_flex_pick()
+```
+
+### Impact
+
+- Champions like Talon, Tryndamere, Warwick no longer dropped
+- Role data always consistent (no cross-file conflicts)
+- Simpler mental model for developers
