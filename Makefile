@@ -1,4 +1,6 @@
-.PHONY: install install-backend install-frontend dev dev-backend dev-frontend setup-data download-data build-db test lint clean
+.PHONY: install install-backend install-frontend dev dev-backend dev-frontend \
+       setup-data download-data build-db build-knowledge \
+       test lint clean help
 
 # Install all dependencies
 install: install-backend install-frontend
@@ -7,7 +9,7 @@ install-backend:
 	cd backend && uv sync
 
 install-frontend:
-	cd deepdraft && npm install
+	cd frontend && npm install
 
 # Development servers
 dev:
@@ -17,16 +19,32 @@ dev-backend:
 	cd backend && uv run fastapi dev src/ban_teemo/main.py
 
 dev-frontend:
-	cd deepdraft && npm run dev
+	cd frontend && npm run dev
 
 # =============================================================================
-# Database Setup (run these for first-time setup)
+# Data Setup
+# =============================================================================
+#
+# Data Flow:
+#   1. download-data  → CSVs in outputs/full_2024_2025_v2/csv/
+#   2. build-db       → Creates draft_data.duckdb from CSVs
+#   3. build-knowledge (optional) → Regenerates knowledge/*.json from CSVs
+#
+# The knowledge/*.json files are pre-committed to the repo, so step 3 is only
+# needed when refreshing analytics from new CSV data.
+#
 # =============================================================================
 
-# Full data setup: download CSVs from GitHub release + build DuckDB
+# Full data setup: download CSVs + build DuckDB (standard first-time setup)
 setup-data: download-data build-db
 	@echo ""
-	@echo "✓ Data setup complete! You can now run 'make dev-backend'"
+	@echo "✓ Data setup complete!"
+	@echo ""
+	@echo "  CSV data:  outputs/full_2024_2025_v2/csv/"
+	@echo "  Database:  outputs/full_2024_2025_v2/csv/draft_data.duckdb"
+	@echo "  Knowledge: knowledge/*.json (pre-committed, no rebuild needed)"
+	@echo ""
+	@echo "Run 'make dev-backend' to start the server."
 
 # Download CSV data from GitHub releases (requires gh CLI)
 download-data:
@@ -39,8 +57,19 @@ download-data:
 
 # Build DuckDB database from CSV files
 build-db:
-	@echo "==> Building DuckDB database..."
+	@echo "==> Building DuckDB database from CSVs..."
 	cd backend && uv run python scripts/build_duckdb.py
+
+# Regenerate knowledge files from CSV data (optional - only for data refresh)
+build-knowledge:
+	@echo "==> Regenerating knowledge files from CSV data..."
+	@if [ ! -d "outputs/full_2024_2025_v2/csv" ]; then \
+		echo "Error: CSV data not found. Run 'make download-data' first."; \
+		exit 1; \
+	fi
+	uv run python scripts/build_computed_datasets.py
+	@echo ""
+	@echo "✓ Knowledge files regenerated in knowledge/"
 
 # Testing
 test: test-backend test-frontend
@@ -49,7 +78,7 @@ test-backend:
 	cd backend && uv run pytest
 
 test-frontend:
-	cd deepdraft && npm test
+	cd frontend && npm test
 
 # Linting
 lint: lint-backend lint-frontend
@@ -58,7 +87,7 @@ lint-backend:
 	cd backend && uv run ruff check src/
 
 lint-frontend:
-	cd deepdraft && npm run lint
+	cd frontend && npm run lint
 
 # Build
 build: build-backend build-frontend
@@ -67,32 +96,37 @@ build-backend:
 	cd backend && uv build
 
 build-frontend:
-	cd deepdraft && npm run build
+	cd frontend && npm run build
 
 # Clean
 clean:
 	rm -rf backend/.venv
-	rm -rf deepdraft/node_modules
-	rm -rf deepdraft/dist
+	rm -rf frontend/node_modules
+	rm -rf frontend/dist
 
 # Help
 help:
 	@echo "Available commands:"
 	@echo ""
 	@echo "  First-time setup:"
-	@echo "    make install      - Install all dependencies (Python + Node)"
-	@echo "    make setup-data   - Download data + build DuckDB (requires gh CLI)"
+	@echo "    make install       - Install all dependencies (Python + Node)"
+	@echo "    make setup-data    - Download CSVs + build DuckDB (requires gh CLI)"
 	@echo ""
 	@echo "  Development:"
-	@echo "    make dev-backend  - Start FastAPI dev server (port 8000)"
-	@echo "    make dev-frontend - Start Vite dev server (port 5173)"
+	@echo "    make dev-backend   - Start FastAPI dev server (port 8000)"
+	@echo "    make dev-frontend  - Start Vite dev server (port 5173)"
 	@echo ""
-	@echo "  Individual data commands:"
-	@echo "    make download-data - Download CSVs from GitHub releases"
-	@echo "    make build-db      - Build DuckDB from CSV files"
+	@echo "  Data commands:"
+	@echo "    make download-data   - Download CSVs from GitHub releases"
+	@echo "    make build-db        - Build DuckDB from CSV files"
+	@echo "    make build-knowledge - Regenerate knowledge/*.json from CSVs"
 	@echo ""
-	@echo "  Other:"
-	@echo "    make test         - Run all tests"
-	@echo "    make lint         - Run linters"
-	@echo "    make build        - Build for production"
-	@echo "    make clean        - Remove build artifacts"
+	@echo "  Testing & quality:"
+	@echo "    make test          - Run all tests"
+	@echo "    make lint          - Run linters"
+	@echo "    make build         - Build for production"
+	@echo "    make clean         - Remove build artifacts"
+	@echo ""
+	@echo "  Data flow:"
+	@echo "    CSVs (download-data) → DuckDB (build-db) → ready to run"
+	@echo "    Knowledge files are pre-committed; rebuild only when refreshing data"

@@ -14,9 +14,9 @@ wheels/
 
 # Data files (downloaded via GitHub release)
 outputs/
-*.tar.gz
+*.tar.gz*
 
-# Root data files (should live in knowledge/)
+# Root data files (should live in knowledge/ or data/)
 /synergies.json
 /synergies.csv
 /knowledge_base.json
@@ -25,6 +25,13 @@ outputs/
 /rework_patch_mapping.json
 /LoLSeries_2024_2025.csv
 /LoLSeriesGames_2024_2025.csv
+/player_roles_leaguepedia*.json
+
+# Input data (intermediate/raw files)
+data/input/
+
+# Runtime data (generated)
+data/*.duckdb
 
 # IDE
 .idea/
@@ -35,3 +42,6 @@ outputs/**/*.duckdb
 
 # Logs
 logs/
+
+# Experiment results (local testing)
+results/

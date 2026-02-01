@@ -18,7 +18,7 @@ Since live matches can't be guaranteed during judging, DeepDraft uses a **histor
 - **Draft Visualization** - Real-time ban/pick tracking with champion portraits from Riot Data Dragon
 - **Layered Analytics** - Recommendations based on meta strength, player proficiency, synergies, and counters
 - **Replay Mode** - Step through historical drafts at adjustable speeds
-- **LLM Insights** - Natural language explanations of draft strategy (via Groq)
+- **LLM Insights** - Natural language explanations of draft strategy (requires [Nebius API key](https://docs.tokenfactory.nebius.com/quickstart#get-api-key))
 
 ## Architecture
 
@@ -39,8 +39,8 @@ Since live matches can't be guaranteed during judging, DeepDraft uses a **histor
          ┌───────────────────┼───────────────────┐
          ▼                   ▼                   ▼
 ┌──────────────┐     ┌──────────────┐    ┌───────────────┐
-│  CSV Data    │     │  Knowledge   │    │  Llama 3.1    │
-│  (68K+ acts) │     │  (JSON)      │    │  via Groq     │
+│   DuckDB     │     │  Knowledge   │    │  LLM Insights │
+│  (68K+ acts) │     │  (JSON)      │    │  via Nebius   │
 └──────────────┘     └──────────────┘    └───────────────┘
 ```
 
@@ -49,8 +49,8 @@ Since live matches can't be guaranteed during judging, DeepDraft uses a **histor
 **Backend:**
 - Python 3.12+ with [uv](https://docs.astral.sh/uv/)
 - FastAPI + uvicorn
-- DuckDB for CSV analytics (zero ETL)
-- Groq for LLM inference
+- DuckDB for fast queries
+- Nebius AI Studio for LLM inference (optional, for AI insights)
 
 **Frontend:**
 - React 19 + TypeScript
@@ -66,10 +66,15 @@ Since live matches can't be guaranteed during judging, DeepDraft uses a **histor
 
 ### Prerequisites
 
-- Python 3.12+ with [uv](https://docs.astral.sh/uv/)
-- Node.js 18+ with npm
-- GitHub CLI (`gh`) for data download - [install here](https://cli.github.com/)
-- Make (optional but recommended)
+Install these system dependencies before running the project:
+
+| Dependency | Installation |
+|------------|--------------|
+| **Python 3.12+** | [python.org](https://python.org) or `brew install python` / `apt install python3` |
+| **uv** (Python package manager) | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
+| **Node.js 18+** | [nodejs.org](https://nodejs.org) or use [nvm](https://github.com/nvm-sh/nvm) / [fnm](https://github.com/Schniz/fnm) |
+| **GitHub CLI** (for data download) | [cli.github.com](https://cli.github.com) or `brew install gh` / `apt install gh` |
+| **Make** (optional) | Pre-installed on macOS/Linux; Windows: use WSL or [GnuWin32](http://gnuwin32.sourceforge.net/packages/make.htm) |
 
 ### First-Time Setup
 
@@ -81,18 +86,20 @@ cd ban-teemo
 # 2. Install dependencies
 make install
 
-# 3. Download data and build database (one command)
+# 3. Download data and build database
 make setup-data
 ```
 
 That's it! The `setup-data` command:
-1. Downloads pre-built CSV data from GitHub releases (~50MB)
-2. Builds a DuckDB database for fast queries
+1. Downloads CSV data from GitHub releases (~50MB) → `outputs/full_2024_2025_v2/csv/`
+2. Builds DuckDB for fast queries → `data/draft_data.duckdb`
+
+Knowledge files (`knowledge/*.json`) are pre-committed to the repo, so no regeneration is needed.
 
 **Manual setup** (if you prefer not to use Make):
 ```bash
 cd backend && uv sync
-cd ../deepdraft && npm install
+cd ../frontend && npm install
 ./scripts/download-data.sh
 cd backend && uv run python scripts/build_duckdb.py
 ```
@@ -122,57 +129,74 @@ Open [http://localhost:5173](http://localhost:5173) to view the app.
 ```
 ban-teemo/
 ├── backend/                    # FastAPI service
-│   └── src/ban_teemo/
-│       ├── api/               # REST + WebSocket endpoints
-│       ├── services/          # Draft logic, recommendations
-│       └── models/            # Pydantic schemas
+│   ├── src/ban_teemo/
+│   │   ├── api/               # REST + WebSocket endpoints
+│   │   ├── services/          # Draft logic, recommendations
+│   │   └── models/            # Pydantic schemas
+│   ├── scripts/               # build_duckdb.py
+│   └── tests/
 │
-├── deepdraft/                  # React frontend
+├── frontend/                   # React + Vite frontend
 │   └── src/
 │       ├── components/        # Draft UI components
-│       │   ├── draft/         # DraftBoard, TeamPanel, BanTrack
-│       │   ├── ActionLog/     # Draft action history
-│       │   └── ReplayControls/ # Series/game selectors
 │       ├── hooks/             # useReplaySession, useWebSocket
 │       └── utils/             # Data Dragon helpers
 │
-├── knowledge/                  # Pre-computed analytics (JSON)
-│   ├── matchup_stats.json # Role-specific matchup win rates
-│   ├── champion_synergies.json # Normalized pair synergies
-│   ├── player_proficiency.json # Player-champion performance
-│   ├── flex_champions.json    # Champion role distributions
+├── knowledge/                  # Analytics JSON (pre-committed)
+│   ├── meta_stats.json        # Meta strength scores
+│   ├── player_proficiency.json # Player-champion stats
+│   ├── matchup_stats.json     # Lane matchup win rates
 │   └── ...
 │
-├── outputs/                    # Downloaded CSV data (not in git)
+├── scripts/                    # Data pipeline scripts
+│   ├── build_computed_datasets.py  # CSV → knowledge/*.json
+│   ├── build_tournament_meta.py    # Tournament data
+│   └── download-data.sh            # Fetch CSVs from releases
+│
+├── outputs/                    # Downloaded CSV data (gitignored)
 │   └── full_2024_2025_v2/csv/
 │
-├── docs/                       # Architecture docs & specs
-│   ├── lol_draft_assistant_hackathon_spec_v2.md
-│   └── architecture-v2-review.md
+├── data/                       # Runtime data
+│   └── draft_data.duckdb       # DuckDB database (built from CSVs)
 │
-└── .claude/skills/             # Data fetching tools
-    └── grid-lol-data-skill/   # GRID API client
+└── docs/                       # Architecture docs & specs
 ```
 
 ## Data Pipeline
 
+### Data Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  GitHub Release (data-v1.0.0.tar.gz)                                    │
+│  Downloaded via: make download-data                                     │
+└────────────────────────────────┬────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│  outputs/full_2024_2025_v2/csv/                                         │
+│  ├── player_game_stats.csv   (player performance per game)              │
+│  ├── games.csv               (game metadata, patches, winners)          │
+│  ├── series.csv              (match information)                        │
+│  └── draft_actions.csv       (ban/pick sequence)                        │
+└─────────────────┬───────────────────────────────────┬───────────────────┘
+                  │                                   │
+                  ▼                                   ▼
+    ┌─────────────────────────┐         ┌─────────────────────────────────┐
+    │  make build-db          │         │  make build-knowledge           │
+    │  (required)             │         │  (optional - files pre-committed)│
+    └────────────┬────────────┘         └─────────────┬───────────────────┘
+                 │                                    │
+                 ▼                                    ▼
+    ┌─────────────────────────┐         ┌─────────────────────────────────┐
+    │  data/draft_data.duckdb │         │  knowledge/*.json               │
+    │  (fast SQL queries)     │         │  (analytics for recommendations)│
+    └─────────────────────────┘         └─────────────────────────────────┘
+```
+
 ### Source: GRID Open Access API
 
-Match data was fetched using the GRID LoL Data Skill:
-
-```bash
-# Set API key
-export GRID_API_KEY=your_key
-
-# Fetch series data
-python .claude/skills/grid-lol-data-skill/scripts/fetch_lol_series_v3.py \
-  --input LoLSeriesGames_2024_2025.csv \
-  --limit 1500
-
-# Export to CSVs
-python .claude/skills/grid-lol-data-skill/scripts/fetch_lol_series_v3.py \
-  --export --run latest
-```
+Match data was fetched using the GRID LoL Data Skill (see `.claude/skills/grid-lol-data-skill/`).
 
 ### Data Coverage
 
@@ -189,32 +213,42 @@ python .claude/skills/grid-lol-data-skill/scripts/fetch_lol_series_v3.py \
 
 **Time Range:** January 2024 - September 2025
 
-### Pre-Computed Knowledge Files
+### Knowledge Files
 
-The `knowledge/` directory contains pre-computed analytics for fast API lookups:
+The `knowledge/` directory contains analytics for fast API lookups:
 
-| File | Description |
-|------|-------------|
-| `matchup_stats.json` | Role-specific matchup win rates |
-| `champion_synergies.json` | Normalized synergy scores |
-| `player_proficiency.json` | Player-champion performance metrics |
-| `flex_champions.json` | Champion role probability distributions |
-| `role_baselines.json` | Statistical baselines for normalization |
-| `skill_transfers.json` | Similar champions from co-play patterns |
+| File | Source | Description |
+|------|--------|-------------|
+| `meta_stats.json` | Generated | Pick/ban rates, win rates, meta tiers |
+| `player_proficiency.json` | Generated | Player-champion performance (1.9MB) |
+| `matchup_stats.json` | Generated | Role-specific matchup win rates |
+| `champion_synergies.json` | Generated | Statistical synergy scores |
+| `champion_role_history.json` | Generated | Role distributions per patch |
+| `skill_transfers.json` | Generated | Similar champions from co-play |
+| `role_baselines.json` | Generated | Statistical baselines for normalization |
+| `knowledge_base.json` | Manual | Champion metadata and abilities |
+| `synergies.json` | Manual | Curated synergy ratings (S/A/B/C) |
+| `archetype_counters.json` | Manual | Team archetype analysis |
+| `player_roles.json` | Manual | Authoritative player role mappings |
+| `tournament_meta.json` | Manual | Recent tournament pick/ban data |
 
-These are generated from the CSV data using DuckDB queries (see `docs/architecture-v2-review.md` for query patterns).
+**Generated files** are created by `scripts/build_computed_datasets.py` from CSV data.
+**Manual files** are curated and maintained separately.
 
 ## Configuration
 
 Create a `.env` file in the project root:
 
 ```bash
-# LLM API (for AI insights)
-GROQ_API_KEY=your_groq_api_key
+# Nebius API key (optional, enables AI insights feature)
+# Get your key: https://docs.tokenfactory.nebius.com/quickstart#get-api-key
+NEBIUS_API_KEY=your_nebius_api_key
 
-# Optional: Database path (default: uses CSV files directly)
-DATABASE_URL=outputs/full_2024_2025_v2/csv
+# Optional: Database path (default: data/draft_data.duckdb)
+DATABASE_PATH=data/draft_data.duckdb
 ```
+
+> **Note:** The AI Insights feature requires a Nebius API key. Without it, the app works fully but won't generate natural language draft explanations. See the [Nebius quickstart guide](https://docs.tokenfactory.nebius.com/quickstart#get-api-key) to get your free API key.
 
 ## API Endpoints
 
@@ -231,13 +265,24 @@ DATABASE_URL=outputs/full_2024_2025_v2/csv
 ## Available Commands
 
 ```bash
-make install        # Install all dependencies
-make dev-backend    # Start FastAPI dev server (port 8000)
-make dev-frontend   # Start Vite dev server (port 5173)
-make test           # Run all tests
-make lint           # Run linters
-make build          # Build for production
-make clean          # Remove build artifacts
+# Setup
+make install          # Install all dependencies (Python + Node)
+make setup-data       # Download CSVs + build DuckDB
+
+# Development
+make dev-backend      # Start FastAPI dev server (port 8000)
+make dev-frontend     # Start Vite dev server (port 5173)
+
+# Data management
+make download-data    # Download CSVs from GitHub releases
+make build-db         # Build DuckDB from CSV files
+make build-knowledge  # Regenerate knowledge/*.json from CSVs
+
+# Quality
+make test             # Run all tests
+make lint             # Run linters
+make build            # Build for production
+make clean            # Remove build artifacts
 ```
 
 ## Layered Analytics System
@@ -262,8 +307,6 @@ See [recommendation-service-overview.md](docs/recommendation-service-overview.md
 
 ## License
 
-MIT
+This project is licensed under the [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0).
 
 ---
-
-*Built for the GRID Esports Hackathon 2026*
