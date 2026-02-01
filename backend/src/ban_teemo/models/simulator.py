@@ -29,6 +29,8 @@ class GameResult:
     winner: Literal["blue", "red"]
     blue_comp: list[str]
     red_comp: list[str]
+    blue_bans: list[str] = field(default_factory=list)
+    red_bans: list[str] = field(default_factory=list)
 
 
 @dataclass

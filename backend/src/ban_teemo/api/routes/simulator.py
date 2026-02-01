@@ -17,6 +17,7 @@ from ban_teemo.services.pick_recommendation_engine import PickRecommendationEngi
 from ban_teemo.services.ban_recommendation_service import BanRecommendationService
 from ban_teemo.services.team_evaluation_service import TeamEvaluationService
 from ban_teemo.services.scoring_logger import ScoringLogger
+from ban_teemo.services.scorers.flex_resolver import FlexResolver
 from ban_teemo.repositories.draft_repository import DraftRepository
 
 # Constants
@@ -327,12 +328,19 @@ async def complete_game(request: Request, session_id: str, body: CompleteGameReq
 
         draft_state = session.draft_state
 
+        # Finalize role assignments for both teams
+        flex_resolver = FlexResolver()
+        blue_with_roles = flex_resolver.finalize_role_assignments(draft_state.blue_picks)
+        red_with_roles = flex_resolver.finalize_role_assignments(draft_state.red_picks)
+
         # Record result
         result = GameResult(
             game_number=session.current_game,
             winner=body.winner,
             blue_comp=draft_state.blue_picks,
             red_comp=draft_state.red_picks,
+            blue_bans=draft_state.blue_bans,
+            red_bans=draft_state.red_bans,
         )
         session.game_results.append(result)
 
@@ -362,6 +370,8 @@ async def complete_game(request: Request, session_id: str, body: CompleteGameReq
             },
             "fearless_blocked": session.fearless_blocked,
             "next_game_ready": not session.series_complete,
+            "blue_comp_with_roles": blue_with_roles,
+            "red_comp_with_roles": red_with_roles,
         }
 
 
@@ -418,7 +428,7 @@ async def get_session(session_id: str):
             raise HTTPException(status_code=404, detail="Session expired")
         _touch_session(session, now)
 
-        return {
+        response = {
             "session_id": session_id,
             "status": "drafting" if session.draft_state.current_phase != DraftPhase.COMPLETE else "game_complete",
             "game_number": session.current_game,
@@ -430,6 +440,18 @@ async def get_session(session_id: str):
             },
             "fearless_blocked": session.fearless_blocked,
         }
+
+        # Include finalized role assignments when draft is complete
+        if session.draft_state.current_phase == DraftPhase.COMPLETE:
+            flex_resolver = FlexResolver()
+            response["blue_comp_with_roles"] = flex_resolver.finalize_role_assignments(
+                session.draft_state.blue_picks
+            )
+            response["red_comp_with_roles"] = flex_resolver.finalize_role_assignments(
+                session.draft_state.red_picks
+            )
+
+        return response
 
 
 @router.get("/sessions/{session_id}/recommendations")
@@ -671,6 +693,16 @@ def _build_response(
         "draft_state": _serialize_draft_state(draft_state),
         "is_our_turn": is_our_turn,
     }
+
+    # Include finalized role assignments when draft is complete
+    if draft_state.current_phase == DraftPhase.COMPLETE:
+        flex_resolver = FlexResolver()
+        response["blue_comp_with_roles"] = flex_resolver.finalize_role_assignments(
+            draft_state.blue_picks
+        )
+        response["red_comp_with_roles"] = flex_resolver.finalize_role_assignments(
+            draft_state.red_picks
+        )
 
     # Optionally include recommendations (to avoid extra round trip)
     if include_recommendations and draft_state.current_phase != DraftPhase.COMPLETE:
