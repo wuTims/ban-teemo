@@ -38,7 +38,7 @@ function getTopFactors(components: Record<string, number | undefined>): Array<{ 
   const excludedKeys = new Set(["meta", "proficiency", "matchup"]);
 
   return Object.entries(components)
-    .filter(([key, value]) => typeof value === "number" && !excludedKeys.has(key))
+    .filter((entry): entry is [string, number] => typeof entry[1] === "number" && !excludedKeys.has(entry[0]))
     .map(([name, value]) => ({ name, value, label: factorLabels[name] || name }))
     .sort((a, b) => b.value - a.value)
     .slice(0, 3);

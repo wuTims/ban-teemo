@@ -157,13 +157,23 @@ export interface LLMTimeoutMessage {
   action_count: number;
 }
 
+export interface PausedMessage {
+  type: "paused";
+}
+
+export interface ResumedMessage {
+  type: "resumed";
+}
+
 export type WebSocketMessage =
   | SessionStartMessage
   | DraftActionMessage
   | DraftCompleteMessage
   | EnhancedRecommendationsMessage
   | WaitingForLLMMessage
-  | LLMTimeoutMessage;
+  | LLMTimeoutMessage
+  | PausedMessage
+  | ResumedMessage;
 
 // === API Types ===
 export interface SeriesInfo {
