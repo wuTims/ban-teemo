@@ -453,9 +453,10 @@ Full information available. Focus on:
    - Champions that counter revealed enemy picks
 
 ## CRITICAL RULES:
-1. **"reranked" MUST only contain champions from the Algorithm Recommendations above**
+1. **"reranked" MUST contain EXACTLY 5 champions from the Algorithm Recommendations above**
    - You are REORDERING the existing candidates, not replacing them
    - Do NOT add new champions to "reranked" - only reorder the ones provided
+   - You MUST provide analysis for all 5 top candidates, even if some are weaker choices
 2. **"additional_suggestions" is for champions NOT in the Algorithm Recommendations**
    - Suggest strong meta picks for unfilled roles from the Available Champions section
    - These are bonus suggestions beyond the algorithm's candidates
@@ -463,22 +464,14 @@ Full information available. Focus on:
 ## Output (respond ONLY with valid JSON, no markdown)
 {{
   "reranked": [
-    {{
-      "champion": "ChampionName (MUST be from Algorithm Recommendations)",
-      "original_rank": 1,
-      "new_rank": 1,
-      "confidence": 0.85,
-      "reasoning": "Why this is a strong Phase 1 pick - meta power, safety, flex value",
-      "strategic_factors": ["meta_power", "blind_safe", "flex_pick", "player_comfort"]
-    }}
+    {{"champion": "Champion1", "original_rank": 1, "new_rank": 1, "confidence": 0.9, "reasoning": "Best pick because...", "strategic_factors": ["factor1"]}},
+    {{"champion": "Champion2", "original_rank": 3, "new_rank": 2, "confidence": 0.85, "reasoning": "Strong because...", "strategic_factors": ["factor2"]}},
+    {{"champion": "Champion3", "original_rank": 2, "new_rank": 3, "confidence": 0.8, "reasoning": "Good option...", "strategic_factors": ["factor3"]}},
+    {{"champion": "Champion4", "original_rank": 4, "new_rank": 4, "confidence": 0.7, "reasoning": "Viable but...", "strategic_factors": ["factor4"]}},
+    {{"champion": "Champion5", "original_rank": 5, "new_rank": 5, "confidence": 0.6, "reasoning": "Weaker option...", "strategic_factors": ["factor5"]}}
   ],
   "additional_suggestions": [
-    {{
-      "champion": "ChampionName (NOT in Algorithm Recommendations)",
-      "role": "mid/top/jungle/adc/support",
-      "reasoning": "Why this champion is strong for Phase 1 and this role",
-      "confidence": 0.6
-    }}
+    {{"champion": "ChampionName", "role": "mid/top/jungle/adc/support", "reasoning": "Why this champion is strong", "confidence": 0.6}}
   ],
   "draft_analysis": "Phase 1 priority assessment - what we should secure early"
 }}"""
@@ -542,24 +535,19 @@ These champions CANNOT be picked or banned - do not suggest them."""
    - Champions enemy might first-pick
    - Safe laners that are hard to punish
 
+## CRITICAL: You MUST provide analysis for ALL 5 top ban candidates, even if some are weaker choices.
+
 ## Output (respond ONLY with valid JSON, no markdown)
 {{
   "reranked": [
-    {{
-      "champion": "ChampionName",
-      "original_rank": 1,
-      "new_rank": 1,
-      "confidence": 0.85,
-      "reasoning": "Why ban this in Phase 1 - meta power, flex threat, or player target",
-      "strategic_factors": ["meta_power", "flex_threat", "targets_player", "deny_blind"]
-    }}
+    {{"champion": "Ban1", "original_rank": 1, "new_rank": 1, "confidence": 0.9, "reasoning": "Top priority ban...", "strategic_factors": ["meta_power"]}},
+    {{"champion": "Ban2", "original_rank": 2, "new_rank": 2, "confidence": 0.85, "reasoning": "Strong ban...", "strategic_factors": ["flex_threat"]}},
+    {{"champion": "Ban3", "original_rank": 3, "new_rank": 3, "confidence": 0.8, "reasoning": "Good ban...", "strategic_factors": ["targets_player"]}},
+    {{"champion": "Ban4", "original_rank": 4, "new_rank": 4, "confidence": 0.7, "reasoning": "Viable ban...", "strategic_factors": ["deny_blind"]}},
+    {{"champion": "Ban5", "original_rank": 5, "new_rank": 5, "confidence": 0.6, "reasoning": "Lower priority...", "strategic_factors": ["factor"]}}
   ],
   "additional_suggestions": [
-    {{
-      "champion": "ChampionName",
-      "reasoning": "Why this ban makes sense in Phase 1",
-      "confidence": 0.6
-    }}
+    {{"champion": "ChampionName", "reasoning": "Why this ban makes sense in Phase 1", "confidence": 0.6}}
   ],
   "draft_analysis": "Phase 1 ban strategy - what threats to remove early"
 }}"""
@@ -667,9 +655,10 @@ These champions CANNOT be picked or banned - do not suggest them."""
    - Only matters if multiple options are strategically equal
 
 ## CRITICAL RULES:
-1. **"reranked" MUST only contain champions from the Algorithm Recommendations above**
+1. **"reranked" MUST contain EXACTLY 5 champions from the Algorithm Recommendations above**
    - You are REORDERING the existing candidates, not replacing them
    - Do NOT add new champions to "reranked" - only reorder the ones provided
+   - You MUST provide analysis for all 5 top candidates, even if some are weaker choices
 2. **"additional_suggestions" is for champions NOT in the Algorithm Recommendations**
    - Suggest strategic picks for unfilled roles from the Available Champions section
    - These are bonus suggestions beyond the algorithm's candidates
@@ -677,23 +666,14 @@ These champions CANNOT be picked or banned - do not suggest them."""
 ## Output (respond ONLY with valid JSON, no markdown)
 {{
   "reranked": [
-    {{
-      "champion": "ChampionName (MUST be from Algorithm Recommendations)",
-      "original_rank": 1,
-      "new_rank": 1,
-      "confidence": 0.85,
-      "reasoning": "WHY this counters enemy or completes our comp - be specific",
-      "strategic_factors": ["counters_dive", "completes_orianna_combo", "denies_enemy_synergy"]
-    }}
+    {{"champion": "Champion1", "original_rank": 1, "new_rank": 1, "confidence": 0.9, "reasoning": "Best counter/synergy because...", "strategic_factors": ["counters_X"]}},
+    {{"champion": "Champion2", "original_rank": 3, "new_rank": 2, "confidence": 0.85, "reasoning": "Strong because...", "strategic_factors": ["synergy_Y"]}},
+    {{"champion": "Champion3", "original_rank": 2, "new_rank": 3, "confidence": 0.8, "reasoning": "Good option...", "strategic_factors": ["completes_Z"]}},
+    {{"champion": "Champion4", "original_rank": 4, "new_rank": 4, "confidence": 0.7, "reasoning": "Viable but...", "strategic_factors": ["factor"]}},
+    {{"champion": "Champion5", "original_rank": 5, "new_rank": 5, "confidence": 0.6, "reasoning": "Weaker option...", "strategic_factors": ["factor"]}}
   ],
   "additional_suggestions": [
-    {{
-      "champion": "ChampionName (NOT in Algorithm Recommendations)",
-      "role": "mid/top/jungle/adc/support",
-      "for_player": "PlayerName",
-      "reasoning": "Strategic reason this DISRUPTS enemy or ENABLES our win condition",
-      "confidence": 0.6
-    }}
+    {{"champion": "ChampionName", "role": "mid/top/jungle/adc/support", "for_player": "PlayerName", "reasoning": "Strategic reason", "confidence": 0.6}}
   ],
   "draft_analysis": "Enemy strategy: [what they're building]. Counter picks: [specific champions] for [player/role] because [reason]."
 }}"""
@@ -1026,24 +1006,19 @@ Champions NOT in the candidate list that:
 - Hard counter our composition
 - Are the keystone of their strategy
 
+## CRITICAL: You MUST provide analysis for ALL 5 top ban candidates, even if some are weaker choices.
+
 ## Output (respond ONLY with valid JSON, no markdown)
 {{
   "reranked": [
-    {{
-      "champion": "ChampionName",
-      "original_rank": 1,
-      "new_rank": 1,
-      "confidence": 0.85,
-      "reasoning": "WHY this disrupts enemy strategy - be specific about what combo/synergy it breaks",
-      "strategic_factors": ["breaks_synergy", "denies_counter", "removes_archetype"]
-    }}
+    {{"champion": "Ban1", "original_rank": 1, "new_rank": 1, "confidence": 0.9, "reasoning": "Breaks enemy synergy...", "strategic_factors": ["breaks_synergy"]}},
+    {{"champion": "Ban2", "original_rank": 2, "new_rank": 2, "confidence": 0.85, "reasoning": "Denies counter...", "strategic_factors": ["denies_counter"]}},
+    {{"champion": "Ban3", "original_rank": 3, "new_rank": 3, "confidence": 0.8, "reasoning": "Removes archetype...", "strategic_factors": ["removes_archetype"]}},
+    {{"champion": "Ban4", "original_rank": 4, "new_rank": 4, "confidence": 0.7, "reasoning": "Viable ban...", "strategic_factors": ["factor"]}},
+    {{"champion": "Ban5", "original_rank": 5, "new_rank": 5, "confidence": 0.6, "reasoning": "Lower priority...", "strategic_factors": ["factor"]}}
   ],
   "additional_suggestions": [
-    {{
-      "champion": "ChampionName",
-      "reasoning": "What enemy synergy/strategy this disrupts",
-      "confidence": 0.6
-    }}
+    {{"champion": "ChampionName", "reasoning": "What enemy synergy/strategy this disrupts", "confidence": 0.6}}
   ],
   "draft_analysis": "What enemy is building + what ban breaks it"
 }}"""
@@ -1727,8 +1702,32 @@ Note: This is general guidance. Use your knowledge of current pro meta."""
             if not reranked:
                 raise ValueError("No valid reranked items in response")
 
+            # Fill in missing candidates if LLM returned fewer than limit
+            # This ensures we always have analysis for all top candidates
+            if len(reranked) < limit:
+                reranked_champs = {r.champion.lower() for r in reranked}
+                next_rank = len(reranked) + 1
+                for i, c in enumerate(original_candidates[:limit]):
+                    champ = c.get("champion_name", c.get("champion", ""))
+                    if champ.lower() not in reranked_champs:
+                        reranked.append(
+                            RerankedRecommendation(
+                                champion=champ,
+                                original_rank=i + 1,
+                                new_rank=next_rank,
+                                original_score=c.get("score", c.get("priority", 0)),
+                                confidence=0.5,
+                                reasoning="(LLM did not provide analysis - using algorithm ranking)",
+                                strategic_factors=[],
+                            )
+                        )
+                        next_rank += 1
+                        if len(reranked) >= limit:
+                            break
+                logger.info(f"Filled in {next_rank - len(reranked) - 1} missing candidates from original list")
+
             return RerankerResult(
-                reranked=reranked,
+                reranked=reranked[:limit],  # Ensure we don't exceed limit
                 additional_suggestions=additional,
                 draft_analysis=str(data.get("draft_analysis", "")),
                 raw_llm_response=data,

@@ -37,6 +37,16 @@ class ReplaySession:
     # Preloaded data
     all_actions: list[DraftAction] = field(default_factory=list)
     draft_state: DraftState | None = None
+    series_score_before: dict[str, int] | None = None
+    series_score_after: dict[str, int] | None = None
+    winner_team_id: str | None = None
+    winner_side: str | None = None
+
+    # LLM settings (opt-in)
+    llm_enabled: bool = False
+    llm_api_key: str | None = None
+    wait_for_llm: bool = False  # When True, replay waits for LLM before continuing
+    llm_timeout: float = 30.0  # Max seconds to wait for LLM
 
     # Connection tracking
     created_at: datetime = field(default_factory=datetime.now)
@@ -59,6 +69,14 @@ class ReplayManager:
         draft_state: DraftState,
         speed: float = 1.0,
         delay_seconds: float = 3.0,
+        series_score_before: dict[str, int] | None = None,
+        series_score_after: dict[str, int] | None = None,
+        winner_team_id: str | None = None,
+        winner_side: str | None = None,
+        llm_enabled: bool = False,
+        llm_api_key: str | None = None,
+        wait_for_llm: bool = False,
+        llm_timeout: float = 30.0,
     ) -> ReplaySession:
         """Create a new replay session.
 
@@ -70,6 +88,8 @@ class ReplayManager:
             draft_state: Initial draft state (empty actions)
             speed: Playback speed multiplier (2.0 = 2x speed)
             delay_seconds: Base delay between actions
+            llm_enabled: Whether to enable LLM-based analysis
+            llm_api_key: API key for LLM service
 
         Returns:
             The created ReplaySession
@@ -84,6 +104,14 @@ class ReplayManager:
             draft_state=draft_state,
             speed=speed,
             delay_seconds=delay_seconds,
+            series_score_before=series_score_before,
+            series_score_after=series_score_after,
+            winner_team_id=winner_team_id,
+            winner_side=winner_side,
+            llm_enabled=llm_enabled,
+            llm_api_key=llm_api_key,
+            wait_for_llm=wait_for_llm,
+            llm_timeout=llm_timeout,
         )
         self.sessions[session_id] = session
         return session

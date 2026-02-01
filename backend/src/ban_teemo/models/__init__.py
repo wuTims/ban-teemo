@@ -7,6 +7,11 @@ from ban_teemo.models.recommendations import (
     PickRecommendation,
     Recommendations,
 )
+from ban_teemo.models.series_context import (
+    PreviousGameSummary,
+    TeamTendencies,
+    SeriesContext,
+)
 
 __all__ = [
     "DraftAction",
@@ -17,4 +22,7 @@ __all__ = [
     "BanRecommendation",
     "PickRecommendation",
     "Recommendations",
+    "PreviousGameSummary",
+    "TeamTendencies",
+    "SeriesContext",
 ]

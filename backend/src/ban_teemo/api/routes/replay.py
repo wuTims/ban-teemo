@@ -19,6 +19,10 @@ class StartReplayRequest(BaseModel):
     game_number: int
     speed: float = 1.0
     delay_seconds: float = 3.0
+    llm_enabled: bool = False
+    llm_api_key: str | None = None
+    wait_for_llm: bool = False  # When True, replay blocks until LLM completes
+    llm_timeout: float = 30.0  # Max seconds to wait for LLM
 
 
 class StartReplayResponse(BaseModel):
@@ -232,6 +236,46 @@ def start_replay(request: Request, body: StartReplayRequest):
         next_action=first_action_type,
     )
 
+    def _parse_int(value: object) -> int | None:
+        try:
+            return int(value)  # type: ignore[arg-type]
+        except (TypeError, ValueError):
+            return None
+
+    # Compute series score before/after this game using game-side team IDs
+    games = repo.get_games_for_series(body.series_id)
+    blue_wins_before = 0
+    red_wins_before = 0
+    blue_wins_after = 0
+    red_wins_after = 0
+
+    for game in games:
+        game_num = _parse_int(game.get("game_number"))
+        winner_id = game.get("winner_team_id")
+        if game_num is None or not winner_id:
+            continue
+
+        if winner_id == blue_team.id:
+            if game_num < body.game_number:
+                blue_wins_before += 1
+            if game_num <= body.game_number:
+                blue_wins_after += 1
+        elif winner_id == red_team.id:
+            if game_num < body.game_number:
+                red_wins_before += 1
+            if game_num <= body.game_number:
+                red_wins_after += 1
+
+    series_score_before = {"blue": blue_wins_before, "red": red_wins_before}
+    series_score_after = {"blue": blue_wins_after, "red": red_wins_after}
+
+    winner_team_id = game_info.get("winner_team_id")
+    winner_side = None
+    if winner_team_id == blue_team.id:
+        winner_side = "blue"
+    elif winner_team_id == red_team.id:
+        winner_side = "red"
+
     # Create session
     session = manager.create_session(
         game_id=game_id,
@@ -241,6 +285,14 @@ def start_replay(request: Request, body: StartReplayRequest):
         draft_state=initial_state,
         speed=body.speed,
         delay_seconds=body.delay_seconds,
+        series_score_before=series_score_before,
+        series_score_after=series_score_after,
+        winner_team_id=winner_team_id,
+        winner_side=winner_side,
+        llm_enabled=body.llm_enabled,
+        llm_api_key=body.llm_api_key,
+        wait_for_llm=body.wait_for_llm,
+        llm_timeout=body.llm_timeout,
     )
 
     return StartReplayResponse(
