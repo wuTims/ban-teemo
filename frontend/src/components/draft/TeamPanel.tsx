@@ -1,7 +1,7 @@
 // frontend/src/components/draft/TeamPanel.tsx
 import { useMemo } from "react";
 import { ChampionPortrait } from "../shared";
-import type { TeamContext, Team, FinalizedPick } from "../../types";
+import type { TeamContext, Team, FinalizedPick, Player } from "../../types";
 import { getTeamLogoUrl, getTeamInitials } from "../../utils/teamLogos";
 import { getTeamAbbreviation } from "../../data/teamAbbreviations";
 
@@ -12,6 +12,7 @@ interface TeamPanelProps {
   isActive: boolean;
   currentPickIndex?: number; // Which slot is currently picking (0-4)
   picksWithRoles?: FinalizedPick[]; // Optional finalized role assignments
+  players?: Player[]; // Optional player roster for displaying names
 }
 
 const ROLE_ORDER = ["TOP", "JNG", "MID", "ADC", "SUP"] as const;
@@ -58,6 +59,7 @@ export function TeamPanel({
   isActive,
   currentPickIndex,
   picksWithRoles,
+  players,
 }: TeamPanelProps) {
   // When finalized roles are available, reorder picks to display in correct role slots
   const orderedPicks = useMemo(() => {
@@ -78,6 +80,18 @@ export function TeamPanel({
     // Build ordered picks array matching ROLE_ORDER
     return ROLE_ORDER.map((role) => roleToChampion[role] || null);
   }, [picks, picksWithRoles]);
+
+  // Create a map of display role -> player name for showing player names next to champions
+  const roleToPlayer = useMemo(() => {
+    const map: Record<string, string> = {};
+    if (players) {
+      for (const player of players) {
+        // Player.role is already in display format (TOP, JNG, MID, ADC, SUP)
+        map[player.role] = player.name;
+      }
+    }
+    return map;
+  }, [players]);
 
   const sideColors = side === "blue"
     ? {
@@ -142,11 +156,18 @@ export function TeamPanel({
                 className="w-8 h-8 sm:w-10 sm:h-10 lg:w-[66px] lg:h-[66px] 2xl:w-[88px] 2xl:h-[88px] shrink-0"
               />
 
-              {/* Champion name - hidden on mobile, shown on desktop */}
+              {/* Champion name and player - hidden on mobile, shown on desktop */}
               {pick && (
-                <span className="hidden lg:block flex-1 text-sm text-gold-bright truncate">
-                  {pick}
-                </span>
+                <div className="hidden lg:flex flex-col flex-1 min-w-0">
+                  <span className="text-sm text-gold-bright truncate">
+                    {pick}
+                  </span>
+                  {roleToPlayer[role] && (
+                    <span className="text-xs text-text-secondary truncate">
+                      {roleToPlayer[role]}
+                    </span>
+                  )}
+                </div>
               )}
             </div>
           );

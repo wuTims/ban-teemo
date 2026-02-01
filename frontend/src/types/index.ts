@@ -247,15 +247,23 @@ export interface SimulatorBanRecommendation {
   target_player: string | null;
   target_role: string | null;
   reasons: string[];
+  components?: Record<string, number>;
 }
 
 export interface ScoreComponents {
-  meta: number;
-  proficiency: number;
-  matchup: number;
-  counter: number;
-  synergy: number;
-  [key: string]: number; // Allow additional dynamic components
+  meta?: number;
+  tournament_priority?: number;
+  tournament_performance?: number;
+  proficiency?: number;
+  matchup?: number;
+  counter?: number;
+  matchup_counter?: number;
+  archetype?: number;
+  synergy?: number;
+  role_flex?: number;
+  blind_safety?: number;
+  presence_bonus?: number;
+  [key: string]: number | undefined; // Allow additional dynamic components
 }
 
 export interface SimulatorPickRecommendation {

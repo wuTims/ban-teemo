@@ -1,5 +1,5 @@
 // frontend/src/components/SimulatorView/index.tsx
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import { PhaseIndicator, TeamPanel, BanRow } from "../draft";
 import { ChampionPool } from "../ChampionPool";
 // RoleRecommendationPanel kept for future use but not currently rendered
@@ -23,19 +23,18 @@ import type {
 // Champion list derived from Data Dragon mapping
 const ALL_CHAMPIONS = getAllChampionNames();
 
-// Score normalization anchors - maps raw scores to intuitive 0-100% range
-// Based on observed score distributions:
-// - Ban scores: raw 40-56% → normalized uses floor=0.35, ceiling=0.65
-// - Pick scores: raw 44-71% → normalized uses floor=0.40, ceiling=0.80
-const SCORE_ANCHORS = {
-  ban: { floor: 0.35, ceiling: 0.65 },
-  pick: { floor: 0.40, ceiling: 0.80 },
+type ScoreAnchor = { min: number; max: number };
+
+// Simulator display normalization: map 30-70% scores to 0-100% for friendlier colors.
+const SCORE_ANCHORS: Record<"ban" | "pick", ScoreAnchor> = {
+  ban: { min: 0.30, max: 0.70 },
+  pick: { min: 0.30, max: 0.70 },
 };
 
 function normalizeScore(rawScore: number, type: "ban" | "pick"): number {
-  const { floor, ceiling } = SCORE_ANCHORS[type];
-  const normalized = (rawScore - floor) / (ceiling - floor);
-  return Math.max(0, Math.min(1, normalized)); // Clamp to 0-1
+  const { min, max } = SCORE_ANCHORS[type];
+  const normalized = (rawScore - min) / (max - min);
+  return Math.max(0, Math.min(1, normalized));
 }
 
 // Type guard to differentiate recommendation types
@@ -47,21 +46,117 @@ function isBanRecommendation(rec: SimulatorRecommendation): rec is SimulatorBanR
   return "priority" in rec && "target_player" in rec;
 }
 
-// Helper to get top 3 scoring factors with labels
-function getTopFactors(components: Record<string, number>): Array<{ name: string; value: number; label: string }> {
-  const factorLabels: Record<string, string> = {
-    meta: "Meta",
-    proficiency: "Proficiency",
-    matchup: "Matchup",
-    counter: "Counter",
-    synergy: "Synergy",
-    archetype: "Archetype",
-  };
+type ScoreBreakdownItem = { key: string; label: string; value: number; weighted?: boolean };
 
-  return Object.entries(components)
-    .map(([name, value]) => ({ name, value, label: factorLabels[name] || name }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 3);
+const PICK_COMPONENT_LABELS: Record<string, string> = {
+  tournament_priority: "Tournament Priority",
+  tournament_performance: "Tournament Performance",
+  matchup_counter: "Matchup/Counter",
+  archetype: "Archetype",
+  synergy: "Synergy",
+};
+
+const BAN_COMPONENT_LABELS: Record<string, string> = {
+  tournament_priority: "Tournament Priority",
+  presence: "Presence",
+  flex: "Flex",
+  comfort: "Comfort",
+  confidence: "Confidence",
+  archetype_counter: "Archetype Counter",
+  synergy_denial: "Synergy Denial",
+  role_denial: "Role Denial",
+  counter_our_picks: "Counter Picks",
+  counter: "Counter",
+  tier_bonus: "Tier Bonus",
+};
+
+const BAN_COMPONENT_ORDER = [
+  "tournament_priority",
+  "presence",
+  "flex",
+  "comfort",
+  "confidence",
+  "archetype_counter",
+  "synergy_denial",
+  "role_denial",
+  "counter_our_picks",
+  "counter",
+  "tier_bonus",
+];
+
+function getPickScoreBreakdown(components?: Record<string, number | undefined>): ScoreBreakdownItem[] {
+  if (!components) return [];
+  const items: ScoreBreakdownItem[] = [];
+  const hasTournament =
+    components.tournament_priority !== undefined ||
+    components.tournament_performance !== undefined;
+
+  if (hasTournament) {
+    if (components.tournament_priority !== undefined) {
+      items.push({
+        key: "tournament_priority",
+        label: PICK_COMPONENT_LABELS.tournament_priority,
+        value: components.tournament_priority,
+      });
+    }
+    if (components.tournament_performance !== undefined) {
+      items.push({
+        key: "tournament_performance",
+        label: PICK_COMPONENT_LABELS.tournament_performance,
+        value: components.tournament_performance,
+      });
+    }
+  }
+
+  if (components.matchup_counter !== undefined) {
+    items.push({
+      key: "matchup_counter",
+      label: PICK_COMPONENT_LABELS.matchup_counter,
+      value: components.matchup_counter,
+    });
+  }
+
+  if (components.archetype !== undefined) {
+    items.push({
+      key: "archetype",
+      label: PICK_COMPONENT_LABELS.archetype,
+      value: components.archetype,
+    });
+  }
+
+  if (components.synergy !== undefined) {
+    items.push({
+      key: "synergy",
+      label: PICK_COMPONENT_LABELS.synergy,
+      value: components.synergy,
+    });
+  }
+
+  return items;
+}
+
+function getBanScoreBreakdown(components?: Record<string, number | undefined>): ScoreBreakdownItem[] {
+  if (!components) return [];
+  const items: ScoreBreakdownItem[] = [];
+  BAN_COMPONENT_ORDER.forEach((key) => {
+    const value = components[key];
+    if (typeof value === "number") {
+      items.push({
+        key,
+        label: BAN_COMPONENT_LABELS[key] ?? key,
+        value,
+        weighted: true,
+      });
+    }
+  });
+  return items;
+}
+
+function getComponentColor(value: number, weighted: boolean): string {
+  if (weighted) {
+    return value >= 0.2 ? "text-success" : value >= 0.1 ? "text-warning" : "text-danger";
+  }
+  return value >= 0.7 ? "text-success" : value >= 0.5 ? "text-warning" : "text-danger";
 }
 
 // Helper to find player for a role
@@ -113,13 +208,11 @@ function RecommendationCard({
   let normalizedScore: number;
   let displayLabel: string;
   let playerInfo: string | null = null;
-  let topFactors: Array<{ name: string; value: number; label: string }> = [];
-  let scoreType: "ban" | "pick" = "pick";
+  let breakdownItems: ScoreBreakdownItem[] = [];
 
   if (isPickRecommendation(recommendation)) {
     rawScore = recommendation.score;
-    scoreType = "pick";
-    normalizedScore = normalizeScore(rawScore, scoreType);
+    normalizedScore = normalizeScore(rawScore, "pick");
     displayLabel = `${Math.round(normalizedScore * 100)}%`;
 
     // Get player for suggested role
@@ -128,17 +221,17 @@ function RecommendationCard({
       ? `${playerName} (${recommendation.suggested_role})`
       : recommendation.suggested_role;
 
-    // Get top 3 factors
-    topFactors = getTopFactors(recommendation.components);
+    // Score breakdown (explicitly include tournament metrics when present)
+    breakdownItems = getPickScoreBreakdown(recommendation.components);
   } else if (isBanRecommendation(recommendation)) {
     rawScore = recommendation.priority;
-    scoreType = "ban";
-    normalizedScore = normalizeScore(rawScore, scoreType);
+    normalizedScore = normalizeScore(rawScore, "ban");
     displayLabel = `${Math.round(normalizedScore * 100)}%`;
     playerInfo = recommendation.target_player || null;
+    breakdownItems = getBanScoreBreakdown(recommendation.components);
   } else {
     rawScore = 0.5;
-    normalizedScore = 0.5;
+    normalizedScore = normalizeScore(rawScore, "pick");
     displayLabel = "N/A";
   }
 
@@ -210,17 +303,15 @@ function RecommendationCard({
         >
           <div className="overflow-hidden">
             <div className="mt-1.5 space-y-1.5">
-              {/* Top Factors (only for pick recommendations) */}
-              {topFactors.length > 0 && (
+              {/* Score breakdown */}
+              {breakdownItems.length > 0 && (
                 <div className="space-y-0.5">
-                  {topFactors.map((factor) => (
-                    <div key={factor.name} className="flex items-center gap-2 text-[10px] sm:text-xs">
+                  <div className="text-[9px] uppercase text-text-tertiary">Score Breakdown</div>
+                  {breakdownItems.map((factor) => (
+                    <div key={factor.key} className="flex items-center gap-2 text-[10px] sm:text-xs">
                       <span className="text-gold-dim">▸</span>
                       <span className="text-text-secondary">{factor.label}:</span>
-                      <span className={`font-mono ${
-                        factor.value >= 0.7 ? "text-success" :
-                        factor.value >= 0.5 ? "text-warning" : "text-danger"
-                      }`}>
+                      <span className={`font-mono ${getComponentColor(factor.value, !!factor.weighted)}`}>
                         {factor.value.toFixed(2)}
                       </span>
                     </div>
@@ -277,6 +368,10 @@ export function SimulatorView({
   // Track which recommendation cards are expanded
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
+  useEffect(() => {
+    setExpandedCards(new Set());
+  }, [draftState.action_count]);
+
   const toggleCardExpand = useCallback((championName: string) => {
     setExpandedCards(prev => {
       const next = new Set(prev);
@@ -300,6 +395,14 @@ export function SimulatorView({
 
   const fearlessCount = Object.keys(fearlessBlocked).length;
   const isBanPhase = draftState.next_action === "ban";
+  const recommendationList = recommendations ?? [];
+
+  const showRecommendations = isOurTurn && recommendationList.length > 0;
+  const showInsights =
+    llmLoading ||
+    !!llmInsight?.draft_analysis ||
+    (llmInsight?.status === "ready" && (llmInsight.reranked?.length ?? 0) > 0) ||
+    llmInsight?.status === "error";
 
   return (
     <div className="space-y-2 sm:space-y-3 lg:space-y-4">
@@ -348,6 +451,7 @@ export function SimulatorView({
             side="blue"
             isActive={draftState.next_team === "blue" && draftState.next_action === "pick"}
             picksWithRoles={blueCompWithRoles ?? undefined}
+            players={blueTeam?.players}
           />
           {coachingSide === "blue" && (
             <div className="text-center text-xs text-magic mt-1 font-medium">
@@ -377,6 +481,7 @@ export function SimulatorView({
             side="red"
             isActive={draftState.next_team === "red" && draftState.next_action === "pick"}
             picksWithRoles={redCompWithRoles ?? undefined}
+            players={redTeam?.players}
           />
           {coachingSide === "red" && (
             <div className="text-center text-xs text-magic mt-1 font-medium">
@@ -390,36 +495,40 @@ export function SimulatorView({
       <BanRow blueBans={draftState.blue_bans} redBans={draftState.red_bans} />
 
       {/* Recommendations */}
-      {isOurTurn && recommendations && recommendations.length > 0 && (
+      {(showRecommendations || showInsights) && (
         <div className="bg-lol-dark rounded-lg p-2 sm:p-3 lg:p-4">
-          <div className="flex items-center justify-between mb-2 sm:mb-3">
-            <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wide text-gold-bright">
-              {isBanPhase ? "Ban" : "Pick"} Recommendations
-            </h3>
-            <div className="flex items-center gap-2 sm:gap-3">
-              {/* Role-Grouped Toggle - hidden for now, keeping code for future use */}
-              <span className={`
-                text-[10px] sm:text-xs font-medium uppercase px-1.5 sm:px-2 py-0.5 rounded
-                ${coachingSide === "blue" ? "bg-blue-team/20 text-blue-team" : "bg-red-team/20 text-red-team"}
-              `}>
-                Your Turn
-              </span>
-            </div>
-          </div>
-          {/* Responsive grid: 2 columns on mobile, 3 on sm, 5 on lg+ - items-start prevents row height sync */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-2.5 lg:gap-3 items-start">
-            {recommendations.slice(0, 5).map((rec, i) => (
-              <RecommendationCard
-                key={rec.champion_name}
-                recommendation={rec}
-                isTopPick={i === 0}
-                onClick={onChampionSelect}
-                ourTeam={coachingSide === "blue" ? blueTeam : redTeam}
-                isExpanded={expandedCards.has(rec.champion_name)}
-                onToggleExpand={() => toggleCardExpand(rec.champion_name)}
-              />
-            ))}
-          </div>
+          {showRecommendations && (
+            <>
+              <div className="flex items-center justify-between mb-2 sm:mb-3">
+                <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wide text-gold-bright">
+                  {isBanPhase ? "Ban" : "Pick"} Recommendations
+                </h3>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  {/* Role-Grouped Toggle - hidden for now, keeping code for future use */}
+                  <span className={`
+                    text-[10px] sm:text-xs font-medium uppercase px-1.5 sm:px-2 py-0.5 rounded
+                    ${coachingSide === "blue" ? "bg-blue-team/20 text-blue-team" : "bg-red-team/20 text-red-team"}
+                  `}>
+                    Your Turn
+                  </span>
+                </div>
+              </div>
+              {/* Responsive grid: 2 columns on mobile, 3 on sm, 5 on lg+ - items-start prevents row height sync */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-2.5 lg:gap-3 items-start">
+                {recommendationList.slice(0, 5).map((rec, i) => (
+                  <RecommendationCard
+                    key={rec.champion_name}
+                    recommendation={rec}
+                    isTopPick={i === 0}
+                    onClick={onChampionSelect}
+                    ourTeam={coachingSide === "blue" ? blueTeam : redTeam}
+                    isExpanded={expandedCards.has(rec.champion_name)}
+                    onToggleExpand={() => toggleCardExpand(rec.champion_name)}
+                  />
+                ))}
+              </div>
+            </>
+          )}
 
           {/* Role-Grouped Supplemental Panel - hidden for now, keeping code for future use
           {!isBanPhase && _showRoleGrouped && _roleGroupedRecommendations && (
@@ -434,13 +543,18 @@ export function SimulatorView({
           */}
 
           {/* AI Insights Panel - includes analysis and reranked picks */}
-          <div className="mt-4">
-            <InsightPanel
-              insight={llmInsight?.draft_analysis ?? null}
-              isLoading={llmLoading}
-              reranked={llmInsight?.status === "ready" ? llmInsight.reranked : undefined}
-            />
-          </div>
+          {showInsights && (
+            <div className={showRecommendations ? "mt-4" : ""}>
+              <InsightPanel
+                insight={
+                  llmInsight?.draft_analysis ??
+                  (llmInsight?.status === "error" ? llmInsight.message ?? null : null)
+                }
+                isLoading={llmLoading}
+                reranked={llmInsight?.status === "ready" ? llmInsight.reranked : undefined}
+              />
+            </div>
+          )}
         </div>
       )}
 

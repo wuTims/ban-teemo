@@ -26,17 +26,19 @@ function getPlayerForRole(team: TeamContext, role: string): string | null {
 }
 
 // Helper to get top 3 scoring factors with labels
-function getTopFactors(components: Record<string, number>): Array<{ name: string; value: number; label: string }> {
+function getTopFactors(components: Record<string, number | undefined>): Array<{ name: string; value: number; label: string }> {
   const factorLabels: Record<string, string> = {
-    meta: "Meta",
-    proficiency: "Prof",
-    matchup: "Match",
+    tournament_priority: "Prio",
+    tournament_performance: "Perf",
+    matchup_counter: "Match",
     counter: "Cntr",
     synergy: "Syn",
     archetype: "Arch",
   };
+  const excludedKeys = new Set(["meta", "proficiency", "matchup"]);
 
   return Object.entries(components)
+    .filter(([key, value]) => typeof value === "number" && !excludedKeys.has(key))
     .map(([name, value]) => ({ name, value, label: factorLabels[name] || name }))
     .sort((a, b) => b.value - a.value)
     .slice(0, 3);
