@@ -1,8 +1,8 @@
-// e2e-test.mjs - End-to-end test for DeepDraft demo UI
+// e2e-test.mjs - End-to-end test for Ban Teemo demo UI
 import { chromium } from 'playwright';
 
 async function runTests() {
-  console.log('Starting E2E tests for DeepDraft...\n');
+  console.log('Starting E2E tests for Ban Teemo...\n');
 
   const browser = await chromium.launch({
     headless: true,
@@ -34,11 +34,11 @@ async function runTests() {
   await page.goto('http://localhost:5173', { waitUntil: 'domcontentloaded', timeout: 15000 });
 
   // Test 1: Page loads with header
-  await test('Page loads with DeepDraft header', async () => {
-    const header = await page.locator('h1:has-text("DeepDraft")');
+  await test('Page loads with Ban Teemo header', async () => {
+    const header = await page.locator('h1:has-text("Ban Teemo")');
     await header.waitFor({ timeout: 5000 });
     const text = await header.textContent();
-    if (!text.includes('DeepDraft')) throw new Error('Header not found');
+    if (!text.includes('Ban Teemo')) throw new Error('Header not found');
   });
 
   // Test 2: Subtitle is present

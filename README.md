@@ -1,10 +1,10 @@
-# DeepDraft - LoL Draft Assistant
+# Ban Teemo - LoL Draft Assistant
 
 An AI-powered League of Legends draft assistant that replays professional matches and provides real-time pick/ban recommendations backed by pro match data and layered analytics.
 
 ## Demo Concept
 
-Since live matches can't be guaranteed during judging, DeepDraft uses a **historical replay system** that:
+Since live matches can't be guaranteed during judging, Ban Teemo uses a **historical replay system** that:
 
 1. Pre-loads 1,400+ professional series from LCK, LEC, LCS, and LPL
 2. Replays draft actions with configurable delays (simulating live experience)

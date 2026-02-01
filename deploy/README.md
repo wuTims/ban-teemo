@@ -1,6 +1,6 @@
 # Deployment Guide
 
-This directory contains deployment configurations for the Ban Teemo (DeepDraft) application.
+This directory contains deployment configurations for the Ban Teemo application.
 
 ## Architecture Overview
 
