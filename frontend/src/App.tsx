@@ -1,5 +1,5 @@
 // frontend/src/App.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ActionLog } from "./components/ActionLog";
 import { DraftBoard } from "./components/DraftBoard";
 import { RecommendationPanel } from "./components/RecommendationPanel";
@@ -22,6 +22,14 @@ export default function App() {
   const simulator = useSimulatorSession();
   const settings = useSettings();
 
+  useEffect(() => {
+    if (!settings.llmEnabled) return;
+    if (!settings.apiKey) return;
+    if (simulator.llmApiKey !== settings.apiKey) {
+      simulator.setLlmApiKey(settings.apiKey);
+    }
+  }, [settings.llmEnabled, settings.apiKey, simulator.llmApiKey, simulator.setLlmApiKey]);
+
   const handleSaveSettings = (apiKey: string, llmEnabled: boolean) => {
     settings.setApiKey(apiKey);
     settings.setLlmEnabled(llmEnabled);
@@ -38,7 +46,7 @@ export default function App() {
       <header className="min-h-12 sm:h-14 lg:h-16 bg-lol-dark border-b border-gold-dim/30 flex flex-wrap sm:flex-nowrap items-center px-2 sm:px-4 lg:px-6 py-2 sm:py-0 gap-2 sm:gap-0">
         <div className="flex items-center gap-2 sm:gap-4">
           <h1 className="text-base sm:text-lg lg:text-xl font-bold uppercase tracking-wide text-gold-bright">
-            DeepDraft
+            Ban Teemo
           </h1>
           <span className="hidden sm:inline text-xs lg:text-sm text-text-tertiary">LoL Draft Assistant</span>
         </div>
@@ -122,12 +130,11 @@ export default function App() {
               onStop={replay.stopReplay}
               onPause={replay.pauseReplay}
               onResume={replay.resumeReplay}
+              onSeriesChange={replay.resetSession}
               error={replay.error}
               llmEnabled={settings.llmEnabled}
               hasApiKey={settings.hasApiKey}
               apiKey={settings.apiKey}
-              isWaitingForLLM={replay.isWaitingForLLM}
-              waitingForActionCount={replay.waitingForActionCount}
             />
 
             <div className="flex flex-row gap-6">
@@ -157,6 +164,8 @@ export default function App() {
               redTeam={replay.redTeam}
               llmInsights={replay.llmInsights}
               llmTimeouts={replay.llmTimeouts}
+              isWaitingForLLM={replay.isWaitingForLLM}
+              waitingForActionCount={replay.waitingForActionCount}
             />
           </>
         ) : (

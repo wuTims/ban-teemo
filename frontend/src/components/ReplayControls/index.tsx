@@ -21,12 +21,11 @@ interface ReplayControlsProps {
   onStop: () => void;
   onPause: () => void;
   onResume: () => void;
+  onSeriesChange?: () => void;
   error: string | null;
   llmEnabled?: boolean;
   hasApiKey?: boolean;
   apiKey?: string;
-  isWaitingForLLM?: boolean;
-  waitingForActionCount?: number | null;
 }
 
 function TeamLogo({ teamId, teamName, size = "sm" }: { teamId: string; teamName: string; size?: "sm" | "md" }) {
@@ -58,12 +57,11 @@ export function ReplayControls({
   onStop,
   onPause,
   onResume,
+  onSeriesChange,
   error,
   llmEnabled: globalLlmEnabled = false,
   hasApiKey = false,
   apiKey = "",
-  isWaitingForLLM = false,
-  waitingForActionCount = null,
 }: ReplayControlsProps) {
   const [seriesList, setSeriesList] = useState<SeriesInfo[]>([]);
   const [games, setGames] = useState<GameInfo[]>([]);
@@ -82,9 +80,14 @@ export function ReplayControls({
       if (!blueId || !redId || games.length === 0) return null;
       let blueWins = 0;
       let redWins = 0;
+      // After replay completes, include current game; otherwise exclude it to avoid spoilers
+      const includeCurrentGame = status === "complete";
       for (const game of games) {
         const gameNum = Number(game.game_number);
-        if (!Number.isFinite(gameNum) || gameNum > selectedGame) {
+        const shouldSkip = includeCurrentGame
+          ? gameNum > selectedGame
+          : gameNum >= selectedGame;
+        if (!Number.isFinite(gameNum) || shouldSkip) {
           continue;
         }
         if (game.winner_team_id === blueId) {
@@ -95,7 +98,7 @@ export function ReplayControls({
       }
       return { blue: blueWins, red: redWins };
     };
-  }, [games, selectedGame]);
+  }, [games, selectedGame, status]);
 
   const seriesScorePreview = gamePreview
     ? computeSeriesScore(gamePreview.blue_team.id, gamePreview.red_team.id)
@@ -192,7 +195,10 @@ export function ReplayControls({
           </label>
           <select
             value={selectedSeries}
-            onChange={(e) => setSelectedSeries(e.target.value)}
+            onChange={(e) => {
+              setSelectedSeries(e.target.value);
+              onSeriesChange?.();
+            }}
             disabled={isActive}
             className="
               w-full px-3 py-2 rounded bg-lol-light border border-gold-dim
@@ -351,16 +357,6 @@ export function ReplayControls({
             </button>
           )}
         </div>
-
-        {/* AI Waiting Indicator */}
-        {isWaitingForLLM && waitingForActionCount && (
-          <div className="flex items-center gap-2 text-magic">
-            <div className="w-4 h-4 border-2 border-magic border-t-transparent rounded-full animate-spin" />
-            <span className="text-sm font-medium">
-              Analyzing action {waitingForActionCount}...
-            </span>
-          </div>
-        )}
 
         {/* Status */}
         {isPaused && (

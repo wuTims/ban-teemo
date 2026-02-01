@@ -18,6 +18,8 @@ interface InsightsLogProps {
   redTeam?: TeamContext | null;
   llmInsights?: Map<number, LLMInsight>;
   llmTimeouts?: Set<number>;
+  isWaitingForLLM?: boolean;
+  waitingForActionCount?: number | null;
 }
 
 // Helper to format component scores with color
@@ -412,6 +414,8 @@ export function InsightsLog({
   redTeam,
   llmInsights,
   llmTimeouts,
+  isWaitingForLLM = false,
+  waitingForActionCount = null,
 }: InsightsLogProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   // Per-entry UI state (keyed by action sequence)
@@ -495,6 +499,18 @@ export function InsightsLog({
           )}
         </div>
       </div>
+
+      {/* AI Analysis Loading Indicator */}
+      {isWaitingForLLM && waitingForActionCount && (
+        <div className="mb-3 border border-magic/30 bg-magic/5 rounded-lg p-3">
+          <div className="flex items-center gap-3 text-magic">
+            <div className="w-5 h-5 border-2 border-magic border-t-transparent rounded-full animate-spin" />
+            <span className="text-sm font-medium">
+              Analyzing Action #{waitingForActionCount}...
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Scrollable log - most recent on top */}
       <div

@@ -54,12 +54,7 @@ export function InsightPanel({ insight, isLoading = false, reranked }: InsightPa
             AI Insight
           </h3>
           {/* Status indicator */}
-          {isLoading ? (
-            <>
-              <div className="w-3 h-3 border-2 border-magic border-t-transparent rounded-full animate-spin" />
-              <span className="text-[10px] text-magic">Analyzing...</span>
-            </>
-          ) : hasContent ? (
+          {hasContent ? (
             <span className="text-[10px] px-1.5 py-0.5 bg-magic/20 text-magic rounded">
               Ready
             </span>

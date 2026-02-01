@@ -9,6 +9,8 @@ interface RecommendationPanelProps {
   redTeam?: TeamContext | null;
   llmInsights?: Map<number, LLMInsight>;
   llmTimeouts?: Set<number>;
+  isWaitingForLLM?: boolean;
+  waitingForActionCount?: number | null;
 }
 
 export function RecommendationPanel({
@@ -18,6 +20,8 @@ export function RecommendationPanel({
   redTeam,
   llmInsights,
   llmTimeouts,
+  isWaitingForLLM,
+  waitingForActionCount,
 }: RecommendationPanelProps) {
   return (
     <InsightsLog
@@ -27,6 +31,8 @@ export function RecommendationPanel({
       redTeam={redTeam}
       llmInsights={llmInsights}
       llmTimeouts={llmTimeouts}
+      isWaitingForLLM={isWaitingForLLM}
+      waitingForActionCount={waitingForActionCount}
     />
   );
 }
