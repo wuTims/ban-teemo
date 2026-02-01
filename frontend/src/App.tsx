@@ -77,6 +77,9 @@ export default function App() {
           {mode === "replay" && replay.status === "playing" && (
             <span className="text-[10px] sm:text-xs text-magic animate-pulse">Live</span>
           )}
+          {mode === "replay" && replay.status === "paused" && (
+            <span className="text-[10px] sm:text-xs text-gold-bright">Paused</span>
+          )}
           {mode === "simulator" && simulator.status === "drafting" && (
             <span className="text-[10px] sm:text-xs text-magic animate-pulse">Drafting</span>
           )}
@@ -117,6 +120,8 @@ export default function App() {
               status={replay.status}
               onStart={replay.startReplay}
               onStop={replay.stopReplay}
+              onPause={replay.pauseReplay}
+              onResume={replay.resumeReplay}
               error={replay.error}
               llmEnabled={settings.llmEnabled}
               hasApiKey={settings.hasApiKey}

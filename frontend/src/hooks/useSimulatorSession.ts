@@ -260,7 +260,10 @@ export function useSimulatorSession() {
 
   const startSession = useCallback(async (config: SimulatorConfig) => {
     cancelPendingOperations();
-    setState({ ...initialState, status: "setup" });
+
+    // Preserve llmApiKey across session start - it's set before startSession is called
+    const preservedApiKey = llmApiKeyRef.current;
+    setState({ ...initialState, status: "setup", llmApiKey: preservedApiKey });
 
     try {
       const res = await fetch(`${API_BASE}/api/simulator/sessions`, {
@@ -282,6 +285,7 @@ export function useSimulatorSession() {
 
       setState({
         ...initialState,
+        llmApiKey: preservedApiKey,  // Preserve API key
         status: "drafting",
         sessionId: data.session_id,
         blueTeam: data.blue_team,
@@ -299,6 +303,10 @@ export function useSimulatorSession() {
       // Fetch recommendations if it's our turn
       if (data.is_our_turn) {
         fetchRecommendations(data.session_id, actionCount);
+        // Also fetch LLM insights if API key is set
+        if (preservedApiKey) {
+          fetchLlmInsights(data.session_id, actionCount, preservedApiKey);
+        }
       } else {
         pendingTimerRef.current = setTimeout(() => {
           triggerEnemyAction(data.session_id);
@@ -307,7 +315,7 @@ export function useSimulatorSession() {
     } catch (err) {
       setState((s) => ({ ...s, error: String(err) }));
     }
-  }, [cancelPendingOperations, triggerEnemyAction, fetchRecommendations]);
+  }, [cancelPendingOperations, triggerEnemyAction, fetchRecommendations, fetchLlmInsights]);
 
   const submitAction = useCallback(async (champion: string) => {
     const currentSessionId = state.sessionId;
@@ -434,6 +442,11 @@ export function useSimulatorSession() {
 
       if (isOurTurn) {
         fetchRecommendations(currentSessionId, actionCount);
+        // Also fetch LLM insights if API key is set
+        const currentApiKey = llmApiKeyRef.current;
+        if (currentApiKey) {
+          fetchLlmInsights(currentSessionId, actionCount, currentApiKey);
+        }
       } else {
         pendingTimerRef.current = setTimeout(() => {
           triggerEnemyAction(currentSessionId);
@@ -442,7 +455,7 @@ export function useSimulatorSession() {
     } catch (err) {
       setState((s) => ({ ...s, error: String(err) }));
     }
-  }, [state.sessionId, state.coachingSide, triggerEnemyAction, fetchRecommendations]);
+  }, [state.sessionId, state.coachingSide, triggerEnemyAction, fetchRecommendations, fetchLlmInsights]);
 
   const endSession = useCallback(async () => {
     cancelPendingOperations();

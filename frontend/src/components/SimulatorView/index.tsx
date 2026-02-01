@@ -2,7 +2,8 @@
 import { useMemo, useState, useCallback } from "react";
 import { PhaseIndicator, TeamPanel, BanRow } from "../draft";
 import { ChampionPool } from "../ChampionPool";
-import { RoleRecommendationPanel } from "../recommendations/RoleRecommendationPanel";
+// RoleRecommendationPanel kept for future use but not currently rendered
+// import { RoleRecommendationPanel } from "../recommendations/RoleRecommendationPanel";
 import { InsightPanel } from "../recommendations/InsightPanel";
 import { ChampionPortrait } from "../shared/ChampionPortrait";
 import { getAllChampionNames } from "../../utils/dataDragon";
@@ -21,6 +22,21 @@ import type {
 
 // Champion list derived from Data Dragon mapping
 const ALL_CHAMPIONS = getAllChampionNames();
+
+// Score normalization anchors - maps raw scores to intuitive 0-100% range
+// Based on observed score distributions:
+// - Ban scores: raw 40-56% → normalized uses floor=0.35, ceiling=0.65
+// - Pick scores: raw 44-71% → normalized uses floor=0.40, ceiling=0.80
+const SCORE_ANCHORS = {
+  ban: { floor: 0.35, ceiling: 0.65 },
+  pick: { floor: 0.40, ceiling: 0.80 },
+};
+
+function normalizeScore(rawScore: number, type: "ban" | "pick"): number {
+  const { floor, ceiling } = SCORE_ANCHORS[type];
+  const normalized = (rawScore - floor) / (ceiling - floor);
+  return Math.max(0, Math.min(1, normalized)); // Clamp to 0-1
+}
 
 // Type guard to differentiate recommendation types
 function isPickRecommendation(rec: SimulatorRecommendation): rec is SimulatorPickRecommendation {
@@ -93,14 +109,18 @@ function RecommendationCard({
   const reasons = recommendation.reasons;
 
   // Determine score/priority and player info
-  let displayScore: number;
+  let rawScore: number;
+  let normalizedScore: number;
   let displayLabel: string;
   let playerInfo: string | null = null;
   let topFactors: Array<{ name: string; value: number; label: string }> = [];
+  let scoreType: "ban" | "pick" = "pick";
 
   if (isPickRecommendation(recommendation)) {
-    displayScore = recommendation.score;
-    displayLabel = `${Math.round(displayScore * 100)}%`;
+    rawScore = recommendation.score;
+    scoreType = "pick";
+    normalizedScore = normalizeScore(rawScore, scoreType);
+    displayLabel = `${Math.round(normalizedScore * 100)}%`;
 
     // Get player for suggested role
     const playerName = getPlayerForRole(ourTeam, recommendation.suggested_role);
@@ -111,17 +131,21 @@ function RecommendationCard({
     // Get top 3 factors
     topFactors = getTopFactors(recommendation.components);
   } else if (isBanRecommendation(recommendation)) {
-    displayScore = recommendation.priority;
-    displayLabel = `${Math.round(displayScore * 100)}%`;
+    rawScore = recommendation.priority;
+    scoreType = "ban";
+    normalizedScore = normalizeScore(rawScore, scoreType);
+    displayLabel = `${Math.round(normalizedScore * 100)}%`;
     playerInfo = recommendation.target_player || null;
   } else {
-    displayScore = 0.5;
+    rawScore = 0.5;
+    normalizedScore = 0.5;
     displayLabel = "N/A";
   }
 
+  // Color thresholds based on normalized score
   const scoreColor =
-    displayScore >= 0.7 ? "text-success" :
-    displayScore >= 0.5 ? "text-warning" : "text-danger";
+    normalizedScore >= 0.7 ? "text-success" :
+    normalizedScore >= 0.5 ? "text-warning" : "text-danger";
 
   const cardBorder = isTopPick
     ? "border-magic-bright shadow-[0_0_20px_rgba(10,200,185,0.4)]"
@@ -215,6 +239,11 @@ function RecommendationCard({
                   ))}
                 </div>
               )}
+
+              {/* Raw score for transparency */}
+              <div className="text-[9px] text-text-tertiary mt-1 pt-1 border-t border-gold-dim/20">
+                Raw score: {(rawScore * 100).toFixed(1)}%
+              </div>
             </div>
           </div>
         </div>
@@ -229,7 +258,7 @@ export function SimulatorView({
   coachingSide,
   draftState,
   recommendations,
-  roleGroupedRecommendations,
+  roleGroupedRecommendations: _roleGroupedRecommendations, // Keep prop for future use
   isOurTurn,
   isEnemyThinking,
   gameNumber,
@@ -242,8 +271,9 @@ export function SimulatorView({
   llmLoading = false,
   llmInsight,
 }: SimulatorViewProps) {
-  // Toggle state for showing role-grouped view (default OFF as it's supplemental)
-  const [showRoleGrouped, setShowRoleGrouped] = useState(false);
+  // Role-grouped view state (kept for future use but not rendered)
+  const [_showRoleGroupedFuture, _setShowRoleGroupedFuture] = useState(false);
+  void _roleGroupedRecommendations; void _showRoleGroupedFuture; void _setShowRoleGroupedFuture;
   // Track which recommendation cards are expanded
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
@@ -367,21 +397,7 @@ export function SimulatorView({
               {isBanPhase ? "Ban" : "Pick"} Recommendations
             </h3>
             <div className="flex items-center gap-2 sm:gap-3">
-              {/* Role-Grouped Toggle - only show during pick phase, hide on small screens */}
-              {!isBanPhase && roleGroupedRecommendations && (
-                <button
-                  onClick={() => setShowRoleGrouped(!showRoleGrouped)}
-                  className={`
-                    hidden sm:block text-xs font-medium px-2 py-0.5 rounded border transition-colors
-                    ${showRoleGrouped
-                      ? "bg-gold-dim/20 border-gold-dim text-gold"
-                      : "bg-transparent border-gold-dim/30 text-text-tertiary hover:text-text-secondary hover:border-gold-dim/50"
-                    }
-                  `}
-                >
-                  {showRoleGrouped ? "Hide" : "Show"} By Role
-                </button>
-              )}
+              {/* Role-Grouped Toggle - hidden for now, keeping code for future use */}
               <span className={`
                 text-[10px] sm:text-xs font-medium uppercase px-1.5 sm:px-2 py-0.5 rounded
                 ${coachingSide === "blue" ? "bg-blue-team/20 text-blue-team" : "bg-red-team/20 text-red-team"}
@@ -405,50 +421,25 @@ export function SimulatorView({
             ))}
           </div>
 
-          {/* Role-Grouped Supplemental Panel */}
-          {!isBanPhase && showRoleGrouped && roleGroupedRecommendations && (
+          {/* Role-Grouped Supplemental Panel - hidden for now, keeping code for future use
+          {!isBanPhase && _showRoleGrouped && _roleGroupedRecommendations && (
             <div className="mt-3 sm:mt-4">
               <RoleRecommendationPanel
-                roleGrouped={roleGroupedRecommendations}
+                roleGrouped={_roleGroupedRecommendations}
                 ourTeam={coachingSide === "blue" ? blueTeam : redTeam}
                 onChampionClick={onChampionSelect}
               />
             </div>
           )}
+          */}
 
-          {/* AI Insights Panel */}
+          {/* AI Insights Panel - includes analysis and reranked picks */}
           <div className="mt-4">
             <InsightPanel
               insight={llmInsight?.draft_analysis ?? null}
               isLoading={llmLoading}
+              reranked={llmInsight?.status === "ready" ? llmInsight.reranked : undefined}
             />
-
-            {/* Show reranked recommendations if available */}
-            {llmInsight?.status === "ready" && llmInsight.reranked && llmInsight.reranked.length > 0 && (
-              <div className="mt-3 space-y-2">
-                <h4 className="text-sm font-medium text-magic uppercase tracking-wide">
-                  AI Reranked Picks
-                </h4>
-                {llmInsight.reranked.slice(0, 3).map((rec) => (
-                  <div
-                    key={rec.champion_name}
-                    className="bg-lol-dark/50 rounded p-2 border border-magic/20"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-gold-bright font-medium">
-                        #{rec.new_rank} {rec.champion_name}
-                      </span>
-                      <span className="text-xs text-text-tertiary">
-                        (was #{rec.original_rank})
-                      </span>
-                    </div>
-                    <p className="text-xs text-text-secondary mt-1">
-                      {rec.reasoning}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </div>
       )}
