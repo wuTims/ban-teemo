@@ -51,6 +51,7 @@ export function DraftBoard({ blueTeam, redTeam, draftState, blueCompWithRoles, r
           isActive={nextTeam === "blue" && nextAction === "pick"}
           currentPickIndex={getCurrentPickIndex(bluePicks, nextTeam, nextAction, "blue")}
           picksWithRoles={blueCompWithRoles ?? undefined}
+          players={blueTeam?.players}
         />
 
         {/* Center: Ban Track */}
@@ -85,6 +86,7 @@ export function DraftBoard({ blueTeam, redTeam, draftState, blueCompWithRoles, r
           isActive={nextTeam === "red" && nextAction === "pick"}
           currentPickIndex={getCurrentPickIndex(redPicks, nextTeam, nextAction, "red")}
           picksWithRoles={redCompWithRoles ?? undefined}
+          players={redTeam?.players}
         />
       </div>
     </div>

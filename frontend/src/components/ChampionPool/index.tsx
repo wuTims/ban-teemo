@@ -61,7 +61,7 @@ export function ChampionPool({
   const sortedChampions = useMemo(() => [...allChampions].sort(), [allChampions]);
 
   return (
-    <div className="bg-lol-dark rounded-lg p-2 sm:p-3 lg:p-4 flex flex-col h-[350px] sm:h-[400px] lg:h-[900px] xl:h-[1000px]">
+    <div className="bg-lol-dark rounded-lg p-2 sm:p-3 lg:p-4 flex flex-col h-[400px] lg:h-[1500px] xl:h-[1500px] 2xl:h-[1100px]">
       {/* Search */}
       <input
         type="text"
