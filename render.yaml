@@ -15,7 +15,7 @@ services:
     runtime: docker
 
     # Docker configuration
-    dockerfilePath: ./deploy/docker/Dockerfile
+    dockerfilePath: ./Dockerfile
     dockerContext: .
 
     # Instance configuration

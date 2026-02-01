@@ -6,13 +6,13 @@ Render hosts the FastAPI backend with WebSocket support.
 
 ### Method 1: Blueprint (Recommended)
 
-The `render.yaml` Blueprint automates service provisioning.
+The `render.yaml` Blueprint (at repository root) automates service provisioning.
 
 1. Push code to GitHub/GitLab
 2. Go to [Render Dashboard](https://dashboard.render.com)
 3. Click **New** > **Blueprint**
 4. Connect your repository
-5. Render detects `deploy/render/render.yaml` automatically
+5. Render detects `/render.yaml` automatically
 6. Review and click **Apply**
 
 ### Method 2: Manual Setup
@@ -25,7 +25,7 @@ The `render.yaml` Blueprint automates service provisioning.
    - **Region**: Oregon (or closest to users)
    - **Branch**: `main`
    - **Runtime**: Docker
-   - **Dockerfile Path**: `deploy/docker/Dockerfile`
+   - **Dockerfile Path**: `Dockerfile`
    - **Docker Context**: `.` (repository root)
    - **Plan**: Free
 
