@@ -12,10 +12,10 @@ from ban_teemo.repositories.draft_repository import DraftRepository
 class EnemySimulatorService:
     """Generates enemy picks/bans from historical data."""
 
-    def __init__(self, data_path: Optional[str] = None):
-        if data_path is None:
-            data_path = str(Path(__file__).parents[4] / "data")
-        self.repo = DraftRepository(data_path)
+    def __init__(self, database_path: Optional[str] = None):
+        if database_path is None:
+            database_path = str(Path(__file__).parents[4] / "data" / "draft_data.duckdb")
+        self.repo = DraftRepository(database_path)
 
     def initialize_enemy_strategy(self, enemy_team_id: str) -> EnemyStrategy:
         """Load reference game, fallbacks, and champion weights."""

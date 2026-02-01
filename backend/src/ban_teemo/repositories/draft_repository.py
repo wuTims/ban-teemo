@@ -12,20 +12,19 @@ from ban_teemo.utils.role_normalizer import normalize_role, sort_by_role, ROLE_O
 class DraftRepository:
     """Data access layer - DuckDB queries against pre-built database file."""
 
-    def __init__(self, data_path: str, knowledge_dir: Path | None = None):
+    def __init__(self, database_path: str, knowledge_dir: Path | None = None):
         """Initialize with path to DuckDB database.
 
         Args:
-            data_path: Path to directory containing draft_data.duckdb
-                      (built from CSV files by scripts/build_duckdb.py)
+            database_path: Path to draft_data.duckdb file
+                          (built from CSV files by scripts/build_duckdb.py)
             knowledge_dir: Optional path to knowledge directory containing player_roles.json.
-                          If not provided, will try to find it relative to data_path.
+                          If not provided, will try to find it relative to database_path.
 
         Raises:
             FileNotFoundError: If draft_data.duckdb doesn't exist
         """
-        self.data_path = Path(data_path) if isinstance(data_path, str) else data_path
-        self._db_path = self.data_path / "draft_data.duckdb"
+        self._db_path = Path(database_path) if isinstance(database_path, str) else database_path
 
         if not self._db_path.exists():
             raise FileNotFoundError(
@@ -53,10 +52,9 @@ class DraftRepository:
         if knowledge_dir:
             search_paths.append(knowledge_dir / "player_roles.json")
 
-        # Common relative paths from data_path
+        # Common relative paths from database path
         search_paths.extend([
-            self.data_path.parent / "knowledge" / "player_roles.json",
-            self.data_path.parent.parent / "knowledge" / "player_roles.json",
+            self._db_path.parent / "knowledge" / "player_roles.json",
             Path(__file__).parent.parent.parent.parent.parent / "knowledge" / "player_roles.json",
         ])
 

@@ -17,7 +17,6 @@ def mock_services():
     """Mock the services to avoid needing real data."""
     from pathlib import Path
     mock_repo = MagicMock()
-    mock_repo.data_path = Path("/fake/path")
     mock_repo._db_path = Path("/fake/path/draft_data.duckdb")
 
     # Mock get_team_context to return a fake team

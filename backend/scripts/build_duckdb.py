@@ -19,13 +19,16 @@ def build_duckdb(data_path: Path, output_path: Path | None = None) -> Path:
 
     Args:
         data_path: Directory containing CSV files
-        output_path: Where to write the .duckdb file (default: data_path/draft_data.duckdb)
+        output_path: Where to write the .duckdb file (default: repo_root/draft_data.duckdb)
 
     Returns:
         Path to the created database file
     """
     if output_path is None:
-        output_path = data_path / "draft_data.duckdb"
+        # Output to data/ directory by default
+        repo_root = Path(__file__).parent.parent.parent
+        output_path = repo_root / "data" / "draft_data.duckdb"
+        output_path.parent.mkdir(exist_ok=True)
 
     # Remove old DB if exists
     if output_path.exists():

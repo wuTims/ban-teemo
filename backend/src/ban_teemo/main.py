@@ -17,18 +17,31 @@ from ban_teemo.services.replay_manager import ReplayManager
 from ban_teemo.services.draft_service import DraftService
 
 
-# Data path - use outputs/full_2024_2025_v2/csv relative to project root
-# __file__ = .../backend/src/ban_teemo/main.py -> need 4 parents to reach ban-teemo/
-DATA_PATH = Path(__file__).parent.parent.parent.parent / "outputs" / "full_2024_2025_v2" / "csv"
+# Database path - use settings or default to draft_data.duckdb in repo root
+def get_database_path() -> Path:
+    """Get the database path from settings or default location."""
+    if settings.database_path:
+        db_path = Path(settings.database_path)
+        if db_path.is_absolute():
+            return db_path
+        # Relative path - resolve from repo root
+        repo_root = Path(__file__).parent.parent.parent.parent
+        return repo_root / settings.database_path
+    # Default: data/draft_data.duckdb in repo root
+    return Path(__file__).parent.parent.parent.parent / "data" / "draft_data.duckdb"
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler for startup/shutdown events."""
+    db_path = get_database_path()
     # Startup: Initialize repository and managers
-    app.state.repository = DraftRepository(str(DATA_PATH))
-    app.state.replay_manager = ReplayManager()
-    app.state.service = DraftService(str(DATA_PATH))
+    if not hasattr(app.state, "repository"):
+        app.state.repository = DraftRepository(str(db_path))
+    if not hasattr(app.state, "replay_manager"):
+        app.state.replay_manager = ReplayManager()
+    if not hasattr(app.state, "service"):
+        app.state.service = DraftService(str(db_path))
     yield
     # Shutdown: Clean up resources
     pass

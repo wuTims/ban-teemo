@@ -16,14 +16,14 @@ from ban_teemo.services.ban_recommendation_service import BanRecommendationServi
 class DraftService:
     """Core business logic for draft state and recommendations."""
 
-    def __init__(self, data_path: str, knowledge_dir: Optional[Path] = None):
+    def __init__(self, database_path: str, knowledge_dir: Optional[Path] = None):
         """Initialize the draft service.
 
         Args:
-            data_path: Path to CSV data directory (for future analytics)
+            database_path: Path to DuckDB database file
             knowledge_dir: Optional path to knowledge directory for recommendation engines
         """
-        self.data_path = data_path
+        self.database_path = database_path
         self.pick_engine = PickRecommendationEngine(knowledge_dir)
         self.ban_service = BanRecommendationService(knowledge_dir)
 
@@ -156,6 +156,8 @@ class DraftService:
                     base_score=rec.get("base_score"),
                     synergy_multiplier=rec.get("synergy_multiplier"),
                     components=rec.get("components", {}),
+                    proficiency_source=rec.get("proficiency_source"),
+                    proficiency_player=rec.get("proficiency_player"),
                 )
                 for rec in raw_picks
             ]

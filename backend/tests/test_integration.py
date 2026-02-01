@@ -147,13 +147,13 @@ def test_data_dir():
             """)
         conn.close()
 
-        yield str(data_path)
+        yield str(db_path)
 
 
 @pytest.fixture
 def repository(test_data_dir):
     """Create a DraftRepository with test data."""
-    return DraftRepository(test_data_dir)
+    return DraftRepository(test_data_dir)  # test_data_dir is now the db path
 
 
 # =============================================================================
@@ -224,7 +224,7 @@ class TestServiceIntegration:
 
     def test_enemy_simulator_uses_real_draft_data(self, repository):
         """EnemySimulatorService should load strategy from real game data."""
-        service = EnemySimulatorService(data_path=repository.data_path)
+        service = EnemySimulatorService(database_path=str(repository._db_path))
 
         strategy = service.initialize_enemy_strategy("oe:team:geng")
 
@@ -235,7 +235,7 @@ class TestServiceIntegration:
 
     def test_enemy_simulator_generates_valid_actions(self, repository):
         """Enemy simulator should generate picks from historical data."""
-        service = EnemySimulatorService(data_path=repository.data_path)
+        service = EnemySimulatorService(database_path=str(repository._db_path))
         strategy = service.initialize_enemy_strategy("oe:team:geng")
 
         # Generate an action (enemy's first ban)

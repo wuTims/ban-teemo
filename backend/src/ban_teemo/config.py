@@ -22,12 +22,11 @@ class Settings(BaseSettings):
     # CORS - comma-separated origins
     cors_origins: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
 
-    # Data path (directory containing draft_data.duckdb)
-    data_path: str = "outputs/full_2024_2025_v2/csv"
+    # Database path (DuckDB file)
+    database_path: str = "data/draft_data.duckdb"
 
-    # LLM Providers
-    groq_api_key: str = ""
-    together_api_key: str = ""
+    # LLM Provider (Nebius AI Studio)
+    nebius_api_key: str = ""
 
     # Feature flags
     enable_llm: bool = True
