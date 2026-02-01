@@ -1,0 +1,75 @@
+# =============================================================================
+# Docker Build Exclusions
+# =============================================================================
+# Reduces build context size and prevents sensitive files from being included
+
+# Version control
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv
+venv
+ENV
+.pytest_cache
+*.egg-info
+.eggs
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Testing
+.coverage
+htmlcov
+.tox
+.nox
+
+# Documentation (not needed at runtime)
+docs
+*.md
+!README.md
+
+# Frontend (deployed separately)
+deepdraft
+frontend
+node_modules
+
+# Development files
+Makefile
+*.csv
+!outputs/full_2024_2025_v2/csv/*.csv
+*.json
+!knowledge/*.json
+!outputs/full_2024_2025_v2/csv/*.json
+
+# Logs and temp files
+logs
+*.log
+.DS_Store
+Thumbs.db
+
+# Environment files (secrets - set via dashboard)
+.env
+.env.*
+!.env.example
+
+# Deployment configs (not needed in image)
+deploy
+
+# Scripts (development only)
+scripts
+
+# Results and experiments
+results
+
+# Claude config
+.claude

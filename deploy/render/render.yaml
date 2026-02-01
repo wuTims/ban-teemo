@@ -1,0 +1,65 @@
+# Render Blueprint - Infrastructure as Code
+# Documentation: https://render.com/docs/blueprint-spec
+#
+# Usage:
+#   1. Push this file to your repository
+#   2. In Render Dashboard: New > Blueprint > Connect Repo
+#   3. Render auto-detects this file and provisions services
+
+services:
+  # =============================================================================
+  # Backend API Service
+  # =============================================================================
+  - type: web
+    name: ban-teemo-api
+    runtime: docker
+
+    # Docker configuration
+    dockerfilePath: ./deploy/docker/Dockerfile
+    dockerContext: .
+
+    # Instance configuration
+    plan: free  # Options: free, starter, standard, pro
+    region: ohio  # Closest to most users, options: oregon, ohio, frankfurt, singapore
+
+    # Health check configuration
+    healthCheckPath: /health
+
+    # Build & Deploy settings
+    branch: main  # Or your production branch
+    autoDeploy: true  # Auto-deploy on push to branch
+
+    # Environment variables
+    envVars:
+      # Port is auto-set by Render, but we reference it explicitly
+      - key: PORT
+        value: 10000
+
+      # CORS - will be updated after frontend deploy
+      - key: CORS_ORIGINS
+        value: "https://your-app.pages.dev,http://localhost:5173"
+
+      # LLM Configuration (optional - set in dashboard for security)
+      - key: ENABLE_LLM
+        value: "true"
+
+      # These should be set manually in dashboard (sensitive)
+      # - key: NEBIUS_API_KEY
+      #   sync: false
+      # - key: GROQ_API_KEY
+      #   sync: false
+
+# =============================================================================
+# Notes
+# =============================================================================
+#
+# After deployment:
+# 1. Go to Render Dashboard > ban-teemo-api > Environment
+# 2. Update CORS_ORIGINS with your actual Cloudflare Pages URL
+# 3. Add any API keys (NEBIUS_API_KEY, GROQ_API_KEY) as secret environment variables
+#
+# Free tier limitations:
+# - Service sleeps after 15 minutes of inactivity
+# - Cold starts take 30-60 seconds
+# - 750 free hours/month across all services
+# - 512MB RAM, shared CPU
