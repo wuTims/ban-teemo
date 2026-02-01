@@ -2,6 +2,7 @@
 
 from functools import lru_cache
 
+from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -19,8 +20,14 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = 8000
 
-    # CORS - comma-separated origins
-    cors_origins: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
+    # CORS - comma-separated origins (env var: CORS_ORIGINS)
+    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+
+    @computed_field
+    @property
+    def cors_origins_list(self) -> list[str]:
+        """Parse CORS origins as a list."""
+        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
     # Database path (DuckDB file)
     database_path: str = "data/draft_data.duckdb"
