@@ -19,6 +19,8 @@ from ban_teemo.services.team_evaluation_service import TeamEvaluationService
 from ban_teemo.services.scoring_logger import ScoringLogger
 from ban_teemo.services.scorers.flex_resolver import FlexResolver
 from ban_teemo.repositories.draft_repository import DraftRepository
+from ban_teemo.services.llm_reranker import LLMReranker
+from ban_teemo.services.series_context_builder import SeriesContextBuilder
 
 # Constants
 DEFAULT_PATCH_VERSION = "15.18"
@@ -133,6 +135,11 @@ class ActionRequest(BaseModel):
 
 class CompleteGameRequest(BaseModel):
     winner: Literal["blue", "red"]
+
+
+class InsightsRequest(BaseModel):
+    api_key: str
+    action_count: int  # To detect stale requests
 
 
 @router.post("/sessions", status_code=201)
@@ -583,6 +590,174 @@ async def get_evaluation(request: Request, session_id: str):
             "matchup_advantage": evaluation["matchup_advantage"],
             "matchup_description": evaluation["matchup_description"],
         }
+
+
+@router.post("/sessions/{session_id}/insights")
+async def get_insights(request: Request, session_id: str, body: InsightsRequest):
+    """Get LLM-enhanced draft insights for current state.
+
+    This endpoint blocks until LLM completes (with timeout).
+    Frontend should call this async after each action.
+    """
+    session, lock = _get_session_with_lock(session_id)
+    with lock:
+        now = time.time()
+        if _is_session_expired(session, now):
+            raise HTTPException(status_code=404, detail="Session expired")
+        _touch_session(session, now)
+
+        draft_state = session.draft_state
+
+        # Validate action_count to reject stale requests
+        if body.action_count != len(draft_state.actions):
+            return {
+                "status": "stale",
+                "message": f"Request for action {body.action_count}, current is {len(draft_state.actions)}"
+            }
+
+        if draft_state.current_phase == DraftPhase.COMPLETE:
+            return {"status": "complete", "insights": None}
+
+        _, pick_engine, ban_service, _, _ = _get_or_create_services(request)
+
+        # Determine teams and picks based on coaching side
+        our_team = session.blue_team if session.coaching_side == "blue" else session.red_team
+        enemy_team = session.red_team if session.coaching_side == "blue" else session.blue_team
+        our_picks = draft_state.blue_picks if session.coaching_side == "blue" else draft_state.red_picks
+        enemy_picks = draft_state.red_picks if session.coaching_side == "blue" else draft_state.blue_picks
+        banned = draft_state.blue_bans + draft_state.red_bans
+
+        # Include fearless blocked in unavailable set
+        all_banned = list(set(banned) | session.fearless_blocked_set)
+
+        team_players = [{"name": p.name, "role": p.role} for p in our_team.players]
+        enemy_players = [{"name": p.name, "role": p.role} for p in enemy_team.players]
+
+        # Build series context from previous games
+        series_context = None
+        if session.current_game > 1 and session.game_results:
+            series_context = SeriesContextBuilder.from_game_results(
+                game_number=session.current_game,
+                previous_results=[{
+                    "winner": r.winner,
+                    "blue_comp": r.blue_comp,
+                    "red_comp": r.red_comp,
+                    "blue_bans": r.blue_bans,
+                    "red_bans": r.red_bans,
+                } for r in session.game_results],
+                our_side=session.coaching_side,
+            )
+
+        # Build draft context for LLM
+        draft_context = {
+            "phase": draft_state.current_phase.value,
+            "patch": draft_state.patch_version,
+            "our_team": our_team.name,
+            "enemy_team": enemy_team.name,
+            "our_picks": our_picks,
+            "enemy_picks": enemy_picks,
+            "banned": all_banned,
+            "draft_mode": session.draft_mode,
+            "fearless_blocked": list(session.fearless_blocked_set) if session.draft_mode == "fearless" else [],
+        }
+
+        # Get candidates from recommendation engine
+        if draft_state.next_action == "ban":
+            candidates = ban_service.get_ban_recommendations(
+                enemy_team_id=enemy_team.id,
+                our_picks=our_picks,
+                enemy_picks=enemy_picks,
+                banned=all_banned,
+                phase=draft_state.current_phase.value,
+                limit=15,
+            )
+            candidates = [
+                {
+                    "champion_name": c["champion_name"],
+                    "priority": c["priority"],
+                    "target_player": c.get("target_player"),
+                    "components": c.get("components", {}),
+                    "reasons": c.get("reasons", []),
+                }
+                for c in candidates
+            ]
+        else:
+            candidates = pick_engine.get_recommendations(
+                team_players=team_players,
+                our_picks=our_picks,
+                enemy_picks=enemy_picks,
+                banned=all_banned,
+                limit=15,
+            )
+            candidates = [
+                {
+                    "champion_name": c["champion_name"],
+                    "score": c.get("score", c.get("confidence", 0)),
+                    "suggested_role": c.get("suggested_role"),
+                    "components": c.get("components", {}),
+                    "reasons": c.get("reasons", []),
+                    "proficiency_player": c.get("proficiency_player"),
+                }
+                for c in candidates
+            ]
+
+        # Call LLM reranker
+        reranker = LLMReranker(api_key=body.api_key, timeout=15.0)
+        try:
+            if draft_state.next_action == "ban":
+                result = await reranker.rerank_bans(
+                    candidates=candidates,
+                    draft_context=draft_context,
+                    our_players=team_players,
+                    enemy_players=enemy_players,
+                    limit=5,
+                    series_context=series_context,
+                )
+            else:
+                result = await reranker.rerank_picks(
+                    candidates=candidates,
+                    draft_context=draft_context,
+                    team_players=team_players,
+                    enemy_players=enemy_players,
+                    limit=5,
+                    series_context=series_context,
+                )
+
+            return {
+                "status": "ready",
+                "action_count": body.action_count,
+                "for_team": session.coaching_side,
+                "draft_analysis": result.draft_analysis,
+                "reranked": [
+                    {
+                        "champion_name": r.champion,
+                        "original_rank": r.original_rank,
+                        "new_rank": r.new_rank,
+                        "confidence": r.confidence,
+                        "reasoning": r.reasoning,
+                        "strategic_factors": r.strategic_factors,
+                    }
+                    for r in result.reranked
+                ],
+                "additional_suggestions": [
+                    {
+                        "champion_name": s.champion,
+                        "reasoning": s.reasoning,
+                        "confidence": s.confidence,
+                        "role": s.role,
+                        "for_player": s.for_player,
+                    }
+                    for s in result.additional_suggestions
+                ],
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "action_count": body.action_count,
+                "message": str(e),
+            }
+        finally:
+            await reranker.close()
 
 
 @router.get("/teams")
