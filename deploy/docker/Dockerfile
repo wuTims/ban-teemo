@@ -63,7 +63,9 @@ COPY . /tmp/context/
 RUN if [ -z "$DATA_URL" ]; then \
         echo "Copying data from build context" && \
         cp -r /tmp/context/outputs /data/ 2>/dev/null || true && \
-        cp -r /tmp/context/knowledge /data/ 2>/dev/null || true; \
+        cp -r /tmp/context/knowledge /data/ 2>/dev/null || true && \
+        mkdir -p /data/data && \
+        cp /tmp/context/data/draft_data.duckdb /data/data/ 2>/dev/null || true; \
     fi && \
     rm -rf /tmp/context
 
@@ -72,7 +74,9 @@ RUN ls -la /data/ && \
     test -d /data/outputs/full_2024_2025_v2/csv || \
     (echo "ERROR: outputs/full_2024_2025_v2/csv not found" && exit 1) && \
     test -d /data/knowledge || \
-    (echo "ERROR: knowledge directory not found" && exit 1)
+    (echo "ERROR: knowledge directory not found" && exit 1) && \
+    test -f /data/data/draft_data.duckdb || \
+    (echo "ERROR: data/draft_data.duckdb not found" && exit 1)
 
 # -----------------------------------------------------------------------------
 # Stage 3: Production runtime
@@ -98,6 +102,7 @@ COPY backend/src/ban_teemo ./backend/src/ban_teemo
 # Copy data files from data stage
 COPY --from=data /data/outputs ./outputs
 COPY --from=data /data/knowledge ./knowledge
+COPY --from=data /data/data ./data
 
 # Set ownership
 RUN chown -R appuser:appuser /app

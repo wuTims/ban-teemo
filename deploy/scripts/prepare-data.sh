@@ -17,8 +17,9 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-DATA_DIR="$PROJECT_ROOT/outputs/full_2024_2025_v2/csv"
+CSV_DIR="$PROJECT_ROOT/outputs/full_2024_2025_v2/csv"
 KNOWLEDGE_DIR="$PROJECT_ROOT/knowledge"
+DUCKDB_FILE="$PROJECT_ROOT/data/draft_data.duckdb"
 ARCHIVE_NAME="ban-teemo-data.tar.gz"
 
 # Colors for output
@@ -35,8 +36,8 @@ create_archive() {
     log_info "Creating data archive..."
 
     # Verify data exists
-    if [[ ! -d "$DATA_DIR" ]]; then
-        log_error "Data directory not found: $DATA_DIR"
+    if [[ ! -d "$CSV_DIR" ]]; then
+        log_error "CSV directory not found: $CSV_DIR"
         log_info "Run the data ingestion scripts first to populate this directory."
         exit 1
     fi
@@ -46,12 +47,20 @@ create_archive() {
         exit 1
     fi
 
+    if [[ ! -f "$DUCKDB_FILE" ]]; then
+        log_error "DuckDB file not found: $DUCKDB_FILE"
+        log_info "Run: cd backend && uv run python scripts/build_duckdb.py"
+        exit 1
+    fi
+
     cd "$PROJECT_ROOT"
 
     # Create archive with data files
+    # Note: data/draft_data.duckdb is the pre-built database used by the app
     tar -czvf "$ARCHIVE_NAME" \
         outputs/full_2024_2025_v2/csv \
-        knowledge
+        knowledge \
+        data/draft_data.duckdb
 
     # Show archive info
     ARCHIVE_SIZE=$(du -h "$ARCHIVE_NAME" | cut -f1)
