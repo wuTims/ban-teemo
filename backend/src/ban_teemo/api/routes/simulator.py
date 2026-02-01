@@ -108,8 +108,11 @@ def _get_or_create_services(request: Request) -> tuple[
     if not hasattr(request.app.state, "enemy_simulator_service"):
         database_path = str(repo._db_path)
         request.app.state.enemy_simulator_service = EnemySimulatorService(database_path)
-        request.app.state.pick_engine = PickRecommendationEngine()
-        request.app.state.ban_service = BanRecommendationService(draft_repository=repo)
+        request.app.state.pick_engine = PickRecommendationEngine(simulator_mode=True)
+        request.app.state.ban_service = BanRecommendationService(
+            draft_repository=repo,
+            simulator_mode=True,
+        )
         request.app.state.team_eval_service = TeamEvaluationService()
 
     return (
@@ -607,157 +610,170 @@ async def get_insights(request: Request, session_id: str, body: InsightsRequest)
         _touch_session(session, now)
 
         draft_state = session.draft_state
+        action_count = len(draft_state.actions)
 
         # Validate action_count to reject stale requests
-        if body.action_count != len(draft_state.actions):
+        if body.action_count != action_count:
             return {
                 "status": "stale",
-                "message": f"Request for action {body.action_count}, current is {len(draft_state.actions)}"
+                "message": f"Request for action {body.action_count}, current is {action_count}"
             }
 
         if draft_state.current_phase == DraftPhase.COMPLETE:
             return {"status": "complete", "insights": None}
 
-        _, pick_engine, ban_service, _, _ = _get_or_create_services(request)
+        coaching_side = session.coaching_side
+        draft_mode = session.draft_mode
+        fearless_blocked = list(session.fearless_blocked_set)
+        current_game = session.current_game
+        previous_results = [
+            {
+                "winner": r.winner,
+                "blue_comp": r.blue_comp,
+                "red_comp": r.red_comp,
+                "blue_bans": r.blue_bans,
+                "red_bans": r.red_bans,
+            }
+            for r in session.game_results
+        ]
 
         # Determine teams and picks based on coaching side
-        our_team = session.blue_team if session.coaching_side == "blue" else session.red_team
-        enemy_team = session.red_team if session.coaching_side == "blue" else session.blue_team
-        our_picks = draft_state.blue_picks if session.coaching_side == "blue" else draft_state.red_picks
-        enemy_picks = draft_state.red_picks if session.coaching_side == "blue" else draft_state.blue_picks
-        banned = draft_state.blue_bans + draft_state.red_bans
+        our_team = session.blue_team if coaching_side == "blue" else session.red_team
+        enemy_team = session.red_team if coaching_side == "blue" else session.blue_team
+        our_picks = list(draft_state.blue_picks if coaching_side == "blue" else draft_state.red_picks)
+        enemy_picks = list(draft_state.red_picks if coaching_side == "blue" else draft_state.blue_picks)
+        banned = list(draft_state.blue_bans + draft_state.red_bans)
+        phase_value = draft_state.current_phase.value
+        patch_version = draft_state.patch_version
+        next_action = draft_state.next_action
 
-        # Include fearless blocked in unavailable set
-        all_banned = list(set(banned) | session.fearless_blocked_set)
+    _, pick_engine, ban_service, _, _ = _get_or_create_services(request)
 
-        team_players = [{"name": p.name, "role": p.role} for p in our_team.players]
-        enemy_players = [{"name": p.name, "role": p.role} for p in enemy_team.players]
+    # Include fearless blocked in unavailable set
+    all_banned = list(set(banned) | set(fearless_blocked))
 
-        # Build series context from previous games
-        series_context = None
-        if session.current_game > 1 and session.game_results:
-            series_context = SeriesContextBuilder.from_game_results(
-                game_number=session.current_game,
-                previous_results=[{
-                    "winner": r.winner,
-                    "blue_comp": r.blue_comp,
-                    "red_comp": r.red_comp,
-                    "blue_bans": r.blue_bans,
-                    "red_bans": r.red_bans,
-                } for r in session.game_results],
-                our_side=session.coaching_side,
+    team_players = [{"name": p.name, "role": p.role} for p in our_team.players]
+    enemy_players = [{"name": p.name, "role": p.role} for p in enemy_team.players]
+
+    # Build series context from previous games
+    series_context = None
+    if current_game > 1 and previous_results:
+        series_context = SeriesContextBuilder.from_game_results(
+            game_number=current_game,
+            previous_results=previous_results,
+            our_side=coaching_side,
+        )
+
+    # Build draft context for LLM
+    draft_context = {
+        "phase": phase_value,
+        "patch": patch_version,
+        "our_team": our_team.name,
+        "enemy_team": enemy_team.name,
+        "our_picks": our_picks,
+        "enemy_picks": enemy_picks,
+        "banned": all_banned,
+        "draft_mode": draft_mode,
+        "fearless_blocked": fearless_blocked if draft_mode == "fearless" else [],
+    }
+
+    # Get candidates from recommendation engine
+    if next_action == "ban":
+        candidates = ban_service.get_ban_recommendations(
+            enemy_team_id=enemy_team.id,
+            our_picks=our_picks,
+            enemy_picks=enemy_picks,
+            banned=all_banned,
+            phase=phase_value,
+            limit=15,
+        )
+        candidates = [
+            {
+                "champion_name": c["champion_name"],
+                "priority": c["priority"],
+                "target_player": c.get("target_player"),
+                "components": c.get("components", {}),
+                "reasons": c.get("reasons", []),
+            }
+            for c in candidates
+        ]
+    else:
+        candidates = pick_engine.get_recommendations(
+            team_players=team_players,
+            our_picks=our_picks,
+            enemy_picks=enemy_picks,
+            banned=all_banned,
+            limit=15,
+        )
+        candidates = [
+            {
+                "champion_name": c["champion_name"],
+                "score": c.get("score", c.get("confidence", 0)),
+                "suggested_role": c.get("suggested_role"),
+                "components": c.get("components", {}),
+                "reasons": c.get("reasons", []),
+                "proficiency_player": c.get("proficiency_player"),
+            }
+            for c in candidates
+        ]
+
+    # Call LLM reranker
+    reranker = LLMReranker(api_key=body.api_key, timeout=15.0)
+    try:
+        if next_action == "ban":
+            result = await reranker.rerank_bans(
+                candidates=candidates,
+                draft_context=draft_context,
+                our_players=team_players,
+                enemy_players=enemy_players,
+                limit=5,
+                series_context=series_context,
             )
-
-        # Build draft context for LLM
-        draft_context = {
-            "phase": draft_state.current_phase.value,
-            "patch": draft_state.patch_version,
-            "our_team": our_team.name,
-            "enemy_team": enemy_team.name,
-            "our_picks": our_picks,
-            "enemy_picks": enemy_picks,
-            "banned": all_banned,
-            "draft_mode": session.draft_mode,
-            "fearless_blocked": list(session.fearless_blocked_set) if session.draft_mode == "fearless" else [],
-        }
-
-        # Get candidates from recommendation engine
-        if draft_state.next_action == "ban":
-            candidates = ban_service.get_ban_recommendations(
-                enemy_team_id=enemy_team.id,
-                our_picks=our_picks,
-                enemy_picks=enemy_picks,
-                banned=all_banned,
-                phase=draft_state.current_phase.value,
-                limit=15,
-            )
-            candidates = [
-                {
-                    "champion_name": c["champion_name"],
-                    "priority": c["priority"],
-                    "target_player": c.get("target_player"),
-                    "components": c.get("components", {}),
-                    "reasons": c.get("reasons", []),
-                }
-                for c in candidates
-            ]
         else:
-            candidates = pick_engine.get_recommendations(
+            result = await reranker.rerank_picks(
+                candidates=candidates,
+                draft_context=draft_context,
                 team_players=team_players,
-                our_picks=our_picks,
-                enemy_picks=enemy_picks,
-                banned=all_banned,
-                limit=15,
+                enemy_players=enemy_players,
+                limit=5,
+                series_context=series_context,
             )
-            candidates = [
+
+        return {
+            "status": "ready",
+            "action_count": body.action_count,
+            "for_team": session.coaching_side,
+            "draft_analysis": result.draft_analysis,
+            "reranked": [
                 {
-                    "champion_name": c["champion_name"],
-                    "score": c.get("score", c.get("confidence", 0)),
-                    "suggested_role": c.get("suggested_role"),
-                    "components": c.get("components", {}),
-                    "reasons": c.get("reasons", []),
-                    "proficiency_player": c.get("proficiency_player"),
+                    "champion_name": r.champion,
+                    "original_rank": r.original_rank,
+                    "new_rank": r.new_rank,
+                    "confidence": r.confidence,
+                    "reasoning": r.reasoning,
+                    "strategic_factors": r.strategic_factors,
                 }
-                for c in candidates
-            ]
-
-        # Call LLM reranker
-        reranker = LLMReranker(api_key=body.api_key, timeout=15.0)
-        try:
-            if draft_state.next_action == "ban":
-                result = await reranker.rerank_bans(
-                    candidates=candidates,
-                    draft_context=draft_context,
-                    our_players=team_players,
-                    enemy_players=enemy_players,
-                    limit=5,
-                    series_context=series_context,
-                )
-            else:
-                result = await reranker.rerank_picks(
-                    candidates=candidates,
-                    draft_context=draft_context,
-                    team_players=team_players,
-                    enemy_players=enemy_players,
-                    limit=5,
-                    series_context=series_context,
-                )
-
-            return {
-                "status": "ready",
-                "action_count": body.action_count,
-                "for_team": session.coaching_side,
-                "draft_analysis": result.draft_analysis,
-                "reranked": [
-                    {
-                        "champion_name": r.champion,
-                        "original_rank": r.original_rank,
-                        "new_rank": r.new_rank,
-                        "confidence": r.confidence,
-                        "reasoning": r.reasoning,
-                        "strategic_factors": r.strategic_factors,
-                    }
-                    for r in result.reranked
-                ],
-                "additional_suggestions": [
-                    {
-                        "champion_name": s.champion,
-                        "reasoning": s.reasoning,
-                        "confidence": s.confidence,
-                        "role": s.role,
-                        "for_player": s.for_player,
-                    }
-                    for s in result.additional_suggestions
-                ],
-            }
-        except Exception as e:
-            return {
-                "status": "error",
-                "action_count": body.action_count,
-                "message": str(e),
-            }
-        finally:
-            await reranker.close()
+                for r in result.reranked
+            ],
+            "additional_suggestions": [
+                {
+                    "champion_name": s.champion,
+                    "reasoning": s.reasoning,
+                    "confidence": s.confidence,
+                    "role": s.role,
+                    "for_player": s.for_player,
+                }
+                for s in result.additional_suggestions
+            ],
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "action_count": body.action_count,
+            "message": str(e),
+        }
+    finally:
+        await reranker.close()
 
 
 @router.get("/teams")
