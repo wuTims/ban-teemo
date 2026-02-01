@@ -15,8 +15,6 @@ dependencies = [
     "groq>=0.4.0",
     "duckdb>=1.0.0",
     "pandas>=2.0.0",
-    "leaguepedia-parser>=2.0.1",
-    "openpyxl>=3.1.5",
 ]
 
 [project.optional-dependencies]
@@ -24,6 +22,10 @@ dev = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.23.0",
     "httpx>=0.26.0",
+]
+ingestion = [
+    "leaguepedia-parser>=2.0.1",
+    "openpyxl>=3.1.5",
 ]
 
 [build-system]
