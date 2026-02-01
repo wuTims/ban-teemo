@@ -786,35 +786,6 @@
     "source": "curated"
   },
   {
-    "id": "yone_yasuo",
-    "champions": [
-      "Yone",
-      "Yasuo"
-    ],
-    "partner_requirement": null,
-    "best_partners": [],
-    "type": "champion_design",
-    "category": "brothers",
-    "strength": "A",
-    "confidence": "high",
-    "description": "Lore brothers with shared knockup synergy - either can set up the other's ultimate.",
-    "mechanic_explanation": "Both have knockups (Yone R, Yasuo Q3). Either knockup enables the other's ult. Yone R can set up Yasuo R.",
-    "comp_archetypes": [
-      "dive",
-      "teamfight"
-    ],
-    "execution_notes": [
-      "Yone R knockup enables Yasuo R",
-      "Yasuo Q3 enables Yone R follow-up",
-      "Both scale well, double crit threat"
-    ],
-    "timing": null,
-    "countered_by": [],
-    "historical_name": null,
-    "similar_synergies": [],
-    "source": "curated"
-  },
-  {
     "id": "ashe_zyra",
     "champions": [
       "Ashe",
@@ -4578,7 +4549,10 @@
   },
   {
     "id": "yasuo_malphite",
-    "champions": ["Yasuo", "Malphite"],
+    "champions": [
+      "Yasuo",
+      "Malphite"
+    ],
     "partner_requirement": null,
     "best_partners": [],
     "type": "ability_combo",
@@ -4587,7 +4561,10 @@
     "confidence": "high",
     "description": "Malphite R knockup enables guaranteed Yasuo Last Breath on entire enemy team.",
     "mechanic_explanation": "Any knockup enables Last Breath",
-    "comp_archetypes": ["teamfight", "engage"],
+    "comp_archetypes": [
+      "teamfight",
+      "engage"
+    ],
     "execution_notes": [],
     "timing": null,
     "countered_by": [],
@@ -4597,7 +4574,10 @@
   },
   {
     "id": "yasuo_diana",
-    "champions": ["Yasuo", "Diana"],
+    "champions": [
+      "Yasuo",
+      "Diana"
+    ],
     "partner_requirement": null,
     "best_partners": [],
     "type": "ability_combo",
@@ -4606,7 +4586,10 @@
     "confidence": "high",
     "description": "Diana R pulls enemies together and triggers knockup for Yasuo Last Breath.",
     "mechanic_explanation": "Diana R counts as knockup displacement",
-    "comp_archetypes": ["teamfight", "engage"],
+    "comp_archetypes": [
+      "teamfight",
+      "engage"
+    ],
     "execution_notes": [],
     "timing": null,
     "countered_by": [],
@@ -4616,7 +4599,10 @@
   },
   {
     "id": "yasuo_gragas",
-    "champions": ["Yasuo", "Gragas"],
+    "champions": [
+      "Yasuo",
+      "Gragas"
+    ],
     "partner_requirement": null,
     "best_partners": [],
     "type": "ability_combo",
@@ -4625,7 +4611,10 @@
     "confidence": "high",
     "description": "Gragas E knockup and R displacement enable Yasuo Last Breath.",
     "mechanic_explanation": "Gragas E is knockup, R is displacement",
-    "comp_archetypes": ["teamfight", "pick"],
+    "comp_archetypes": [
+      "teamfight",
+      "pick"
+    ],
     "execution_notes": [],
     "timing": null,
     "countered_by": [],
@@ -4635,7 +4624,10 @@
   },
   {
     "id": "yasuo_alistar",
-    "champions": ["Yasuo", "Alistar"],
+    "champions": [
+      "Yasuo",
+      "Alistar"
+    ],
     "partner_requirement": null,
     "best_partners": [],
     "type": "ability_combo",
@@ -4644,7 +4636,10 @@
     "confidence": "high",
     "description": "Alistar W+Q combo provides reliable knockup for Yasuo Last Breath.",
     "mechanic_explanation": "Alistar Q is knockup",
-    "comp_archetypes": ["engage", "teamfight"],
+    "comp_archetypes": [
+      "engage",
+      "teamfight"
+    ],
     "execution_notes": [],
     "timing": null,
     "countered_by": [],
@@ -4654,7 +4649,10 @@
   },
   {
     "id": "yasuo_rakan",
-    "champions": ["Yasuo", "Rakan"],
+    "champions": [
+      "Yasuo",
+      "Rakan"
+    ],
     "partner_requirement": null,
     "best_partners": [],
     "type": "ability_combo",
@@ -4663,7 +4661,10 @@
     "confidence": "high",
     "description": "Rakan W knockup enables Yasuo Last Breath on grouped enemies.",
     "mechanic_explanation": "Rakan W is knockup",
-    "comp_archetypes": ["engage", "teamfight"],
+    "comp_archetypes": [
+      "engage",
+      "teamfight"
+    ],
     "execution_notes": [],
     "timing": null,
     "countered_by": [],
@@ -4673,7 +4674,10 @@
   },
   {
     "id": "yone_malphite",
-    "champions": ["Yone", "Malphite"],
+    "champions": [
+      "Yone",
+      "Malphite"
+    ],
     "partner_requirement": null,
     "best_partners": [],
     "type": "ability_combo",
@@ -4682,7 +4686,10 @@
     "confidence": "high",
     "description": "Malphite R knockup enables guaranteed Yone Last Breath on entire enemy team.",
     "mechanic_explanation": "Any knockup enables Last Breath",
-    "comp_archetypes": ["teamfight", "engage"],
+    "comp_archetypes": [
+      "teamfight",
+      "engage"
+    ],
     "execution_notes": [],
     "timing": null,
     "countered_by": [],
@@ -4692,7 +4699,10 @@
   },
   {
     "id": "yone_diana",
-    "champions": ["Yone", "Diana"],
+    "champions": [
+      "Yone",
+      "Diana"
+    ],
     "partner_requirement": null,
     "best_partners": [],
     "type": "ability_combo",
@@ -4701,12 +4711,411 @@
     "confidence": "high",
     "description": "Diana R pulls enemies together for Yone R engage.",
     "mechanic_explanation": "Diana R groups enemies for Yone",
-    "comp_archetypes": ["teamfight", "engage"],
+    "comp_archetypes": [
+      "teamfight",
+      "engage"
+    ],
     "execution_notes": [],
     "timing": null,
     "countered_by": [],
     "historical_name": null,
     "similar_synergies": [],
+    "source": "curated"
+  },
+  {
+    "id": "yasuo_ornn",
+    "champions": [
+      "Yasuo",
+      "Ornn"
+    ],
+    "type": "ability_combo",
+    "category": "knockup_synergy",
+    "strength": "S",
+    "confidence": "high",
+    "description": "Ornn R knockup enables guaranteed Yasuo Last Breath on multiple targets.",
+    "mechanic_explanation": "Any knockup enables Last Breath",
+    "comp_archetypes": [
+      "teamfight",
+      "engage"
+    ],
+    "source": "curated"
+  },
+  {
+    "id": "yasuo_jarvan",
+    "champions": [
+      "Yasuo",
+      "Jarvan IV"
+    ],
+    "type": "ability_combo",
+    "category": "knockup_synergy",
+    "strength": "A",
+    "confidence": "high",
+    "description": "Jarvan IV E-Q combo knockup enables Yasuo Last Breath.",
+    "mechanic_explanation": "Any knockup enables Last Breath",
+    "comp_archetypes": [
+      "teamfight",
+      "engage"
+    ],
+    "source": "curated"
+  },
+  {
+    "id": "yasuo_vi",
+    "champions": [
+      "Yasuo",
+      "Vi"
+    ],
+    "type": "ability_combo",
+    "category": "knockup_synergy",
+    "strength": "A",
+    "confidence": "high",
+    "description": "Vi Q knockup and R knockup enable Yasuo Last Breath.",
+    "mechanic_explanation": "Any knockup enables Last Breath",
+    "comp_archetypes": [
+      "teamfight",
+      "engage"
+    ],
+    "source": "curated"
+  },
+  {
+    "id": "yasuo_rell",
+    "champions": [
+      "Yasuo",
+      "Rell"
+    ],
+    "type": "ability_combo",
+    "category": "knockup_synergy",
+    "strength": "A",
+    "confidence": "high",
+    "description": "Rell W engage provides knockup for Yasuo Last Breath.",
+    "mechanic_explanation": "Any knockup enables Last Breath",
+    "comp_archetypes": [
+      "teamfight",
+      "engage"
+    ],
+    "source": "curated"
+  },
+  {
+    "id": "yasuo_nautilus",
+    "champions": [
+      "Yasuo",
+      "Nautilus"
+    ],
+    "type": "ability_combo",
+    "category": "knockup_synergy",
+    "strength": "A",
+    "confidence": "high",
+    "description": "Nautilus R knockup enables Yasuo Last Breath on priority target.",
+    "mechanic_explanation": "Any knockup enables Last Breath",
+    "comp_archetypes": [
+      "teamfight",
+      "engage"
+    ],
+    "source": "curated"
+  },
+  {
+    "id": "yasuo_braum",
+    "champions": [
+      "Yasuo",
+      "Braum"
+    ],
+    "type": "ability_combo",
+    "category": "knockup_synergy",
+    "strength": "A",
+    "confidence": "high",
+    "description": "Braum R knockup enables Yasuo Last Breath.",
+    "mechanic_explanation": "Any knockup enables Last Breath",
+    "comp_archetypes": [
+      "teamfight",
+      "engage"
+    ],
+    "source": "curated"
+  },
+  {
+    "id": "yasuo_xinzhao",
+    "champions": [
+      "Yasuo",
+      "Xin Zhao"
+    ],
+    "type": "ability_combo",
+    "category": "knockup_synergy",
+    "strength": "A",
+    "confidence": "high",
+    "description": "Xin Zhao W knockup enables Yasuo Last Breath.",
+    "mechanic_explanation": "Any knockup enables Last Breath",
+    "comp_archetypes": [
+      "teamfight",
+      "engage"
+    ],
+    "source": "curated"
+  },
+  {
+    "id": "yone_gragas",
+    "champions": [
+      "Yone",
+      "Gragas"
+    ],
+    "type": "ability_combo",
+    "category": "knockup_synergy",
+    "strength": "A",
+    "confidence": "high",
+    "description": "Gragas E knockup and R displacement set up Yone R engage.",
+    "mechanic_explanation": "Gragas E is knockup, R is displacement",
+    "comp_archetypes": [
+      "teamfight",
+      "pick"
+    ],
+    "source": "curated"
+  },
+  {
+    "id": "yone_alistar",
+    "champions": [
+      "Yone",
+      "Alistar"
+    ],
+    "type": "ability_combo",
+    "category": "knockup_synergy",
+    "strength": "S",
+    "confidence": "high",
+    "description": "Alistar W+Q combo provides reliable knockup for Yone Last Breath.",
+    "mechanic_explanation": "Alistar Q is knockup",
+    "comp_archetypes": [
+      "engage",
+      "teamfight"
+    ],
+    "source": "curated"
+  },
+  {
+    "id": "yone_ornn",
+    "champions": [
+      "Yone",
+      "Ornn"
+    ],
+    "type": "ability_combo",
+    "category": "knockup_synergy",
+    "strength": "S",
+    "confidence": "high",
+    "description": "Ornn R knockup enables Yone Last Breath on entire enemy team.",
+    "mechanic_explanation": "Any knockup enables Last Breath",
+    "comp_archetypes": [
+      "teamfight",
+      "engage"
+    ],
+    "source": "curated"
+  },
+  {
+    "id": "yone_rakan",
+    "champions": [
+      "Yone",
+      "Rakan"
+    ],
+    "type": "ability_combo",
+    "category": "knockup_synergy",
+    "strength": "A",
+    "confidence": "high",
+    "description": "Rakan W knockup enables Yone Last Breath on grouped enemies.",
+    "mechanic_explanation": "Rakan W is knockup",
+    "comp_archetypes": [
+      "engage",
+      "teamfight"
+    ],
+    "source": "curated"
+  },
+  {
+    "id": "yone_jarvan",
+    "champions": [
+      "Yone",
+      "Jarvan IV"
+    ],
+    "type": "ability_combo",
+    "category": "knockup_synergy",
+    "strength": "A",
+    "confidence": "high",
+    "description": "Jarvan IV E-Q combo knockup enables Yone Last Breath.",
+    "mechanic_explanation": "Any knockup enables Last Breath",
+    "comp_archetypes": [
+      "teamfight",
+      "engage"
+    ],
+    "source": "curated"
+  },
+  {
+    "id": "yone_vi",
+    "champions": [
+      "Yone",
+      "Vi"
+    ],
+    "type": "ability_combo",
+    "category": "knockup_synergy",
+    "strength": "A",
+    "confidence": "high",
+    "description": "Vi Q knockup and R knockup enable Yone Last Breath.",
+    "mechanic_explanation": "Any knockup enables Last Breath",
+    "comp_archetypes": [
+      "teamfight",
+      "engage"
+    ],
+    "source": "curated"
+  },
+  {
+    "id": "yone_rell",
+    "champions": [
+      "Yone",
+      "Rell"
+    ],
+    "type": "ability_combo",
+    "category": "knockup_synergy",
+    "strength": "A",
+    "confidence": "high",
+    "description": "Rell W engage provides knockup for Yone Last Breath.",
+    "mechanic_explanation": "Any knockup enables Last Breath",
+    "comp_archetypes": [
+      "teamfight",
+      "engage"
+    ],
+    "source": "curated"
+  },
+  {
+    "id": "yone_nautilus",
+    "champions": [
+      "Yone",
+      "Nautilus"
+    ],
+    "type": "ability_combo",
+    "category": "knockup_synergy",
+    "strength": "A",
+    "confidence": "high",
+    "description": "Nautilus R knockup enables Yone Last Breath on priority target.",
+    "mechanic_explanation": "Any knockup enables Last Breath",
+    "comp_archetypes": [
+      "teamfight",
+      "engage"
+    ],
+    "source": "curated"
+  },
+  {
+    "id": "yone_braum",
+    "champions": [
+      "Yone",
+      "Braum"
+    ],
+    "type": "ability_combo",
+    "category": "knockup_synergy",
+    "strength": "A",
+    "confidence": "high",
+    "description": "Braum R knockup enables Yone Last Breath.",
+    "mechanic_explanation": "Any knockup enables Last Breath",
+    "comp_archetypes": [
+      "teamfight",
+      "engage"
+    ],
+    "source": "curated"
+  },
+  {
+    "id": "yone_xinzhao",
+    "champions": [
+      "Yone",
+      "Xin Zhao"
+    ],
+    "type": "ability_combo",
+    "category": "knockup_synergy",
+    "strength": "A",
+    "confidence": "high",
+    "description": "Xin Zhao W knockup enables Yone Last Breath.",
+    "mechanic_explanation": "Any knockup enables Last Breath",
+    "comp_archetypes": [
+      "teamfight",
+      "engage"
+    ],
+    "source": "curated"
+  },
+  {
+    "id": "orianna_camille",
+    "champions": [
+      "Orianna",
+      "Camille"
+    ],
+    "type": "ability_combo",
+    "category": "ball_delivery",
+    "strength": "A",
+    "confidence": "high",
+    "description": "Orianna attaches ball to Camille. Camille E/R delivers ball for guaranteed Shockwave.",
+    "mechanic_explanation": "Ball follows allied champion through dashes",
+    "comp_archetypes": [
+      "dive",
+      "teamfight"
+    ],
+    "source": "curated"
+  },
+  {
+    "id": "orianna_renekton",
+    "champions": [
+      "Orianna",
+      "Renekton"
+    ],
+    "type": "ability_combo",
+    "category": "ball_delivery",
+    "strength": "A",
+    "confidence": "high",
+    "description": "Orianna attaches ball to Renekton. Renekton E delivers ball for AoE Shockwave.",
+    "mechanic_explanation": "Ball follows allied champion through dashes",
+    "comp_archetypes": [
+      "dive",
+      "teamfight"
+    ],
+    "source": "curated"
+  },
+  {
+    "id": "orianna_malphite",
+    "champions": [
+      "Orianna",
+      "Malphite"
+    ],
+    "type": "ability_combo",
+    "category": "ball_delivery",
+    "strength": "S",
+    "confidence": "high",
+    "description": "Orianna attaches ball to Malphite. Malphite R delivers guaranteed multi-target Shockwave.",
+    "mechanic_explanation": "Ball follows allied champion through dashes and blinks",
+    "comp_archetypes": [
+      "teamfight",
+      "engage"
+    ],
+    "source": "curated"
+  },
+  {
+    "id": "orianna_leona",
+    "champions": [
+      "Orianna",
+      "Leona"
+    ],
+    "type": "ability_combo",
+    "category": "ball_delivery",
+    "strength": "A",
+    "confidence": "high",
+    "description": "Orianna attaches ball to Leona. Leona E delivers ball for Shockwave combo.",
+    "mechanic_explanation": "Ball follows allied champion through dashes",
+    "comp_archetypes": [
+      "teamfight",
+      "engage"
+    ],
+    "source": "curated"
+  },
+  {
+    "id": "orianna_alistar",
+    "champions": [
+      "Orianna",
+      "Alistar"
+    ],
+    "type": "ability_combo",
+    "category": "ball_delivery",
+    "strength": "A",
+    "confidence": "high",
+    "description": "Orianna attaches ball to Alistar. Alistar W-Q combo delivers ball for Shockwave.",
+    "mechanic_explanation": "Ball follows allied champion through dashes",
+    "comp_archetypes": [
+      "teamfight",
+      "engage"
+    ],
     "source": "curated"
   }
 ]

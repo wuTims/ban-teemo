@@ -34,12 +34,44 @@ class MetaScorer:
                 data = json.load(f)
                 self._champion_roles = data.get("champions", {})
 
-    def get_meta_score(self, champion_name: str) -> float:
-        """Get meta strength score for a champion (0.0-1.0)."""
+    def get_meta_score(self, champion_name: str, method: str = "hybrid") -> float:
+        """Get meta strength score for a champion (0.0-1.0).
+
+        Args:
+            champion_name: Champion to score
+            method: Scoring method
+                - "default": Original tier-based score (penalizes low win rate)
+                - "presence": Pure presence-based (0.3 + presence * 0.7)
+                - "hybrid": Average of default and presence (best accuracy)
+
+        Returns:
+            Float 0.0-1.0 representing meta strength
+        """
         if champion_name not in self._meta_stats:
             return 0.5
-        score = self._meta_stats[champion_name].get("meta_score")
-        return score if score is not None else 0.5
+
+        stats = self._meta_stats[champion_name]
+
+        if method == "default":
+            score = stats.get("meta_score")
+            return score if score is not None else 0.5
+
+        elif method == "presence":
+            presence = stats.get("presence", 0)
+            # Scale presence (0-1) to meta score (0.3-1.0)
+            return 0.3 + presence * 0.7
+
+        else:  # "hybrid" - default
+            # Average of original tier-based score and presence-based score
+            # This balances win rate signal with pick frequency signal
+            original_score = stats.get("meta_score")
+            if original_score is None:
+                original_score = 0.5
+
+            presence = stats.get("presence", 0)
+            presence_score = 0.3 + presence * 0.7
+
+            return (original_score + presence_score) / 2
 
     def get_meta_tier(self, champion_name: str) -> Optional[str]:
         """Get meta tier (S/A/B/C/D) for a champion."""

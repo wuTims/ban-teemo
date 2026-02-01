@@ -61,7 +61,7 @@ def test_calculate_role_strength_weighted_average(tmp_path):
         tmp_path,
         proficiencies={
             "MidPlayer": {
-                "Azir": {"games_weighted": 10, "win_rate_weighted": 0.7},
+                "Azir": {"games_weighted": 12, "win_rate_weighted": 0.7},
                 "Syndra": {"games_weighted": 5, "win_rate_weighted": 0.6},
             },
         },
@@ -85,7 +85,7 @@ def test_calculate_role_strength_no_role_data(tmp_path):
         tmp_path,
         proficiencies={
             "TopPlayer": {
-                "Aatrox": {"games_weighted": 10, "win_rate_weighted": 0.7},
+                "Aatrox": {"games_weighted": 12, "win_rate_weighted": 0.7},
             },
         },
         role_history={
@@ -112,8 +112,8 @@ def test_calculate_role_strength_filters_by_role(tmp_path):
         tmp_path,
         proficiencies={
             "FlexPlayer": {
-                "Azir": {"games_weighted": 10, "win_rate_weighted": 0.8},
-                "Aatrox": {"games_weighted": 10, "win_rate_weighted": 0.5},
+                "Azir": {"games_weighted": 12, "win_rate_weighted": 0.8},
+                "Aatrox": {"games_weighted": 12, "win_rate_weighted": 0.5},
             },
         },
         role_history={
@@ -139,10 +139,10 @@ def test_calculate_role_strength_uses_win_rate_only(tmp_path):
         tmp_path,
         proficiencies={
             "PlayerA": {
-                "Azir": {"games_weighted": 10, "win_rate_weighted": 0.8},
+                "Azir": {"games_weighted": 12, "win_rate_weighted": 0.8},
             },
             "PlayerB": {
-                "Azir": {"games_weighted": 10, "win_rate_weighted": 0.5},
+                "Azir": {"games_weighted": 12, "win_rate_weighted": 0.5},
             },
         },
         role_history={
@@ -171,7 +171,7 @@ def test_get_champion_proficiency_comfort_scales_with_games(tmp_path):
         tmp_path,
         proficiencies={
             "MidPlayer": {
-                "Azir": {"games_weighted": 10, "win_rate_weighted": 0.7},
+                "Azir": {"games_weighted": 12, "win_rate_weighted": 0.7},
                 "Syndra": {"games_weighted": 8, "win_rate_weighted": 0.65},
                 "Viktor": {"games_weighted": 2, "win_rate_weighted": 0.5},
             },
@@ -185,7 +185,7 @@ def test_get_champion_proficiency_comfort_scales_with_games(tmp_path):
     scorer = ProficiencyScorer(knowledge_dir)
     team_players = [{"name": "MidPlayer", "role": "mid"}]
 
-    # Azir: 10 games (>= G_FULL=8) -> full comfort scaling
+    # Azir: 12 games (>= G_FULL=10) -> full comfort scaling
     azir_score, azir_conf, _, _ = scorer.get_champion_proficiency(
         "Azir", "mid", team_players
     )
@@ -206,7 +206,7 @@ def test_get_champion_proficiency_unplayed_uses_comfort_baseline(tmp_path):
         tmp_path,
         proficiencies={
             "MidPlayer": {
-                "Azir": {"games_weighted": 10, "win_rate_weighted": 0.7},
+                "Azir": {"games_weighted": 12, "win_rate_weighted": 0.7},
             },
         },
         role_history={
@@ -237,7 +237,7 @@ def test_get_champion_proficiency_no_role_strength_comfort_only(tmp_path):
         tmp_path,
         proficiencies={
             "TopPlayer": {
-                "Aatrox": {"games_weighted": 10, "win_rate_weighted": 0.7},
+                "Aatrox": {"games_weighted": 12, "win_rate_weighted": 0.7},
             },
         },
         role_history={
@@ -265,8 +265,8 @@ def test_get_champion_proficiency_comfort_only_capped(tmp_path):
         tmp_path,
         proficiencies={
             "TopPlayer": {
-                "Aatrox": {"games_weighted": 10, "win_rate_weighted": 0.7},
-                "Azir": {"games_weighted": 100, "win_rate_weighted": 0.8},  # Many games on Azir
+                "Aatrox": {"games_weighted": 12, "win_rate_weighted": 0.7},
+                "Azir": {"games_weighted": 120, "win_rate_weighted": 0.8},  # Many games on Azir
             },
         },
         role_history={
@@ -313,7 +313,7 @@ def test_get_champion_proficiency_monotonic_with_games(tmp_path):
         tmp_path,
         proficiencies={
             "MidPlayer": {
-                "Azir": {"games_weighted": 10, "win_rate_weighted": 0.7},
+                "Azir": {"games_weighted": 12, "win_rate_weighted": 0.7},
                 "Syndra": {"games_weighted": 8, "win_rate_weighted": 0.6},
                 "Viktor": {"games_weighted": 4, "win_rate_weighted": 0.6},
                 "Orianna": {"games_weighted": 1, "win_rate_weighted": 0.6},
@@ -387,7 +387,7 @@ def test_deprecated_transfer_method_still_works(tmp_path):
         tmp_path,
         proficiencies={
             "MidPlayer": {
-                "Azir": {"games_weighted": 10, "win_rate_weighted": 0.7},
+                "Azir": {"games_weighted": 12, "win_rate_weighted": 0.7},
             },
         },
         role_history={

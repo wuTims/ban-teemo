@@ -479,15 +479,15 @@ def test_proficiency_weight_lowest():
 
 
 def test_meta_weight():
-    """Meta weight should be 0.30 (tied highest with archetype)."""
+    """Meta weight should be 0.45 (highest - uses hybrid scoring for +5.8% accuracy)."""
     engine = PickRecommendationEngine()
-    assert engine.BASE_WEIGHTS["meta"] == 0.30
+    assert engine.BASE_WEIGHTS["meta"] == 0.45
 
 
-def test_archetype_weight_highest():
-    """Archetype weight should be 0.30 (tied highest - defines team identity)."""
+def test_archetype_weight():
+    """Archetype weight should be 0.15 (reduced to avoid specialist bias)."""
     engine = PickRecommendationEngine()
-    assert engine.BASE_WEIGHTS["archetype"] == 0.30
+    assert engine.BASE_WEIGHTS["archetype"] == 0.15
 
 
 def test_matchup_counter_weight():
@@ -901,6 +901,49 @@ def test_get_effective_weights_no_data_redistributes():
     assert weights["proficiency"] < 0.10, "NO_DATA should reduce proficiency weight"
     # Total should still sum to ~1.0
     total = sum(weights.values())
+    assert 0.99 <= total <= 1.01, f"Weights should sum to 1.0, got {total}"
+
+
+def test_get_effective_weights_matchup_no_data_redistributes():
+    """NO_DATA matchup should redistribute weight to meta only (not archetype).
+
+    Archetype is skipped because 29 champions (17%) have archetype=1.0,
+    causing specialists to dominate over balanced high-meta champions like Azir.
+    """
+    engine = PickRecommendationEngine()
+
+    # Compare weights with FULL vs NO_DATA matchup confidence
+    weights_full = engine._get_effective_weights("HIGH", pick_count=2, has_enemy_picks=True, matchup_conf="FULL")
+    weights_no_data = engine._get_effective_weights("HIGH", pick_count=2, has_enemy_picks=True, matchup_conf="NO_DATA")
+
+    # matchup_counter weight should be reduced by 50% when no data (conservative approach)
+    assert weights_no_data["matchup_counter"] < weights_full["matchup_counter"] * 0.6, (
+        f"NO_DATA matchup should reduce weight: {weights_no_data['matchup_counter']} vs {weights_full['matchup_counter']}"
+    )
+
+    # Meta should increase to compensate (archetype stays same to avoid specialist bias)
+    assert weights_no_data["archetype"] == weights_full["archetype"], "Archetype should NOT change (avoids specialist bias)"
+    assert weights_no_data["meta"] > weights_full["meta"], "Meta should increase when matchup has no data"
+
+    # Total should still sum to ~1.0
+    total = sum(weights_no_data.values())
+    assert 0.99 <= total <= 1.01, f"Weights should sum to 1.0, got {total}"
+
+
+def test_get_effective_weights_matchup_partial_data():
+    """PARTIAL matchup data should reduce weight by 25%."""
+    engine = PickRecommendationEngine()
+
+    weights_full = engine._get_effective_weights("HIGH", pick_count=2, has_enemy_picks=True, matchup_conf="FULL")
+    weights_partial = engine._get_effective_weights("HIGH", pick_count=2, has_enemy_picks=True, matchup_conf="PARTIAL")
+
+    # matchup_counter weight should be reduced by 25% for partial data
+    assert 0.7 <= weights_partial["matchup_counter"] / weights_full["matchup_counter"] <= 0.85, (
+        "PARTIAL matchup should reduce weight by ~25%"
+    )
+
+    # Total should still sum to ~1.0
+    total = sum(weights_partial.values())
     assert 0.99 <= total <= 1.01, f"Weights should sum to 1.0, got {total}"
 
 

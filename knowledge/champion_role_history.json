@@ -1,15 +1,15 @@
 {
   "metadata": {
-    "generated_at": "2026-01-27T10:14:53.809826",
-    "current_patch": "15.18",
+    "generated_at": "2026-01-30T13:08:20.703855",
+    "current_patch": "15.17",
     "meta_window_patches": 3,
-    "min_role_rate_for_viable": 0.1,
+    "min_role_rate_for_viable": 0.2,
     "meta_shift_threshold": 0.15,
     "min_games_for_meta_shift": 10,
     "champions_count": 152,
     "total_meta_shifts_detected": 39,
-    "active_meta_shifts": 34,
-    "ended_meta_shifts": 5
+    "active_meta_shifts": 32,
+    "ended_meta_shifts": 7
   },
   "champions": {
     "Aatrox": {
@@ -97,11 +97,11 @@
         "TOP": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 48
+      "recent_games": 61
     },
     "Ahri": {
       "canonical_role": "MID",
@@ -184,11 +184,11 @@
         "MID": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 35
+      "recent_games": 49
     },
     "Akali": {
       "canonical_role": "TOP",
@@ -282,15 +282,15 @@
         "TOP"
       ],
       "current_distribution": {
-        "MID": 0.949,
-        "TOP": 0.051
+        "MID": 0.977,
+        "TOP": 0.023
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 39
+      "recent_games": 43
     },
     "Alistar": {
       "canonical_role": "SUP",
@@ -389,14 +389,15 @@
         "SUP"
       ],
       "current_distribution": {
-        "SUP": 0.991
+        "SUP": 0.987,
+        "JUNGLE": 0.013
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 107
+      "recent_games": 155
     },
     "Ambessa": {
       "canonical_role": "TOP",
@@ -485,14 +486,14 @@
         "TOP"
       ],
       "current_distribution": {
-        "TOP": 1.0
+        "TOP": 0.993
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 93
+      "recent_games": 138
     },
     "Amumu": {
       "canonical_role": "JUNGLE",
@@ -527,9 +528,9 @@
         "JUNGLE": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 1
     },
@@ -580,9 +581,9 @@
         "MID": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 1
     },
@@ -648,11 +649,11 @@
         "MID": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 83
+      "recent_games": 128
     },
     "Aphelios": {
       "canonical_role": "ADC",
@@ -723,11 +724,11 @@
         "ADC": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 15
+      "recent_games": 30
     },
     "Ashe": {
       "canonical_role": "ADC",
@@ -820,9 +821,9 @@
         "ADC": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 2
     },
@@ -874,9 +875,9 @@
       ],
       "current_distribution": {},
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 0
     },
@@ -976,15 +977,15 @@
         "TOP"
       ],
       "current_distribution": {
-        "MID": 0.583,
-        "TOP": 0.417
+        "MID": 0.627,
+        "TOP": 0.373
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 84
+      "recent_games": 126
     },
     "Azir": {
       "canonical_role": "MID",
@@ -1072,11 +1073,11 @@
         "MID": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 46
+      "recent_games": 76
     },
     "Bard": {
       "canonical_role": "SUP",
@@ -1157,15 +1158,15 @@
         "SUP"
       ],
       "current_distribution": {
-        "SUP": 0.983,
-        "JUNGLE": 0.017
+        "SUP": 0.988,
+        "JUNGLE": 0.012
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 61
+      "recent_games": 83
     },
     "Blitzcrank": {
       "canonical_role": "SUP",
@@ -1240,11 +1241,11 @@
         "SUP": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 11
+      "recent_games": 17
     },
     "Brand": {
       "canonical_role": "JUNGLE",
@@ -1305,9 +1306,9 @@
         "JUNGLE": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 4
     },
@@ -1395,15 +1396,14 @@
         "SUP"
       ],
       "current_distribution": {
-        "SUP": 0.987,
-        "JUNGLE": 0.013
+        "SUP": 0.99
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 78
+      "recent_games": 104
     },
     "Caitlyn": {
       "canonical_role": "ADC",
@@ -1486,11 +1486,11 @@
         "ADC": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 8
+      "recent_games": 11
     },
     "Camille": {
       "canonical_role": "TOP",
@@ -1566,19 +1566,18 @@
       },
       "meta_shifts": [],
       "current_viable_roles": [
-        "SUP",
         "TOP"
       ],
       "current_distribution": {
-        "TOP": 0.889,
-        "SUP": 0.111
+        "TOP": 0.909,
+        "SUP": 0.091
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 9
+      "recent_games": 11
     },
     "Cassiopeia": {
       "canonical_role": "MID",
@@ -1649,9 +1648,9 @@
         "MID": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 17
     },
@@ -1741,11 +1740,11 @@
         "TOP": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 12
+      "recent_games": 17
     },
     "Corki": {
       "canonical_role": "MID",
@@ -1865,15 +1864,15 @@
         "MID"
       ],
       "current_distribution": {
-        "ADC": 0.963,
-        "MID": 0.037
+        "ADC": 0.96,
+        "MID": 0.04
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 109
+      "recent_games": 151
     },
     "Diana": {
       "canonical_role": "JUNGLE",
@@ -1913,9 +1912,9 @@
       ],
       "current_distribution": {},
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 0
     },
@@ -1986,9 +1985,9 @@
         "TOP": 0.5
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 4
     },
@@ -2069,11 +2068,11 @@
         "ADC": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 1
+      "recent_games": 2
     },
     "Ekko": {
       "canonical_role": "JUNGLE",
@@ -2106,9 +2105,9 @@
         "MID": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 1
     },
@@ -2193,11 +2192,11 @@
         "SUP": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 8
+      "recent_games": 9
     },
     "Ezreal": {
       "canonical_role": "ADC",
@@ -2288,11 +2287,11 @@
         "ADC": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 49
+      "recent_games": 65
     },
     "Fiddlesticks": {
       "canonical_role": "JUNGLE",
@@ -2327,9 +2326,9 @@
       ],
       "current_distribution": {},
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 0
     },
@@ -2376,9 +2375,9 @@
       ],
       "current_distribution": {},
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 0
     },
@@ -2482,28 +2481,27 @@
         {
           "role": "TOP",
           "started_patch": "15.1",
-          "ended_patch": null,
+          "ended_patch": "15.17",
           "peak_patch": "15.8",
           "peak_rate": 0.55,
           "total_games": 53,
-          "status": "active",
-          "reason": null
+          "status": "ended",
+          "reason": "no_recent_picks"
         }
       ],
       "current_viable_roles": [
-        "MID",
-        "TOP"
+        "MID"
       ],
       "current_distribution": {
-        "MID": 0.857,
-        "TOP": 0.143
+        "MID": 0.876,
+        "TOP": 0.124
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 84
+      "recent_games": 105
     },
     "Gangplank": {
       "canonical_role": "TOP",
@@ -2554,11 +2552,11 @@
         "TOP": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 4
+      "recent_games": 5
     },
     "Garen": {
       "canonical_role": "TOP",
@@ -2601,9 +2599,9 @@
         "TOP": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 1
     },
@@ -2696,11 +2694,11 @@
         "TOP": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 23
+      "recent_games": 25
     },
     "Gragas": {
       "canonical_role": "JUNGLE",
@@ -2790,6 +2788,16 @@
       },
       "meta_shifts": [
         {
+          "role": "SUP",
+          "started_patch": "15.6",
+          "ended_patch": null,
+          "peak_patch": "15.10",
+          "peak_rate": 0.833,
+          "total_games": 16,
+          "status": "ended",
+          "reason": "no_recent_picks"
+        },
+        {
           "role": "TOP",
           "started_patch": "15.1",
           "ended_patch": null,
@@ -2798,33 +2806,22 @@
           "total_games": 55,
           "status": "active",
           "reason": null
-        },
-        {
-          "role": "SUP",
-          "started_patch": "15.6",
-          "ended_patch": null,
-          "peak_patch": "15.10",
-          "peak_rate": 0.833,
-          "total_games": 16,
-          "status": "active",
-          "reason": null
         }
       ],
       "current_viable_roles": [
         "JUNGLE",
-        "SUP",
         "TOP"
       ],
       "current_distribution": {
-        "TOP": 0.625,
-        "SUP": 0.375
+        "TOP": 0.818,
+        "SUP": 0.182
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 8
+      "recent_games": 11
     },
     "Graves": {
       "canonical_role": "JUNGLE",
@@ -2849,9 +2846,9 @@
       ],
       "current_distribution": {},
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 0
     },
@@ -2929,11 +2926,11 @@
         "TOP": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 56
+      "recent_games": 87
     },
     "Hecarim": {
       "canonical_role": "JUNGLE",
@@ -2956,13 +2953,15 @@
       "current_viable_roles": [
         "JUNGLE"
       ],
-      "current_distribution": {},
+      "current_distribution": {
+        "JUNGLE": 1.0
+      },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 0
+      "recent_games": 1
     },
     "Hwei": {
       "canonical_role": "MID",
@@ -3039,11 +3038,11 @@
         "MID": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 5
+      "recent_games": 7
     },
     "Irelia": {
       "canonical_role": "TOP",
@@ -3076,15 +3075,13 @@
         "MID",
         "TOP"
       ],
-      "current_distribution": {
-        "TOP": 1.0
-      },
+      "current_distribution": {},
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 1
+      "recent_games": 0
     },
     "Ivern": {
       "canonical_role": "JUNGLE",
@@ -3155,11 +3152,11 @@
         "JUNGLE": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 5
+      "recent_games": 3
     },
     "Janna": {
       "canonical_role": "SUP",
@@ -3194,11 +3191,11 @@
         "SUP": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 1
+      "recent_games": 2
     },
     "Jarvan IV": {
       "canonical_role": null,
@@ -3276,15 +3273,14 @@
         "JUNGLE"
       ],
       "current_distribution": {
-        "JUNGLE": 0.989,
-        "SUP": 0.011
+        "JUNGLE": 0.991
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 92
+      "recent_games": 113
     },
     "Jax": {
       "canonical_role": "TOP",
@@ -3381,15 +3377,15 @@
         "TOP"
       ],
       "current_distribution": {
-        "TOP": 0.973,
-        "JUNGLE": 0.027
+        "TOP": 0.958,
+        "JUNGLE": 0.042
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 38
+      "recent_games": 48
     },
     "Jayce": {
       "canonical_role": "TOP",
@@ -3490,28 +3486,27 @@
         {
           "role": "MID",
           "started_patch": "14.1",
-          "ended_patch": null,
+          "ended_patch": "15.17",
           "peak_patch": "14.1",
           "peak_rate": 1.0,
           "total_games": 32,
-          "status": "active",
-          "reason": null
+          "status": "ended",
+          "reason": "no_recent_picks"
         }
       ],
       "current_viable_roles": [
-        "MID",
         "TOP"
       ],
       "current_distribution": {
-        "TOP": 0.8,
-        "MID": 0.2
+        "TOP": 0.813,
+        "MID": 0.187
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 25
+      "recent_games": 32
     },
     "Jhin": {
       "canonical_role": "ADC",
@@ -3602,11 +3597,11 @@
         "ADC": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 66
+      "recent_games": 97
     },
     "Jinx": {
       "canonical_role": "ADC",
@@ -3685,11 +3680,11 @@
         "ADC": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 12
+      "recent_games": 21
     },
     "K'Sante": {
       "canonical_role": null,
@@ -3797,11 +3792,11 @@
         "TOP": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 77
+      "recent_games": 105
     },
     "Kai'Sa": {
       "canonical_role": null,
@@ -3901,11 +3896,11 @@
         "ADC": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 82
+      "recent_games": 118
     },
     "Kalista": {
       "canonical_role": "ADC",
@@ -3988,11 +3983,11 @@
         "ADC": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 16
+      "recent_games": 18
     },
     "Karma": {
       "canonical_role": "MID",
@@ -4082,15 +4077,15 @@
         "SUP"
       ],
       "current_distribution": {
-        "SUP": 0.968,
-        "MID": 0.032
+        "SUP": 0.974,
+        "MID": 0.026
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 31
+      "recent_games": 38
     },
     "Karthus": {
       "canonical_role": "JUNGLE",
@@ -4127,9 +4122,9 @@
       ],
       "current_distribution": {},
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 0
     },
@@ -4170,9 +4165,9 @@
         "MID": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 2
     },
@@ -4241,9 +4236,9 @@
         "TOP": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 2
     },
@@ -4276,9 +4271,9 @@
       ],
       "current_distribution": {},
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 0
     },
@@ -4347,11 +4342,11 @@
         "JUNGLE": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 3
+      "recent_games": 4
     },
     "Kled": {
       "canonical_role": "TOP",
@@ -4399,9 +4394,9 @@
         "TOP": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 4
     },
@@ -4438,9 +4433,9 @@
       ],
       "current_distribution": {},
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 0
     },
@@ -4520,9 +4515,9 @@
         "MID": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 6
     },
@@ -4621,15 +4616,15 @@
         "JUNGLE"
       ],
       "current_distribution": {
-        "JUNGLE": 0.941,
-        "MID": 0.059
+        "JUNGLE": 0.95,
+        "MID": 0.05
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 17
+      "recent_games": 20
     },
     "Leona": {
       "canonical_role": "SUP",
@@ -4715,15 +4710,15 @@
         "SUP"
       ],
       "current_distribution": {
-        "SUP": 0.983,
-        "JUNGLE": 0.017
+        "SUP": 0.986,
+        "JUNGLE": 0.014
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 60
+      "recent_games": 70
     },
     "Lillia": {
       "canonical_role": "JUNGLE",
@@ -4814,11 +4809,11 @@
         "JUNGLE": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 4
+      "recent_games": 5
     },
     "Lissandra": {
       "canonical_role": "MID",
@@ -4857,9 +4852,9 @@
         "MID": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 5
     },
@@ -4948,15 +4943,15 @@
         "ADC"
       ],
       "current_distribution": {
-        "ADC": 0.985,
-        "MID": 0.015
+        "ADC": 0.99,
+        "MID": 0.01
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 68
+      "recent_games": 96
     },
     "Lulu": {
       "canonical_role": "SUP",
@@ -5038,15 +5033,15 @@
         "SUP"
       ],
       "current_distribution": {
-        "SUP": 0.941,
-        "MID": 0.059
+        "SUP": 0.955,
+        "MID": 0.045
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 17
+      "recent_games": 22
     },
     "Lux": {
       "canonical_role": "MID",
@@ -5081,9 +5076,9 @@
       ],
       "current_distribution": {},
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 0
     },
@@ -5110,9 +5105,9 @@
       ],
       "current_distribution": {},
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 0
     },
@@ -5141,13 +5136,15 @@
       "current_viable_roles": [
         "MID"
       ],
-      "current_distribution": {},
+      "current_distribution": {
+        "MID": 1.0
+      },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 0
+      "recent_games": 1
     },
     "Maokai": {
       "canonical_role": "SUP",
@@ -5247,16 +5244,6 @@
       },
       "meta_shifts": [
         {
-          "role": "TOP",
-          "started_patch": "15.1",
-          "ended_patch": "15.6",
-          "peak_patch": "15.4",
-          "peak_rate": 0.625,
-          "total_games": 15,
-          "status": "ended",
-          "reason": "no_recent_picks"
-        },
-        {
           "role": "JUNGLE",
           "started_patch": "14.1",
           "ended_patch": null,
@@ -5265,6 +5252,16 @@
           "total_games": 162,
           "status": "active",
           "reason": null
+        },
+        {
+          "role": "TOP",
+          "started_patch": "15.1",
+          "ended_patch": "15.6",
+          "peak_patch": "15.4",
+          "peak_rate": 0.625,
+          "total_games": 15,
+          "status": "ended",
+          "reason": "no_recent_picks"
         }
       ],
       "current_viable_roles": [
@@ -5272,15 +5269,15 @@
         "SUP"
       ],
       "current_distribution": {
-        "JUNGLE": 0.629,
-        "SUP": 0.371
+        "JUNGLE": 0.7,
+        "SUP": 0.3
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 35
+      "recent_games": 40
     },
     "Mel": {
       "canonical_role": "MID",
@@ -5331,9 +5328,9 @@
         "MID": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 2
     },
@@ -5390,9 +5387,9 @@
         "SUP": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 2
     },
@@ -5494,11 +5491,11 @@
         "ADC": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 23
+      "recent_games": 28
     },
     "Mordekaiser": {
       "canonical_role": "TOP",
@@ -5545,9 +5542,9 @@
         "TOP": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 6
     },
@@ -5591,9 +5588,9 @@
         "JUNGLE": 0.25
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 8
     },
@@ -5678,11 +5675,11 @@
         "JUNGLE": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 27
+      "recent_games": 26
     },
     "Nami": {
       "canonical_role": "SUP",
@@ -5751,11 +5748,11 @@
         "SUP": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 7
+      "recent_games": 10
     },
     "Nasus": {
       "canonical_role": "TOP",
@@ -5780,9 +5777,9 @@
       ],
       "current_distribution": {},
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 0
     },
@@ -5872,11 +5869,11 @@
         "SUP": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 73
+      "recent_games": 113
     },
     "Neeko": {
       "canonical_role": "MID",
@@ -5966,14 +5963,14 @@
         "SUP"
       ],
       "current_distribution": {
-        "SUP": 1.0
+        "SUP": 0.992
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 78
+      "recent_games": 120
     },
     "Nidalee": {
       "canonical_role": "JUNGLE",
@@ -6073,9 +6070,9 @@
         "JUNGLE": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 4
     },
@@ -6106,9 +6103,9 @@
       ],
       "current_distribution": {},
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 0
     },
@@ -6195,19 +6192,18 @@
       },
       "meta_shifts": [],
       "current_viable_roles": [
-        "JUNGLE",
-        "SUP"
+        "JUNGLE"
       ],
       "current_distribution": {
-        "JUNGLE": 0.889,
-        "SUP": 0.111
+        "JUNGLE": 0.9,
+        "SUP": 0.1
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 27
+      "recent_games": 40
     },
     "Olaf": {
       "canonical_role": "TOP",
@@ -6300,15 +6296,15 @@
         "TOP"
       ],
       "current_distribution": {
-        "JUNGLE": 0.667,
-        "TOP": 0.333
+        "JUNGLE": 0.75,
+        "TOP": 0.25
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 6
+      "recent_games": 8
     },
     "Orianna": {
       "canonical_role": "MID",
@@ -6391,11 +6387,11 @@
         "MID": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 99
+      "recent_games": 142
     },
     "Ornn": {
       "canonical_role": "TOP",
@@ -6482,11 +6478,11 @@
         "TOP": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 28
+      "recent_games": 52
     },
     "Pantheon": {
       "canonical_role": "TOP",
@@ -6599,15 +6595,15 @@
         "TOP"
       ],
       "current_distribution": {
-        "JUNGLE": 0.957,
-        "SUP": 0.043
+        "JUNGLE": 0.971,
+        "SUP": 0.029
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 70
+      "recent_games": 104
     },
     "Poppy": {
       "canonical_role": "TOP",
@@ -6736,16 +6732,16 @@
         "TOP"
       ],
       "current_distribution": {
-        "JUNGLE": 0.673,
-        "SUP": 0.31,
-        "TOP": 0.017
+        "JUNGLE": 0.662,
+        "SUP": 0.297,
+        "TOP": 0.041
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 58
+      "recent_games": 74
     },
     "Pyke": {
       "canonical_role": "SUP",
@@ -6804,9 +6800,9 @@
         "SUP": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 9
     },
@@ -6855,11 +6851,11 @@
         "JUNGLE": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 17
+      "recent_games": 16
     },
     "Rakan": {
       "canonical_role": "SUP",
@@ -6953,15 +6949,14 @@
         "SUP"
       ],
       "current_distribution": {
-        "SUP": 0.99,
-        "JUNGLE": 0.01
+        "SUP": 0.993
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 97
+      "recent_games": 140
     },
     "Rammus": {
       "canonical_role": "JUNGLE",
@@ -6988,9 +6983,9 @@
         "SUP": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 1
     },
@@ -7037,15 +7032,15 @@
         "TOP"
       ],
       "current_distribution": {
-        "TOP": 0.846,
-        "JUNGLE": 0.154
+        "TOP": 0.8,
+        "JUNGLE": 0.2
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 13
+      "recent_games": 10
     },
     "Rell": {
       "canonical_role": "SUP",
@@ -7145,15 +7140,14 @@
         "SUP"
       ],
       "current_distribution": {
-        "SUP": 0.989,
-        "JUNGLE": 0.011
+        "SUP": 0.993
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 91
+      "recent_games": 141
     },
     "Renata Glasc": {
       "canonical_role": null,
@@ -7250,11 +7244,11 @@
         "SUP": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 28
+      "recent_games": 38
     },
     "Renekton": {
       "canonical_role": "TOP",
@@ -7347,11 +7341,11 @@
         "TOP": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 63
+      "recent_games": 92
     },
     "Rengar": {
       "canonical_role": "JUNGLE",
@@ -7376,9 +7370,9 @@
       ],
       "current_distribution": {},
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 0
     },
@@ -7413,9 +7407,9 @@
       ],
       "current_distribution": {},
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 0
     },
@@ -7506,11 +7500,11 @@
         "TOP": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 102
+      "recent_games": 160
     },
     "Ryze": {
       "canonical_role": "MID",
@@ -7599,11 +7593,11 @@
         "MID": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 92
+      "recent_games": 126
     },
     "Sejuani": {
       "canonical_role": "JUNGLE",
@@ -7705,15 +7699,15 @@
         "JUNGLE"
       ],
       "current_distribution": {
-        "JUNGLE": 0.969,
-        "SUP": 0.031
+        "JUNGLE": 0.979,
+        "SUP": 0.021
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 32
+      "recent_games": 47
     },
     "Senna": {
       "canonical_role": "ADC",
@@ -7793,11 +7787,11 @@
         "ADC": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 23
+      "recent_games": 32
     },
     "Seraphine": {
       "canonical_role": "ADC",
@@ -7876,9 +7870,9 @@
         "SUP": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 2
     },
@@ -7940,14 +7934,14 @@
         "TOP"
       ],
       "current_distribution": {
-        "TOP": 1.0
+        "SUP": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 2
+      "recent_games": 1
     },
     "Shen": {
       "canonical_role": "TOP",
@@ -8014,26 +8008,27 @@
         {
           "role": "SUP",
           "started_patch": "15.2",
-          "ended_patch": "15.16",
+          "ended_patch": null,
           "peak_patch": "15.2",
           "peak_rate": 1.0,
           "total_games": 12,
-          "status": "ended",
-          "reason": "no_recent_picks"
+          "status": "active",
+          "reason": null
         }
       ],
       "current_viable_roles": [
         "TOP"
       ],
       "current_distribution": {
-        "TOP": 1.0
+        "SUP": 0.5,
+        "TOP": 0.5
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 1
+      "recent_games": 2
     },
     "Shyvana": {
       "canonical_role": "JUNGLE",
@@ -8058,9 +8053,9 @@
       ],
       "current_distribution": {},
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 0
     },
@@ -8093,9 +8088,9 @@
         "TOP": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 1
     },
@@ -8182,15 +8177,15 @@
         "TOP"
       ],
       "current_distribution": {
-        "TOP": 0.979,
-        "MID": 0.021
+        "TOP": 0.985,
+        "MID": 0.015
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 94
+      "recent_games": 133
     },
     "Sivir": {
       "canonical_role": "ADC",
@@ -8273,11 +8268,11 @@
         "ADC": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 86
+      "recent_games": 125
     },
     "Skarner": {
       "canonical_role": "JUNGLE",
@@ -8369,14 +8364,15 @@
         "TOP"
       ],
       "current_distribution": {
-        "JUNGLE": 1.0
+        "JUNGLE": 0.985,
+        "SUP": 0.015
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 41
+      "recent_games": 66
     },
     "Smolder": {
       "canonical_role": "ADC",
@@ -8469,16 +8465,15 @@
         "ADC"
       ],
       "current_distribution": {
-        "ADC": 0.883,
-        "TOP": 0.059,
-        "MID": 0.059
+        "ADC": 0.948,
+        "MID": 0.052
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 17
+      "recent_games": 19
     },
     "Soraka": {
       "canonical_role": "SUP",
@@ -8511,9 +8506,9 @@
       ],
       "current_distribution": {},
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 0
     },
@@ -8571,9 +8566,9 @@
         "MID": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 3
     },
@@ -8680,15 +8675,15 @@
         "MID"
       ],
       "current_distribution": {
-        "MID": 0.56,
-        "JUNGLE": 0.44
+        "MID": 0.703,
+        "JUNGLE": 0.297
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 25
+      "recent_games": 37
     },
     "Syndra": {
       "canonical_role": "MID",
@@ -8759,11 +8754,11 @@
         "MID": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 5
+      "recent_games": 6
     },
     "Tahm Kench": {
       "canonical_role": null,
@@ -8827,9 +8822,9 @@
         "SUP": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 7
     },
@@ -8917,11 +8912,11 @@
         "MID": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 96
+      "recent_games": 139
     },
     "Talon": {
       "canonical_role": "MID",
@@ -8946,9 +8941,9 @@
       ],
       "current_distribution": {},
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 0
     },
@@ -9005,11 +9000,11 @@
         "SUP": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 6
+      "recent_games": 5
     },
     "Thresh": {
       "canonical_role": "SUP",
@@ -9068,11 +9063,11 @@
         "SUP": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 4
+      "recent_games": 9
     },
     "Tristana": {
       "canonical_role": "ADC",
@@ -9178,15 +9173,15 @@
         "MID"
       ],
       "current_distribution": {
-        "MID": 0.667,
-        "ADC": 0.333
+        "MID": 0.615,
+        "ADC": 0.385
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 12
+      "recent_games": 13
     },
     "Trundle": {
       "canonical_role": "TOP",
@@ -9259,16 +9254,15 @@
         "TOP"
       ],
       "current_distribution": {
-        "JUNGLE": 0.973,
-        "SUP": 0.013,
-        "TOP": 0.013
+        "JUNGLE": 0.974,
+        "SUP": 0.026
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 75
+      "recent_games": 114
     },
     "Tryndamere": {
       "canonical_role": "TOP",
@@ -9306,9 +9300,9 @@
         "JUNGLE": 0.5
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 2
     },
@@ -9375,11 +9369,11 @@
         "MID": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 17
+      "recent_games": 16
     },
     "Twitch": {
       "canonical_role": "ADC",
@@ -9418,9 +9412,9 @@
         "ADC": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 1
     },
@@ -9491,11 +9485,11 @@
         "TOP": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 4
+      "recent_games": 5
     },
     "Urgot": {
       "canonical_role": "TOP",
@@ -9534,15 +9528,13 @@
       "current_viable_roles": [
         "TOP"
       ],
-      "current_distribution": {
-        "TOP": 1.0
-      },
+      "current_distribution": {},
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 1
+      "recent_games": 0
     },
     "Varus": {
       "canonical_role": "ADC",
@@ -9633,15 +9625,15 @@
         "ADC"
       ],
       "current_distribution": {
-        "ADC": 0.983,
-        "TOP": 0.017
+        "ADC": 0.987,
+        "TOP": 0.013
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 58
+      "recent_games": 77
     },
     "Vayne": {
       "canonical_role": "ADC",
@@ -9673,9 +9665,9 @@
         "ADC": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 3
     },
@@ -9708,9 +9700,9 @@
         "MID": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 2
     },
@@ -9748,9 +9740,9 @@
         "MID": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 1
     },
@@ -9838,15 +9830,15 @@
         "JUNGLE"
       ],
       "current_distribution": {
-        "JUNGLE": 0.956,
-        "SUP": 0.044
+        "JUNGLE": 0.97,
+        "SUP": 0.03
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 67
+      "recent_games": 99
     },
     "Viego": {
       "canonical_role": "JUNGLE",
@@ -9933,19 +9925,19 @@
       },
       "meta_shifts": [],
       "current_viable_roles": [
-        "JUNGLE",
-        "MID"
+        "JUNGLE"
       ],
       "current_distribution": {
-        "JUNGLE": 0.8,
-        "MID": 0.2
+        "JUNGLE": 0.812,
+        "MID": 0.125,
+        "SUP": 0.063
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 10
+      "recent_games": 16
     },
     "Viktor": {
       "canonical_role": "MID",
@@ -10026,15 +10018,15 @@
         "MID"
       ],
       "current_distribution": {
-        "MID": 0.973,
-        "ADC": 0.027
+        "MID": 0.984,
+        "ADC": 0.016
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 37
+      "recent_games": 61
     },
     "Vladimir": {
       "canonical_role": "MID",
@@ -10102,9 +10094,9 @@
         "TOP": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 1
     },
@@ -10193,9 +10185,9 @@
         "JUNGLE": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 5
     },
@@ -10230,9 +10222,9 @@
       ],
       "current_distribution": {},
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 0
     },
@@ -10336,15 +10328,15 @@
         "JUNGLE"
       ],
       "current_distribution": {
-        "JUNGLE": 0.96,
-        "SUP": 0.04
+        "JUNGLE": 0.961,
+        "SUP": 0.039
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 101
+      "recent_games": 154
     },
     "Xayah": {
       "canonical_role": "ADC",
@@ -10431,11 +10423,11 @@
         "ADC": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 53
+      "recent_games": 84
     },
     "Xerath": {
       "canonical_role": "MID",
@@ -10470,9 +10462,9 @@
       ],
       "current_distribution": {},
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 0
     },
@@ -10574,15 +10566,15 @@
         "JUNGLE"
       ],
       "current_distribution": {
-        "JUNGLE": 0.97,
-        "SUP": 0.03
+        "JUNGLE": 0.968,
+        "SUP": 0.032
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 102
+      "recent_games": 159
     },
     "Yasuo": {
       "canonical_role": "TOP",
@@ -10661,9 +10653,9 @@
         "MID": 0.5
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 2
     },
@@ -10755,15 +10747,15 @@
         "TOP"
       ],
       "current_distribution": {
-        "MID": 0.969,
-        "TOP": 0.031
+        "MID": 0.977,
+        "TOP": 0.023
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 32
+      "recent_games": 43
     },
     "Yorick": {
       "canonical_role": "TOP",
@@ -10826,11 +10818,11 @@
         "TOP": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 48
+      "recent_games": 67
     },
     "Yunara": {
       "canonical_role": "ADC",
@@ -10869,11 +10861,11 @@
         "ADC": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 65
+      "recent_games": 98
     },
     "Yuumi": {
       "canonical_role": "SUP",
@@ -10918,9 +10910,9 @@
       ],
       "current_distribution": {},
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 0
     },
@@ -10962,9 +10954,9 @@
         "JUNGLE": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 1
     },
@@ -11042,15 +11034,15 @@
         "MID"
       ],
       "current_distribution": {
-        "JUNGLE": 0.941,
-        "MID": 0.059
+        "JUNGLE": 0.952,
+        "MID": 0.048
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 17
+      "recent_games": 21
     },
     "Zeri": {
       "canonical_role": "ADC",
@@ -11142,15 +11134,15 @@
         "ADC"
       ],
       "current_distribution": {
-        "ADC": 0.965,
-        "MID": 0.035
+        "ADC": 0.967,
+        "MID": 0.034
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 29
+      "recent_games": 30
     },
     "Ziggs": {
       "canonical_role": "ADC",
@@ -11257,15 +11249,15 @@
         "MID"
       ],
       "current_distribution": {
-        "ADC": 0.666,
-        "MID": 0.334
+        "ADC": 0.608,
+        "MID": 0.392
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 42
+      "recent_games": 46
     },
     "Zilean": {
       "canonical_role": "SUP",
@@ -11296,9 +11288,9 @@
       ],
       "current_distribution": {},
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 0
     },
@@ -11351,11 +11343,11 @@
         "MID": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
-      "recent_games": 3
+      "recent_games": 4
     },
     "Zyra": {
       "canonical_role": "SUP",
@@ -11452,9 +11444,9 @@
         "JUNGLE": 1.0
       },
       "current_patch_window": [
+        "15.15",
         "15.16",
-        "15.17",
-        "15.18"
+        "15.17"
       ],
       "recent_games": 7
     }

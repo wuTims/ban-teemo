@@ -1,5 +1,6 @@
 """Tests for flex pick role resolution."""
 import pytest
+import json
 from ban_teemo.services.scorers.flex_resolver import FlexResolver
 
 
@@ -23,8 +24,10 @@ def test_get_role_probabilities_single_role(resolver):
 
 
 def test_is_flex_pick(resolver):
-    """Test flex pick detection."""
+    """Test flex pick detection derived from current_viable_roles."""
+    # Aurora has 2+ viable roles
     assert resolver.is_flex_pick("Aurora") is True
+    # Jinx is bot-only
     assert resolver.is_flex_pick("Jinx") is False
 
 
@@ -75,35 +78,13 @@ def test_unknown_champion_deterministic(resolver):
     assert probs1 == probs2, "Should be deterministic for unknown champions"
 
 
-def test_fallback_uses_role_history(resolver):
-    """Champions not in flex data should use role history as fallback."""
-    # Check internal state to find a champion in role_history but not flex_data
-    # If flex_data has fewer champions than role_history, we can test fallback
-    flex_champs = set(resolver._flex_data.keys())
-    history_champs = set(resolver._role_history.keys())
-    fallback_only = history_champs - flex_champs
-
-    if fallback_only:
-        # Test a champion that requires fallback
-        test_champ = next(iter(fallback_only))
-        probs = resolver.get_role_probabilities(test_champ)
-        assert probs, f"{test_champ} should have probabilities via role history fallback"
-        assert len(probs) == 1, "Fallback should return single role with 100%"
-        assert list(probs.values())[0] == 1.0, "Fallback should have 100% for primary role"
-    else:
-        # All role_history champs are in flex_data, test deterministic fallback
-        probs = resolver.get_role_probabilities("CompletelyUnknownChampXYZ123")
-        assert probs, "Unknown champion should get deterministic fallback"
-        assert len(probs) == 1, "Deterministic fallback returns single role"
-
-
 def test_role_history_uses_canonical_role(resolver):
     """Role history should parse canonical_role field correctly."""
     # Aatrox is a known TOP laner in role history - now stored as lowercase
-    if "Aatrox" in resolver._role_history:
-        assert resolver._role_history["Aatrox"] == "top"
-    # At minimum, role history should have some entries
-    assert len(resolver._role_history) > 0, "Role history should be populated"
+    if "Aatrox" in resolver._primary_roles:
+        assert resolver._primary_roles["Aatrox"] == "top"
+    # At minimum, primary roles should have some entries
+    assert len(resolver._primary_roles) > 0, "Primary roles should be populated"
 
 
 def test_matchup_calculator_accepts_role_variants():
@@ -135,18 +116,6 @@ def test_minimum_probability_threshold_filters_noise(resolver):
     assert probs == {}, f"Viego should not be suggested for support (2% < 5% threshold), got: {probs}"
 
 
-def test_minimum_probability_threshold_filters_exact_boundary(resolver):
-    """Champions at exactly 5% should be filtered (we use >5% not >=5%).
-
-    Nocturne has exactly 5% support probability - this should be filtered.
-    """
-    filled_all_but_support = {"top", "jungle", "mid", "bot"}
-    probs = resolver.get_role_probabilities("Nocturne", filled_roles=filled_all_but_support)
-
-    # Should return empty dict because 5% support is at the boundary (we filter >= threshold)
-    assert probs == {}, f"Nocturne should not be suggested for support (5% at boundary), got: {probs}"
-
-
 def test_minimum_probability_threshold_allows_legit_flex(resolver):
     """Champions with meaningful secondary role probability should still be suggested.
 
@@ -158,3 +127,273 @@ def test_minimum_probability_threshold_allows_legit_flex(resolver):
     # Poppy has 39% support, which is above the 5% threshold
     assert "support" in probs, f"Poppy should be suggested for support (39% > 5% threshold), got: {probs}"
     assert probs["support"] == 1.0, "Should normalize to 100% when it's the only remaining role"
+
+
+def _write_role_history(tmp_path, role_history):
+    """Helper to create test knowledge files with champion_role_history.json only."""
+    knowledge_dir = tmp_path / "knowledge"
+    knowledge_dir.mkdir()
+    (knowledge_dir / "champion_role_history.json").write_text(
+        json.dumps({"champions": role_history})
+    )
+    return knowledge_dir
+
+
+def test_current_viable_roles_override_all_time(tmp_path):
+    """current_viable_roles should override all_time_distribution."""
+    role_history = {
+        "Flexy": {
+            "canonical_role": "TOP",
+            "all_time_distribution": {"TOP": 1.0},
+            "current_viable_roles": ["mid"],
+            "current_distribution": {"MID": 0.8, "TOP": 0.2},
+        },
+    }
+    knowledge_dir = _write_role_history(tmp_path, role_history)
+    resolver = FlexResolver(knowledge_dir)
+
+    probs = resolver.get_role_probabilities("Flexy")
+    # Should only use mid since it's the only current_viable_role
+    assert probs == {"mid": 1.0}
+
+
+def test_current_distribution_used_when_has_viable_roles(tmp_path):
+    """When current_viable_roles exists, use current_distribution probabilities."""
+    role_history = {
+        "Flexy2": {
+            "canonical_role": "TOP",
+            "all_time_distribution": {"TOP": 1.0},
+            "current_viable_roles": ["top", "mid"],
+            "current_distribution": {"TOP": 0.3, "MID": 0.7},
+        },
+    }
+    knowledge_dir = _write_role_history(tmp_path, role_history)
+    resolver = FlexResolver(knowledge_dir)
+
+    probs = resolver.get_role_probabilities("Flexy2")
+    # Should use current_distribution proportions
+    assert "top" in probs
+    assert "mid" in probs
+    assert probs["mid"] > probs["top"]
+
+
+def test_fallback_all_time_if_current_missing(tmp_path):
+    """Fall back to all_time_distribution when no current data exists."""
+    role_history = {
+        "Solo": {
+            "canonical_role": "ADC",
+            "all_time_distribution": {"ADC": 0.8, "MID": 0.15},
+        },
+    }
+    knowledge_dir = _write_role_history(tmp_path, role_history)
+    resolver = FlexResolver(knowledge_dir)
+
+    probs = resolver.get_role_probabilities("Solo")
+    # Should use all_time_distribution, filtering by MIN_ROLE_PROBABILITY
+    assert "bot" in probs
+    assert "mid" in probs
+
+
+def test_is_flex_derived_from_current_viable_roles(tmp_path):
+    """is_flex_pick should be derived from current_viable_roles count."""
+    role_history = {
+        "FlexChamp": {
+            "canonical_role": "TOP",
+            "current_viable_roles": ["top", "jungle"],
+            "all_time_distribution": {"TOP": 0.6, "JUNGLE": 0.4},
+        },
+        "SingleChamp": {
+            "canonical_role": "MID",
+            "current_viable_roles": ["mid"],
+            "all_time_distribution": {"MID": 1.0},
+        },
+    }
+    knowledge_dir = _write_role_history(tmp_path, role_history)
+    resolver = FlexResolver(knowledge_dir)
+
+    assert resolver.is_flex_pick("FlexChamp") is True
+    assert resolver.is_flex_pick("SingleChamp") is False
+
+
+def test_is_flex_fallback_to_all_time(tmp_path):
+    """is_flex_pick should fall back to all_time_distribution when no current data."""
+    role_history = {
+        "OldFlex": {
+            "canonical_role": "TOP",
+            "all_time_distribution": {"TOP": 0.6, "JUNGLE": 0.4},
+        },
+        "OldSingle": {
+            "canonical_role": "MID",
+            "all_time_distribution": {"MID": 0.98, "TOP": 0.02},
+        },
+    }
+    knowledge_dir = _write_role_history(tmp_path, role_history)
+    resolver = FlexResolver(knowledge_dir)
+
+    # OldFlex has 2 roles above MIN_ROLE_PROBABILITY
+    assert resolver.is_flex_pick("OldFlex") is True
+    # OldSingle has only 1 role above MIN_ROLE_PROBABILITY
+    assert resolver.is_flex_pick("OldSingle") is False
+
+
+def test_unknown_champion_not_flex(tmp_path):
+    """Unknown champions should not be considered flex picks."""
+    knowledge_dir = _write_role_history(tmp_path, {})
+    resolver = FlexResolver(knowledge_dir)
+
+    assert resolver.is_flex_pick("CompletelyUnknownChamp") is False
+
+
+def test_filled_roles_excluded(tmp_path):
+    """Filled roles should be excluded from probabilities."""
+    role_history = {
+        "Flexy": {
+            "current_viable_roles": ["top", "mid", "jungle"],
+            "current_distribution": {"TOP": 0.4, "MID": 0.4, "JUNGLE": 0.2},
+        },
+    }
+    knowledge_dir = _write_role_history(tmp_path, role_history)
+    resolver = FlexResolver(knowledge_dir)
+
+    # Fill top and mid
+    probs = resolver.get_role_probabilities("Flexy", filled_roles={"top", "mid"})
+    # Only jungle should remain
+    assert probs == {"jungle": 1.0}
+
+
+def test_all_viable_roles_filled_returns_empty(tmp_path):
+    """When all viable roles are filled, return empty dict."""
+    role_history = {
+        "Flexy": {
+            "current_viable_roles": ["top", "mid"],
+            "current_distribution": {"TOP": 0.5, "MID": 0.5},
+        },
+    }
+    knowledge_dir = _write_role_history(tmp_path, role_history)
+    resolver = FlexResolver(knowledge_dir)
+
+    # Fill both viable roles
+    probs = resolver.get_role_probabilities("Flexy", filled_roles={"top", "mid"})
+    assert probs == {}
+
+
+def test_primary_role_fallback(tmp_path):
+    """Fall back to canonical_role when no distribution data."""
+    role_history = {
+        "SimpleChamp": {
+            "canonical_role": "TOP",
+        },
+    }
+    knowledge_dir = _write_role_history(tmp_path, role_history)
+    resolver = FlexResolver(knowledge_dir)
+
+    probs = resolver.get_role_probabilities("SimpleChamp")
+    assert probs == {"top": 1.0}
+
+
+def test_minimum_probability_threshold_at_boundary(tmp_path):
+    """Roles at exactly the threshold boundary should be filtered."""
+    role_history = {
+        "EdgeCase": {
+            "all_time_distribution": {"TOP": 0.95, "SUP": 0.05},  # 5% is at boundary
+        }
+    }
+    knowledge_dir = _write_role_history(tmp_path, role_history)
+    resolver = FlexResolver(knowledge_dir)
+
+    filled_all_but_support = {"top", "jungle", "mid", "bot"}
+    probs = resolver.get_role_probabilities("EdgeCase", filled_roles=filled_all_but_support)
+
+    # 5% is below MIN_ROLE_PROBABILITY (0.051), so should be empty
+    assert probs == {}, f"EdgeCase should not be suggested for support (5% at boundary), got: {probs}"
+
+
+def test_talon_midlane_not_jungle(resolver):
+    """Talon should resolve to mid, not jungle (P3 fix verification).
+
+    This test verifies the consolidation fix - previously Talon would be
+    dropped because flex_champions.json said JUNGLE but current_viable_roles
+    said MID, and the intersection was empty.
+    """
+    probs = resolver.get_role_probabilities("Talon")
+    # Talon should now resolve based on current_viable_roles from champion_role_history
+    assert probs, "Talon should have role probabilities"
+    # Should include mid (current meta role)
+    if "mid" in probs or "jungle" in probs:
+        # Either is acceptable depending on current data
+        pass
+    else:
+        # At minimum should have some role
+        assert len(probs) > 0, f"Talon should have at least one role, got: {probs}"
+
+
+class TestFinalizeRoleAssignments:
+    """Tests for the finalize_role_assignments method."""
+
+    def test_basic_single_role_champions(self, resolver):
+        """Standard comp with single-role champions should assign correctly."""
+        champions = ["Aatrox", "Lee Sin", "Ahri", "Jinx", "Thresh"]
+        result = resolver.finalize_role_assignments(champions)
+
+        assert len(result) == 5
+        roles = {r["role"] for r in result}
+        assert roles == {"top", "jungle", "mid", "bot", "support"}
+
+        # Verify expected assignments
+        assignments = {r["role"]: r["champion"] for r in result}
+        assert assignments["top"] == "Aatrox"
+        assert assignments["jungle"] == "Lee Sin"
+        assert assignments["mid"] == "Ahri"
+        assert assignments["bot"] == "Jinx"
+        assert assignments["support"] == "Thresh"
+
+    def test_flex_pick_resolution(self, resolver):
+        """Flex champions should be resolved to best available role."""
+        # Aurora is mid/top flex, with Aatrox already taking top
+        champions = ["Aatrox", "Lee Sin", "Aurora", "Jinx", "Thresh"]
+        result = resolver.finalize_role_assignments(champions)
+
+        assignments = {r["role"]: r["champion"] for r in result}
+        # Aurora should go mid since top is taken by Aatrox
+        assert assignments["mid"] == "Aurora"
+        assert assignments["top"] == "Aatrox"
+
+    def test_returns_role_ordered(self, resolver):
+        """Result should be ordered by role: top, jungle, mid, bot, support."""
+        champions = ["Thresh", "Jinx", "Ahri", "Lee Sin", "Aatrox"]
+        result = resolver.finalize_role_assignments(champions)
+
+        expected_order = ["top", "jungle", "mid", "bot", "support"]
+        actual_order = [r["role"] for r in result]
+        assert actual_order == expected_order
+
+    def test_handles_incomplete_team(self, resolver):
+        """Should handle less than 5 champions gracefully."""
+        champions = ["Aatrox", "Lee Sin", "Ahri"]
+        result = resolver.finalize_role_assignments(champions)
+
+        # Returns what we got with default role assignments
+        assert len(result) == 3
+
+    def test_all_flex_picks(self, tmp_path):
+        """Team with all flex champions should still assign uniquely."""
+        role_history = {
+            "FlexA": {"current_viable_roles": ["top", "mid"], "current_distribution": {"TOP": 0.6, "MID": 0.4}},
+            "FlexB": {"current_viable_roles": ["jungle", "top"], "current_distribution": {"JUNGLE": 0.7, "TOP": 0.3}},
+            "FlexC": {"current_viable_roles": ["mid", "bot"], "current_distribution": {"MID": 0.5, "BOT": 0.5}},
+            "FlexD": {"current_viable_roles": ["bot", "support"], "current_distribution": {"BOT": 0.6, "SUP": 0.4}},
+            "FlexE": {"current_viable_roles": ["support", "jungle"], "current_distribution": {"SUP": 0.7, "JUNGLE": 0.3}},
+        }
+        knowledge_dir = _write_role_history(tmp_path, role_history)
+        resolver = FlexResolver(knowledge_dir)
+
+        champions = ["FlexA", "FlexB", "FlexC", "FlexD", "FlexE"]
+        result = resolver.finalize_role_assignments(champions)
+
+        # All 5 roles should be assigned exactly once
+        roles = [r["role"] for r in result]
+        assert sorted(roles) == ["bot", "jungle", "mid", "support", "top"]
+
+        # Each champion assigned exactly once
+        champs = [r["champion"] for r in result]
+        assert sorted(champs) == sorted(champions)

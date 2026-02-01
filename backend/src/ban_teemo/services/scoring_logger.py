@@ -186,6 +186,8 @@ class ScoringLogger:
                     "synergy_multiplier": rec.get("synergy_multiplier"),
                     "confidence": rec.get("confidence"),
                     "components": rec.get("components", {}),
+                    "proficiency_source": rec.get("proficiency_source"),
+                    "proficiency_player": rec.get("proficiency_player"),
                     "flag": rec.get("flag"),
                     "reasons": rec.get("reasons", []),
                 }
@@ -365,8 +367,9 @@ class ScoringLogger:
         actual_events = [e for e in self.entries if e["event"] == "actual_action"]
 
         # Analyze component distributions for picks
+        # Note: matchup_counter is the combined matchup+counter component (refactored)
         component_stats: dict[str, dict] = {}
-        for comp in ["meta", "proficiency", "matchup", "counter", "synergy"]:
+        for comp in ["meta", "proficiency", "matchup_counter", "synergy", "archetype"]:
             component_stats[comp] = {"values": [], "at_05_count": 0}
 
         for event in pick_events:

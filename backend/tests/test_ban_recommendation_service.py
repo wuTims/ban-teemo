@@ -209,136 +209,6 @@ def test_auto_lookup_normalizes_roles(mock_repository):
     assert players[0]["name"] == "TestPlayer"
 
 
-def test_pool_depth_boost_shallow_pool_phase2(service):
-    """Verify shallow pools (≤3 champions) get pool_depth=1.0 in Phase 2."""
-    # Create controlled proficiency entry
-    proficiency = {"score": 0.5, "games": 5, "confidence": "MEDIUM"}
-    player = {"name": "TestPlayer", "role": "MID"}
-
-    # Calculate base priority (without pool depth) by testing with deep pool
-    base_priority, base_components = service._calculate_ban_priority(
-        champion="Azir",
-        player=player,
-        proficiency=proficiency,
-        pool_size=10,  # Deep pool - no boost
-        is_phase_1=False,
-    )
-
-    # Calculate priority with shallow pool
-    shallow_priority, components = service._calculate_ban_priority(
-        champion="Azir",
-        player=player,
-        proficiency=proficiency,
-        pool_size=3,  # Shallow pool
-        is_phase_1=False,
-    )
-
-    # Pool depth raw score should be 1.0 for shallow pools
-    assert components["pool_depth"] == 1.0
-    # Base should have 0 pool depth
-    assert base_components["pool_depth"] == 0.0
-    # Shallow should have higher priority
-    assert shallow_priority > base_priority
-
-
-def test_pool_depth_boost_medium_pool_phase2(service):
-    """Verify medium pools (4-5 champions) get pool_depth=0.5 in Phase 2."""
-    proficiency = {"score": 0.5, "games": 5, "confidence": "MEDIUM"}
-    player = {"name": "TestPlayer", "role": "MID"}
-
-    base_priority, _ = service._calculate_ban_priority(
-        champion="Azir", player=player, proficiency=proficiency, pool_size=10,
-        is_phase_1=False,
-    )
-    medium_priority, components = service._calculate_ban_priority(
-        champion="Azir", player=player, proficiency=proficiency, pool_size=5,
-        is_phase_1=False,
-    )
-
-    # Pool depth raw score should be 0.5 for medium pools
-    assert components["pool_depth"] == 0.5
-    # Medium should have higher priority than deep
-    assert medium_priority > base_priority
-
-
-def test_pool_depth_no_boost_for_missing_data_phase2(service):
-    """Verify pool_depth=0 when pool_size=0 (missing data) in Phase 2."""
-    proficiency = {"score": 0.5, "games": 5, "confidence": "MEDIUM"}
-    player = {"name": "TestPlayer", "role": "MID"}
-
-    base_priority, _ = service._calculate_ban_priority(
-        champion="Azir", player=player, proficiency=proficiency, pool_size=10,
-        is_phase_1=False,
-    )
-    no_data_priority, components = service._calculate_ban_priority(
-        champion="Azir", player=player, proficiency=proficiency, pool_size=0,
-        is_phase_1=False,
-    )
-
-    assert no_data_priority == base_priority, \
-        f"pool_size=0 should get no boost: base={base_priority}, no_data={no_data_priority}"
-    assert components["pool_depth"] == 0.0
-
-
-def test_pool_depth_no_boost_for_deep_pool_phase2(service):
-    """Verify pool_depth=0 when pool_size >= 6 in Phase 2."""
-    proficiency = {"score": 0.5, "games": 5, "confidence": "MEDIUM"}
-    player = {"name": "TestPlayer", "role": "MID"}
-
-    priority_6, components_6 = service._calculate_ban_priority(
-        champion="Azir", player=player, proficiency=proficiency, pool_size=6,
-        is_phase_1=False,
-    )
-    priority_10, components_10 = service._calculate_ban_priority(
-        champion="Azir", player=player, proficiency=proficiency, pool_size=10,
-        is_phase_1=False,
-    )
-
-    assert priority_6 == priority_10, \
-        f"Deep pools (6+) should have same priority: 6={priority_6}, 10={priority_10}"
-    assert components_6["pool_depth"] == 0.0
-    assert components_10["pool_depth"] == 0.0
-
-
-def test_pool_depth_boost_shallow_pool_phase1(service):
-    """Verify +0.08 boost is applied for shallow pools in Phase 1 tiered system."""
-    proficiency = {"score": 0.5, "games": 5, "confidence": "MEDIUM"}
-    player = {"name": "TestPlayer", "role": "MID"}
-
-    # Phase 1 uses tiered system with smaller pool bonuses
-    base_priority, _ = service._calculate_ban_priority(
-        champion="Azir", player=player, proficiency=proficiency, pool_size=10,
-        is_phase_1=True,
-    )
-    shallow_priority, components = service._calculate_ban_priority(
-        champion="Azir", player=player, proficiency=proficiency, pool_size=3,
-        is_phase_1=True,
-    )
-
-    assert shallow_priority == min(1.0, round(base_priority + 0.08, 3)), \
-        f"Expected +0.08 boost in Phase 1: base={base_priority}, shallow={shallow_priority}"
-    assert components["pool_depth_bonus"] == 0.08
-
-
-def test_pool_depth_boost_medium_pool_phase1(service):
-    """Verify +0.04 boost is applied for medium pools in Phase 1 tiered system."""
-    proficiency = {"score": 0.5, "games": 5, "confidence": "MEDIUM"}
-    player = {"name": "TestPlayer", "role": "MID"}
-
-    base_priority, _ = service._calculate_ban_priority(
-        champion="Azir", player=player, proficiency=proficiency, pool_size=10,
-        is_phase_1=True,
-    )
-    medium_priority, components = service._calculate_ban_priority(
-        champion="Azir", player=player, proficiency=proficiency, pool_size=5,
-        is_phase_1=True,
-    )
-
-    assert medium_priority == min(1.0, round(base_priority + 0.04, 3)), \
-        f"Expected +0.04 boost in Phase 1: base={base_priority}, medium={medium_priority}"
-    assert components["pool_depth_bonus"] == 0.04
-
-
 def test_get_presence_score_high_presence(service):
     """High presence champions should have high presence score."""
     # Azir has ~39% presence
@@ -399,29 +269,28 @@ def test_get_archetype_counter_score_no_enemy():
 
 
 def test_phase1_ban_priority_uses_tiered_system():
-    """Phase 1 bans should use tiered priority system."""
+    """Phase 1 bans should use meta-first tiered priority system."""
     service = BanRecommendationService()
 
-    # T1: High proficiency + high presence + in pool
+    # T1: High proficiency + high presence + in pool = signature power pick
     priority_t1, components_t1 = service._calculate_ban_priority(
         champion="Azir",  # High presence champion
         player={"name": "TestPlayer", "role": "mid"},
         proficiency={"score": 0.8, "games": 10, "confidence": "HIGH"},
-        pool_size=5,
         is_phase_1=True,
     )
 
     # Should include tier classification
     assert "tier" in components_t1, "Should include tier classification"
-    assert components_t1["tier"] == "T1_POOL_AND_POWER", (
-        f"High prof + high presence should be T1, got {components_t1['tier']}"
+    assert components_t1["tier"] == "T1_SIGNATURE_POWER", (
+        f"High prof + high presence should be T1_SIGNATURE_POWER, got {components_t1['tier']}"
     )
     assert "tier_bonus" in components_t1, "Should include tier bonus"
-    assert components_t1["tier_bonus"] >= 0.10, "T1 should have significant bonus"
+    assert components_t1["tier_bonus"] >= 0.05, "T1 should have significant bonus"
 
 
 def test_tier1_bans_include_meta_weight():
-    """Tier 1 bans should factor in meta score with additional 10% weight."""
+    """Tier 1 bans should have high weighted meta component (35% weight)."""
     service = BanRecommendationService()
 
     # T1 scenario: High proficiency + high presence + in pool
@@ -429,106 +298,90 @@ def test_tier1_bans_include_meta_weight():
         champion="Azir",  # High presence, high meta champion
         player={"name": "TestPlayer", "role": "mid"},
         proficiency={"score": 0.85, "games": 12, "confidence": "HIGH"},
-        pool_size=4,
         is_phase_1=True,
     )
 
     # Verify tier is T1
-    assert components_t1["tier"] == "T1_POOL_AND_POWER", (
-        f"Should be T1, got {components_t1['tier']}"
+    assert components_t1["tier"] == "T1_SIGNATURE_POWER", (
+        f"Should be T1_SIGNATURE_POWER, got {components_t1['tier']}"
     )
 
-    # Tier 1 should include meta component
-    assert "meta" in components_t1, "Tier 1 should include meta component"
-    assert components_t1["meta"] > 0, "Meta score should be positive for Azir"
+    # All phase 1 bans should include weighted meta component
+    assert "meta" in components_t1, "Should include weighted meta component"
+    # Meta is weighted at 35%, so for a high-meta champ like Azir (~0.65), expect ~0.23
+    assert components_t1["meta"] > 0.15, f"Meta should be significant for Azir: {components_t1['meta']}"
 
-    # Tier 1 should include meta_tier_bonus (additional 10% weight)
-    assert "meta_tier_bonus" in components_t1, (
-        "Tier 1 should include meta_tier_bonus component"
-    )
-    # meta_tier_bonus = meta_score * 0.10
-    expected_bonus = round(components_t1["meta"] * 0.10, 3)
-    assert components_t1["meta_tier_bonus"] == expected_bonus, (
-        f"meta_tier_bonus should be meta * 0.10 = {expected_bonus}, "
-        f"got {components_t1['meta_tier_bonus']}"
+    # Verify meta is the highest weighted component (meta-first approach)
+    assert components_t1["meta"] >= components_t1.get("proficiency", 0), (
+        f"Meta should be weighted higher than proficiency in Phase 1"
     )
 
 
 def test_tier1_meta_weight_increases_priority():
-    """Tier 1 meta weight should increase priority for high-meta champions."""
+    """High-meta champions should have higher priority due to meta-first weighting."""
     service = BanRecommendationService()
 
-    # T2 scenario (high proficiency, low presence - no meta bonus)
-    priority_t2, components_t2 = service._calculate_ban_priority(
+    # T3 scenario (high proficiency, low presence - comfort pick)
+    priority_t3, components_t3 = service._calculate_ban_priority(
         champion="Qiyana",  # Low presence
         player={"name": "TestPlayer", "role": "mid"},
         proficiency={"score": 0.85, "games": 12, "confidence": "HIGH"},
-        pool_size=4,
         is_phase_1=True,
     )
 
-    # T1 scenario (high proficiency, high presence - gets meta bonus)
+    # T1 scenario (high proficiency, high presence - signature power)
     priority_t1, components_t1 = service._calculate_ban_priority(
         champion="Azir",  # High presence
         player={"name": "TestPlayer", "role": "mid"},
         proficiency={"score": 0.85, "games": 12, "confidence": "HIGH"},
-        pool_size=4,
         is_phase_1=True,
     )
 
-    # Verify tiers
-    assert components_t2["tier"] == "T2_POOL_TARGET", f"Should be T2, got {components_t2['tier']}"
-    assert components_t1["tier"] == "T1_POOL_AND_POWER", f"Should be T1, got {components_t1['tier']}"
+    # Verify tiers - low presence comfort pick is T3, high presence is T1
+    assert components_t3["tier"] == "T3_COMFORT_PICK", f"Should be T3, got {components_t3['tier']}"
+    assert components_t1["tier"] == "T1_SIGNATURE_POWER", f"Should be T1, got {components_t1['tier']}"
 
-    # T1 should have meta_tier_bonus, T2 should not
-    assert "meta_tier_bonus" in components_t1, "T1 should have meta_tier_bonus"
-    assert "meta_tier_bonus" not in components_t2, "T2 should not have meta_tier_bonus"
-
-    # The priority difference should include the meta tier bonus
-    # (along with other differences from meta/presence)
-    assert priority_t1 > priority_t2, (
-        f"T1 priority ({priority_t1}) should exceed T2 ({priority_t2}) "
-        f"due to higher tier bonus and meta tier bonus"
+    # T1 (high meta) should have higher priority than T3 (low meta)
+    assert priority_t1 > priority_t3, (
+        f"T1 priority ({priority_t1}) should exceed T3 ({priority_t3}) "
+        f"due to higher meta weight and tier bonus"
     )
 
 
-def test_phase1_tier2_pool_targeting():
-    """Tier 2 should apply for pool targeting without high presence."""
+def test_phase1_tier3_comfort_pick():
+    """Tier 3 should apply for comfort picks without high presence."""
     service = BanRecommendationService()
 
-    # T2: High proficiency, in pool, but low presence champion
+    # T3: High proficiency, in pool, but low presence champion
     priority, components = service._calculate_ban_priority(
         champion="Qiyana",  # Lower presence (~7%)
         player={"name": "TestPlayer", "role": "mid"},
         proficiency={"score": 0.75, "games": 8, "confidence": "MEDIUM"},
-        pool_size=3,
         is_phase_1=True,
     )
 
-    # Should be T2 (pool target) or T4 (if presence threshold not met)
+    # Should be T3 (comfort pick) or T4 (if proficiency threshold not met)
     tier = components.get("tier", "")
-    assert tier in ["T2_POOL_TARGET", "T4_GENERAL"], f"Low presence comfort pick: {tier}"
+    assert tier in ["T3_COMFORT_PICK", "T4_GENERAL"], f"Low presence comfort pick: {tier}"
 
 
 def test_phase1_tier_ordering():
     """Higher tiers should have higher priority than lower tiers."""
     service = BanRecommendationService()
 
-    # T1 scenario
+    # T1 scenario (signature power - high meta + high proficiency)
     p1, c1 = service._calculate_ban_priority(
         champion="Azir",
         player={"name": "P1", "role": "mid"},
         proficiency={"score": 0.85, "games": 12, "confidence": "HIGH"},
-        pool_size=4,
         is_phase_1=True,
     )
 
-    # T4 scenario (low proficiency, low presence)
+    # T4 scenario (general - low proficiency, low presence)
     p4, c4 = service._calculate_ban_priority(
         champion="Qiyana",
         player={"name": "P1", "role": "mid"},
         proficiency={"score": 0.5, "games": 2, "confidence": "LOW"},
-        pool_size=8,
         is_phase_1=True,
     )
 
@@ -668,14 +521,14 @@ def test_phase1_includes_global_power_bans():
     has_power_ban = any(c in high_presence for c in champ_names)
     assert has_power_ban, f"Should include power bans, got: {champ_names}"
 
-    # Verify global power bans have the T3_GLOBAL_POWER tier classification
+    # Verify global power bans have the T2_META_POWER tier classification
     # (this ensures the new _get_global_power_bans method is being used)
     has_global_power_tier = any(
-        r.get("components", {}).get("tier") == "T3_GLOBAL_POWER"
+        r.get("components", {}).get("tier") == "T2_META_POWER"
         for r in recommendations
     )
     assert has_global_power_tier, (
-        f"Should have T3_GLOBAL_POWER tier bans, got tiers: "
+        f"Should have T2_META_POWER tier bans, got tiers: "
         f"{[r.get('components', {}).get('tier') for r in recommendations]}"
     )
 

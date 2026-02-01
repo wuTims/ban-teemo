@@ -16,8 +16,9 @@ class ProficiencyScorer:
 
     # Champion Comfort + Role Strength constants
     COMFORT_BASELINE = 0.5  # Starting comfort for all unplayed champions
-    G_FULL = 8  # Games for full comfort scaling
-    PROFICIENCY_CAP = 0.95  # Prevent perfect scores
+    G_FULL = 10  # Games for full comfort scaling
+    # Raised from 0.95 to 1.0 for better score differentiation
+    PROFICIENCY_CAP = 1.0
     ROLE_STRENGTH_BONUS = 0.3  # Max bonus from role strength
 
     def __init__(self, knowledge_dir: Optional[Path] = None):

@@ -9,6 +9,7 @@ from ban_teemo.services.scorers import (
     ProficiencyScorer,
     MatchupCalculator,
     SkillTransferService,
+    TournamentScorer,
 )
 from ban_teemo.services.synergy_service import SynergyService
 from ban_teemo.utils.role_normalizer import CANONICAL_ROLES, normalize_role
@@ -21,28 +22,45 @@ ROLE_FILL_THRESHOLD = 0.75
 class PickRecommendationEngine:
     """Generates pick recommendations using weighted multi-factor scoring."""
 
-    # Domain expert priority order:
-    # 1. Team composition (archetype) - "draft best team possible"
-    # 2. Meta strength - "don't pick weak champions"
-    # 3. Matchup/Counter - "don't feed"
+    # Domain expert priority order (tuned via experiments - see scripts/scoring_experiments.py):
+    # 1. Meta strength - "pick strong champions" (highest - uses hybrid scoring)
+    # 2. Matchup/Counter - "don't feed"
+    # 3. Team composition (archetype) - reduced to avoid specialist bias
     # 4. Proficiency - "they're pros anyway"
     #
     # NOTE: Synergy is NOT a base weight - it's applied as a multiplier to the
     # final score. This is intentional: synergy is a team-wide modifier that
     # scales the entire recommendation, not an individual champion attribute.
-    # Adding synergy here would double-count it (once as weight, once as multiplier).
+    #
+    # Tuning notes (2026-01-31):
+    # - Archetype reduced from 0.30 to 0.15: 29 champions have archetype=1.0,
+    #   causing "specialist bias" where niche picks outscored balanced meta picks
+    # - Meta increased to 0.45 with hybrid scoring: averages original tier-based
+    #   score with presence-based score, improving accuracy by +5.8%
     BASE_WEIGHTS = {
-        "archetype": 0.30,       # Team composition fit (highest - defines team identity)
-        "meta": 0.30,            # Champion power level
+        "meta": 0.45,            # Champion power level (hybrid scoring)
         "matchup_counter": 0.25, # Combined lane + team matchups
+        "archetype": 0.15,       # Team composition fit (reduced - specialist bias)
         "proficiency": 0.15,     # Player comfort (lowest - they're pros)
     }
+
+    # Simulator mode weights - replaces meta with tournament components
+    # Tournament data provides current pro meta signals (picks/bans/winrates)
+    SIMULATOR_BASE_WEIGHTS = {
+        "tournament_priority": 0.25,    # Role-agnostic contestation
+        "tournament_performance": 0.20, # Role-specific adjusted winrate
+        "matchup_counter": 0.25,        # Combined lane + team matchups
+        "archetype": 0.15,              # Team composition fit
+        "proficiency": 0.15,            # Player comfort
+    }
+
     # Widened from 0.3 to 0.5 for better score differentiation (0.75-1.25 range)
     SYNERGY_MULTIPLIER_RANGE = 0.5
     ALL_ROLES = CANONICAL_ROLES  # {top, jungle, mid, bot, support}
     TRANSFER_EXPANSION_LIMIT = 2
 
-    def __init__(self, knowledge_dir: Optional[Path] = None):
+    def __init__(self, knowledge_dir: Optional[Path] = None, simulator_mode: bool = False):
+        self.simulator_mode = simulator_mode
         self.meta_scorer = MetaScorer(knowledge_dir)
         self.flex_resolver = FlexResolver(knowledge_dir)
         self.proficiency_scorer = ProficiencyScorer(knowledge_dir)
@@ -50,6 +68,7 @@ class PickRecommendationEngine:
         self.synergy_service = SynergyService(knowledge_dir)
         self.archetype_service = ArchetypeService(knowledge_dir)
         self.skill_transfer_service = SkillTransferService(knowledge_dir)
+        self.tournament_scorer = TournamentScorer(knowledge_dir)
 
     def get_recommendations(
         self,
@@ -296,8 +315,19 @@ class PickRecommendationEngine:
         ) = self._choose_best_role(champion, probs, team_players, role_fill=role_fill)
         suggested_role = suggested_role or "mid"
 
-        # Meta
-        components["meta"] = self.meta_scorer.get_meta_score(champion)
+        # Meta / Tournament scoring
+        if self.simulator_mode:
+            # Simulator mode: use tournament data for current pro meta signals
+            tournament_scores = self.tournament_scorer.get_tournament_scores(
+                champion, suggested_role
+            )
+            components["tournament_priority"] = tournament_scores["priority"]
+            components["tournament_performance"] = tournament_scores["performance"]
+            # Also store meta for reference/fallback but don't weight it
+            components["meta"] = self.meta_scorer.get_meta_score(champion)
+        else:
+            # Normal mode: use existing meta scoring
+            components["meta"] = self.meta_scorer.get_meta_score(champion)
 
         # Proficiency - role-assigned player only
         components["proficiency"] = role_prof_score
@@ -309,6 +339,8 @@ class PickRecommendationEngine:
         # Rationale: "don't feed" encompasses both lane and team-level matchups
         matchup_scores = []
         counter_scores = []
+        matchup_data_found = 0
+        matchup_lookups = 0
 
         for enemy in enemy_picks:
             # Lane matchup
@@ -316,16 +348,33 @@ class PickRecommendationEngine:
             if suggested_role in role_probs and role_probs[suggested_role] > 0:
                 result = self.matchup_calculator.get_lane_matchup(champion, enemy, suggested_role)
                 matchup_scores.append(result["score"])
+                matchup_lookups += 1
+                if result.get("data_source") != "none":
+                    matchup_data_found += 1
 
             # Team counter
             result = self.matchup_calculator.get_team_matchup(champion, enemy)
             counter_scores.append(result["score"])
+            matchup_lookups += 1
+            if result.get("data_source") != "none":
+                matchup_data_found += 1
 
         # Combine: weight lane matchup slightly higher (60/40)
         # Lane matchup is more important than general team counter
         matchup_avg = sum(matchup_scores) / len(matchup_scores) if matchup_scores else 0.5
         counter_avg = sum(counter_scores) / len(counter_scores) if counter_scores else 0.5
         components["matchup_counter"] = matchup_avg * 0.6 + counter_avg * 0.4
+
+        # Determine matchup data confidence
+        # NO_DATA: no lookups had real data, PARTIAL: some data, FULL: all data
+        if matchup_lookups == 0:
+            matchup_conf = "NO_DATA"  # No enemy picks yet
+        elif matchup_data_found == 0:
+            matchup_conf = "NO_DATA"  # All lookups returned defaults
+        elif matchup_data_found < matchup_lookups:
+            matchup_conf = "PARTIAL"  # Some data available
+        else:
+            matchup_conf = "FULL"  # All lookups had real data
 
         # Synergy
         synergy_result = self.synergy_service.calculate_team_synergy(our_picks + [champion])
@@ -349,17 +398,30 @@ class PickRecommendationEngine:
         effective_weights = self._get_effective_weights(
             role_prof_conf,
             pick_count=pick_count,
-            has_enemy_picks=has_enemy_picks
+            has_enemy_picks=has_enemy_picks,
+            matchup_conf=matchup_conf,
+            simulator_mode=self.simulator_mode,
         )
         # NOTE: Synergy is applied as a multiplier AFTER base_score, not as a component.
         # This avoids double-counting synergy (which is already a multiplier in the
         # current implementation). See synergy_multiplier usage below.
-        base_score = (
-            components["archetype"] * effective_weights["archetype"] +
-            components["meta"] * effective_weights["meta"] +
-            components["matchup_counter"] * effective_weights["matchup_counter"] +
-            components["proficiency"] * effective_weights["proficiency"]
-        )
+        if self.simulator_mode:
+            # Simulator mode: tournament components replace meta
+            base_score = (
+                components["tournament_priority"] * effective_weights["tournament_priority"] +
+                components["tournament_performance"] * effective_weights["tournament_performance"] +
+                components["archetype"] * effective_weights["archetype"] +
+                components["matchup_counter"] * effective_weights["matchup_counter"] +
+                components["proficiency"] * effective_weights["proficiency"]
+            )
+        else:
+            # Normal mode: use meta
+            base_score = (
+                components["archetype"] * effective_weights["archetype"] +
+                components["meta"] * effective_weights["meta"] +
+                components["matchup_counter"] * effective_weights["matchup_counter"] +
+                components["proficiency"] * effective_weights["proficiency"]
+            )
         # Synergy multiplier is applied separately: total_score = base_score * synergy_multiplier
 
         # Apply blind pick safety factor for early picks without enemy context
@@ -536,13 +598,15 @@ class PickRecommendationEngine:
         self,
         prof_conf: str,
         pick_count: int = 0,
-        has_enemy_picks: bool = False
+        has_enemy_picks: bool = False,
+        matchup_conf: str = "FULL",
+        simulator_mode: bool = False,
     ) -> dict[str, float]:
         """Get context-adjusted scoring weights.
 
         Priority order (domain expert):
         1. archetype - team composition (NEVER reduced - defines team identity)
-        2. meta - champion power
+        2. meta/tournament - champion power
         3. matchup_counter - don't feed
         4. proficiency - lowest (pros can play anything)
 
@@ -551,40 +615,138 @@ class PickRecommendationEngine:
         - Meta is boosted early (power picks) and reduced late (counters matter more)
         - Matchup_counter is boosted late when counter-picking is possible
         - Proficiency is always lowest priority for pro play
+
+        Simulator mode uses AGGRESSIVE phase adjustments:
+        - Early blind: priority +0.05, performance -0.05, matchup -0.10, archetype +0.10
+        - Late counter: priority -0.10, performance +0.05, matchup +0.10, proficiency -0.05
+        These larger swings (0.10-0.15) allow counter-picks to overcome raw priority.
+
+        Data confidence handling:
+        - When proficiency or matchup data is missing (NO_DATA), we reduce that
+          component's weight and redistribute to components we DO have data for.
+        - This prevents "0.5 defaults" from having outsized influence on scoring.
         """
+        if simulator_mode:
+            return self._get_simulator_weights(
+                prof_conf, pick_count, has_enemy_picks, matchup_conf
+            )
+
+        # Normal mode weights
         weights = dict(self.BASE_WEIGHTS)
 
         # First pick: boost meta, reduce proficiency further
         # NOTE: Archetype is NOT reduced - first pick often sets team identity
         if pick_count == 0 and not has_enemy_picks:
             # Blind picks are about power level + team identity
-            weights["meta"] += 0.05           # 0.30 -> 0.35
+            weights["meta"] += 0.05           # 0.45 -> 0.50
             weights["proficiency"] -= 0.05    # 0.15 -> 0.10
 
         # Late draft: boost matchup_counter, reduce meta
         elif has_enemy_picks and pick_count >= 3:
             weights["matchup_counter"] += 0.05  # 0.25 -> 0.30
-            weights["meta"] -= 0.05             # 0.30 -> 0.25
+            weights["meta"] -= 0.05             # 0.45 -> 0.40
+
+        # Handle NO_DATA matchup - reduce weight to avoid 0.5 defaults dominating
+        # This happens when champion has insufficient pro play matchup data
+        #
+        # IMPORTANT: Redistribute to META only (not archetype) because archetype
+        # scores are biased toward specialists (29 champs have arch=1.0).
+        # Redistributing to archetype causes specialists to dominate over
+        # balanced high-meta champions like Azir.
+        if matchup_conf == "NO_DATA":
+            redistribute = weights["matchup_counter"] * 0.5  # Keep 50% weight
+            weights["matchup_counter"] *= 0.5
+            # Redistribute to meta only - archetype bias causes specialist domination
+            weights["meta"] += redistribute
+        elif matchup_conf == "PARTIAL":
+            # Partial data - reduce weight by 25%
+            redistribute = weights["matchup_counter"] * 0.25
+            weights["matchup_counter"] *= 0.75
+            # Redistribute mostly to meta, small amount to archetype
+            weights["meta"] += redistribute * 0.8
+            weights["archetype"] += redistribute * 0.2
 
         # Handle NO_DATA proficiency
         if prof_conf == "NO_DATA":
             redistribute = weights["proficiency"] * 0.8
             weights["proficiency"] *= 0.2
-            # Distribute to archetype and meta (most important factors)
-            weights["archetype"] += redistribute * 0.5
-            weights["meta"] += redistribute * 0.3
-            weights["matchup_counter"] += redistribute * 0.2
+            # Distribute to meta and matchup (avoid archetype bias toward specialists)
+            weights["meta"] += redistribute * 0.6
+            weights["matchup_counter"] += redistribute * 0.4
+
+        return weights
+
+    def _get_simulator_weights(
+        self,
+        prof_conf: str,
+        pick_count: int,
+        has_enemy_picks: bool,
+        matchup_conf: str,
+    ) -> dict[str, float]:
+        """Get simulator mode weights with aggressive phase adjustments.
+
+        Aggressive phase swings allow counter-picks to overcome raw tournament priority:
+        - Early blind: Prioritize contested picks (priority) + team identity (archetype)
+        - Late counter: Prioritize proven performers (performance) + counter-picking (matchup)
+
+        Phase adjustments:
+        | Component              | Base | Early | Late  |
+        |------------------------|------|-------|-------|
+        | tournament_priority    | 0.25 | +0.05 | -0.10 |
+        | tournament_performance | 0.20 | -0.05 | +0.05 |
+        | matchup_counter        | 0.25 | -0.10 | +0.10 |
+        | archetype              | 0.15 | +0.10 | 0     |
+        | proficiency            | 0.15 | 0     | -0.05 |
+        """
+        weights = dict(self.SIMULATOR_BASE_WEIGHTS)
+
+        # Early blind picks (pick_count == 0, no enemy context)
+        if pick_count == 0 and not has_enemy_picks:
+            weights["tournament_priority"] += 0.05    # 0.25 -> 0.30
+            weights["tournament_performance"] -= 0.05 # 0.20 -> 0.15
+            weights["matchup_counter"] -= 0.10        # 0.25 -> 0.15
+            weights["archetype"] += 0.10              # 0.15 -> 0.25
+            # proficiency stays at 0.15
+
+        # Late counter-pick phase (3+ picks, has enemy context)
+        elif has_enemy_picks and pick_count >= 3:
+            weights["tournament_priority"] -= 0.10    # 0.25 -> 0.15
+            weights["tournament_performance"] += 0.05 # 0.20 -> 0.25
+            weights["matchup_counter"] += 0.10        # 0.25 -> 0.35
+            # archetype stays at 0.15
+            weights["proficiency"] -= 0.05            # 0.15 -> 0.10
+
+        # Handle NO_DATA matchup - redistribute to tournament components
+        if matchup_conf == "NO_DATA":
+            redistribute = weights["matchup_counter"] * 0.5
+            weights["matchup_counter"] *= 0.5
+            # Redistribute to tournament_priority (not archetype to avoid specialist bias)
+            weights["tournament_priority"] += redistribute
+        elif matchup_conf == "PARTIAL":
+            redistribute = weights["matchup_counter"] * 0.25
+            weights["matchup_counter"] *= 0.75
+            weights["tournament_priority"] += redistribute * 0.6
+            weights["tournament_performance"] += redistribute * 0.4
+
+        # Handle NO_DATA proficiency
+        if prof_conf == "NO_DATA":
+            redistribute = weights["proficiency"] * 0.8
+            weights["proficiency"] *= 0.2
+            weights["tournament_priority"] += redistribute * 0.4
+            weights["tournament_performance"] += redistribute * 0.3
+            weights["matchup_counter"] += redistribute * 0.3
 
         return weights
 
     def _calculate_role_fill(self, our_picks: list[dict]) -> dict[str, float]:
         """Calculate cumulative role fill from existing picks.
 
-        Flex champions contribute fractionally based on their role probabilities.
-        Pure role champions contribute 1.0 to their role.
+        Two-pass approach:
+        1. First pass: identify pure role picks that definitively fill roles
+        2. Second pass: flex champions redistribute to remaining unfilled roles
 
-        Uses get_role_probabilities() which reads from champion_role_history.json
-        (the single source of truth for role data).
+        This handles cases like Aurora (mid/top flex) + Ambessa (top) where
+        Aurora should commit fully to mid once top is taken.
 
         Args:
             our_picks: List of pick dicts with 'champion' and 'role' keys
@@ -593,7 +755,9 @@ class PickRecommendationEngine:
             Dict mapping role -> fill confidence (0.0 to 1.0+)
         """
         role_fill: dict[str, float] = {}
+        flex_picks: list[tuple[str, dict[str, float]]] = []  # (champion, role_probs)
 
+        # PASS 1: Process pure role champions first (they definitively fill roles)
         for pick in our_picks:
             champion = pick.get("champion") if isinstance(pick, dict) else pick
             assigned_role = pick.get("role") if isinstance(pick, dict) else None
@@ -601,24 +765,20 @@ class PickRecommendationEngine:
             if not champion:
                 continue
 
-            # Get role probabilities (with fallback to role_history for unknown champs)
             role_probs = self.flex_resolver.get_role_probabilities(champion, filled_roles=set())
 
             if not role_probs:
-                # No role data at all - use assigned role if provided
                 if assigned_role:
                     normalized = normalize_role(assigned_role)
                     if normalized:
                         role_fill[normalized] = role_fill.get(normalized, 0.0) + 1.0
                 continue
 
-            # Check if flex (multiple roles with significant probability)
             is_flex = self.flex_resolver.is_flex_pick(champion)
 
             if is_flex:
-                # Flex champion: distribute based on role probabilities
-                for role, prob in role_probs.items():
-                    role_fill[role] = role_fill.get(role, 0.0) + prob
+                # Defer flex champions to pass 2
+                flex_picks.append((champion, role_probs))
             else:
                 # Pure role champion: 1.0 to assigned or primary role
                 role_to_fill = assigned_role
@@ -627,9 +787,32 @@ class PickRecommendationEngine:
                     if normalized:
                         role_fill[normalized] = role_fill.get(normalized, 0.0) + 1.0
                 else:
-                    # Use primary role from probabilities
                     primary_role = max(role_probs, key=role_probs.get)
                     role_fill[primary_role] = role_fill.get(primary_role, 0.0) + 1.0
+
+        # PASS 2: Process flex champions, redistributing to unfilled roles
+        for champion, role_probs in flex_picks:
+            # Find which of this champion's roles are still unfilled
+            unfilled_roles = {
+                role: prob for role, prob in role_probs.items()
+                if role_fill.get(role, 0.0) < ROLE_FILL_THRESHOLD
+            }
+
+            if not unfilled_roles:
+                # All roles filled - use primary role anyway (overfill)
+                primary_role = max(role_probs, key=role_probs.get)
+                role_fill[primary_role] = role_fill.get(primary_role, 0.0) + 1.0
+            elif len(unfilled_roles) == 1:
+                # Only one role unfilled - commit fully to it
+                role = next(iter(unfilled_roles))
+                role_fill[role] = role_fill.get(role, 0.0) + 1.0
+            else:
+                # Multiple unfilled roles - redistribute proportionally among them
+                total_prob = sum(unfilled_roles.values())
+                for role, prob in unfilled_roles.items():
+                    # Normalize probability among unfilled roles only
+                    normalized_prob = prob / total_prob if total_prob > 0 else 1.0 / len(unfilled_roles)
+                    role_fill[role] = role_fill.get(role, 0.0) + normalized_prob
 
         return role_fill
 
@@ -642,11 +825,18 @@ class PickRecommendationEngine:
 
         Thresholds:
         - LOW_CONFIDENCE: confidence < 0.7 (possible range is 0.65-1.0)
-        - SURPRISE_PICK: low meta but high proficiency
+        - SURPRISE_PICK: low meta/tournament_priority but high proficiency
         """
         if result["confidence"] < 0.7:
             return "LOW_CONFIDENCE"
-        if result["components"].get("meta", 0) < 0.4 and result["components"].get("proficiency", 0) >= 0.7:
+
+        # Check for surprise pick: low meta strength but high player comfort
+        # In simulator mode, use tournament_priority instead of meta
+        meta_score = result["components"].get("tournament_priority")
+        if meta_score is None:
+            meta_score = result["components"].get("meta", 0)
+
+        if meta_score < 0.4 and result["components"].get("proficiency", 0) >= 0.7:
             return "SURPRISE_PICK"
         return None
 

@@ -615,74 +615,6 @@ def build_player_proficiency(current_patch: str) -> dict:
     return result
 
 
-def build_flex_champions(current_patch: str) -> dict:
-    """Build flex_champions.json with role probability distributions."""
-    print("Building flex_champions.json...")
-
-    stats = load_csv(PLAYER_GAME_STATS_CSV)
-    knowledge_base = load_json(KNOWLEDGE_BASE_FILE)
-
-    # Pre-load player roles for logging
-    player_roles = load_player_roles()
-    print(f"  Using {len(player_roles)} corrected player roles")
-
-    # Count role occurrences per champion
-    champ_roles = defaultdict(lambda: defaultdict(int))
-
-    for row in stats:
-        champion = row.get("champion_name", "")
-        if not champion:
-            continue
-
-        # Use corrected player role
-        role = get_player_role(row.get("player_name", ""), row.get("role", ""))
-        if not role:
-            continue
-
-        champ_roles[champion][role] += 1
-
-    # Build flex picks data
-    flex_picks = {}
-
-    for champion, roles in champ_roles.items():
-        total = sum(roles.values())
-        if total == 0:
-            continue
-
-        role_probs = {role: count / total for role, count in roles.items()}
-
-        # Check if it's a flex pick (more than one role with >10% presence)
-        significant_roles = [r for r, p in role_probs.items() if p >= 0.1]
-        is_flex = len(significant_roles) > 1
-
-        # Get primary role from knowledge_base if available
-        kb_positions = []
-        if champion in knowledge_base.get("champions", {}):
-            kb_positions = knowledge_base["champions"][champion].get("positions", [])
-            kb_flex = knowledge_base["champions"][champion].get("flex_positions", [])
-            if kb_flex:
-                kb_positions.extend(kb_flex)
-
-        flex_picks[champion] = {
-            **{role: round(prob, 3) for role, prob in sorted(role_probs.items(), key=lambda x: -x[1])},
-            "is_flex": is_flex,
-            "games_total": total,
-            "kb_positions": kb_positions
-        }
-
-    result = {
-        "metadata": {
-            "generated_at": datetime.now().isoformat(),
-            "champions_count": len(flex_picks),
-            "flex_picks_count": sum(1 for c in flex_picks.values() if c["is_flex"])
-        },
-        "flex_picks": dict(sorted(flex_picks.items()))
-    }
-
-    save_json(result, OUTPUT_DIR / "flex_champions.json")
-    return result
-
-
 def build_champion_synergies(current_patch: str) -> dict:
     """Build champion_synergies.json with statistical synergy scores."""
     print("Building champion_synergies.json...")
@@ -1054,7 +986,7 @@ def build_champion_role_history(current_patch: str) -> dict:
 
     # Configuration
     META_WINDOW = 3  # Patches to consider for "current" viability
-    MIN_ROLE_RATE_FOR_VIABLE = 0.10  # 10% threshold to be considered viable
+    MIN_ROLE_RATE_FOR_VIABLE = 0.20  # 20% threshold to be considered viable
     MIN_GAMES_FOR_STATS = 3  # Minimum games in a patch for reliable stats
     META_SHIFT_THRESHOLD = 0.15  # 15% in off-role to be considered a meta shift
     MIN_GAMES_FOR_META_SHIFT = 10  # Minimum total games to count as a real meta shift
@@ -1293,7 +1225,7 @@ def build_frontend_champion_roles(current_patch: str) -> dict:
 
     # Paths
     history_file = OUTPUT_DIR / "champion_role_history.json"
-    frontend_file = BASE_DIR / "deepdraft" / "src" / "data" / "championRoles.json"
+    frontend_file = BASE_DIR / "frontend" / "src" / "data" / "championRoles.json"
 
     # Load data sources
     history = load_json(history_file) if history_file.exists() else {"champions": {}}
@@ -1422,12 +1354,11 @@ DATASETS = {
     "patch_info": build_patch_info,
     "role_baselines": build_role_baselines,
     "meta_stats": build_meta_stats,
-    "flex_champions": build_flex_champions,
     "player_proficiency": build_player_proficiency,
     "champion_synergies": build_champion_synergies,
     "matchup_stats": build_matchup_stats,
     "skill_transfers": build_skill_transfers,
-    "champion_role_history": build_champion_role_history,
+    "champion_role_history": build_champion_role_history,  # Single source of truth for role data
     "frontend_champion_roles": build_frontend_champion_roles,
 }
 
@@ -1455,16 +1386,16 @@ def main():
 
     if args.all:
         # Build in dependency order
+        # Note: flex_champions.json was deprecated and consolidated into champion_role_history.json
         order = [
             "patch_info",
             "role_baselines",
             "meta_stats",
-            "flex_champions",
             "player_proficiency",  # Depends on role_baselines
             "champion_synergies",
             "matchup_stats",
             "skill_transfers",
-            "champion_role_history",  # Tracks role evolution and meta shifts
+            "champion_role_history",  # Single source of truth for role data (replaces flex_champions)
             "frontend_champion_roles",  # Depends on champion_role_history
         ]
         for name in order:

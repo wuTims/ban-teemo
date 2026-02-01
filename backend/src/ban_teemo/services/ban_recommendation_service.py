@@ -3,7 +3,13 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 from ban_teemo.services.archetype_service import ArchetypeService
-from ban_teemo.services.scorers import FlexResolver, MatchupCalculator, MetaScorer, ProficiencyScorer
+from ban_teemo.services.scorers import (
+    FlexResolver,
+    MatchupCalculator,
+    MetaScorer,
+    ProficiencyScorer,
+    TournamentScorer,
+)
 from ban_teemo.services.synergy_service import SynergyService
 from ban_teemo.utils.role_normalizer import normalize_role
 
@@ -17,17 +23,20 @@ class BanRecommendationService:
     def __init__(
         self,
         knowledge_dir: Optional[Path] = None,
-        draft_repository: Optional["DraftRepository"] = None
+        draft_repository: Optional["DraftRepository"] = None,
+        simulator_mode: bool = False,
     ):
         if knowledge_dir is None:
             knowledge_dir = Path(__file__).parents[4] / "knowledge"
 
+        self.simulator_mode = simulator_mode
         self.meta_scorer = MetaScorer(knowledge_dir)
         self.proficiency_scorer = ProficiencyScorer(knowledge_dir)
         self.matchup_calculator = MatchupCalculator(knowledge_dir)
         self.flex_resolver = FlexResolver(knowledge_dir)
         self.archetype_service = ArchetypeService(knowledge_dir)
         self.synergy_service = SynergyService(knowledge_dir)
+        self.tournament_scorer = TournamentScorer(knowledge_dir)
         self._draft_repository = draft_repository
 
     def get_ban_recommendations(
@@ -69,7 +78,6 @@ class BanRecommendationService:
                 player_pool = self.proficiency_scorer.get_player_champion_pool(
                     player["name"], min_games=2
                 )
-                pool_size = len(player_pool)  # Pre-compute once per player for efficiency
 
                 for entry in player_pool[:5]:  # Top 5 per player
                     champ = entry["champion"]
@@ -80,7 +88,6 @@ class BanRecommendationService:
                         champion=champ,
                         player=player,
                         proficiency=entry,
-                        pool_size=pool_size,
                         is_phase_1=is_phase_1,
                     )
 
@@ -160,24 +167,31 @@ class BanRecommendationService:
         champion: str,
         player: dict,
         proficiency: dict,
-        pool_size: int = 0,
         is_phase_1: bool = True,
     ) -> tuple[float, dict[str, float]]:
-        """Calculate ban priority score using explicit tiered priority.
+        """Calculate ban priority score using meta-first tiered priority.
 
-        TIERED PRIORITY SYSTEM (Phase 1):
-            Tier 1 (Highest): High proficiency + high presence (in pool + meta power)
-            Tier 2 (High):    High proficiency only (pool targeting)
-            Tier 3 (Medium):  High presence only (global power)
-            Tier 4 (Lower):   General meta bans
+        PHASE 1 - Meta power and flex threats prioritized:
+            Tier 1 (Highest): Signature power pick (high meta + high proficiency)
+            Tier 2 (High):    Meta power (high presence global threat)
+            Tier 3 (Medium):  Comfort pick (player-specific targeting)
+            Tier 4 (Lower):   General ban
 
-        Base weights: proficiency(30%), meta(25%), presence(25%), flex(20%)
-        Tier bonuses applied on top for combined conditions.
+        Normal mode Phase 1 weights: meta(35%), presence(25%), flex(25%), proficiency(15%)
+        Simulator mode Phase 1 weights: tournament_priority(30%), meta(15%),
+                                        presence(20%), flex(20%), proficiency(15%)
+
+        PHASE 2 - Strategic disruption focus:
+            Synergy/counter scoring handled by _get_contextual_phase2_bans.
+            This function handles player-targeted portion.
+
+        Phase 2 weights: meta(40%), proficiency(30%), comfort(20%), confidence(10%)
         """
         components: dict[str, float] = {}
 
         if is_phase_1:
-            # Phase 1: Tiered power pick priority
+            # Phase 1: Meta power and flex threats prioritized
+            # LLM priority order: meta power > flex threats > player targeting > blind picks
 
             # Calculate base components
             meta_score = self.meta_scorer.get_meta_score(champion)
@@ -191,90 +205,112 @@ class BanRecommendationService:
             is_high_presence = presence >= 0.25
             is_in_pool = proficiency.get("games", 0) >= 2
 
-            # Store RAW 0-1 scores for display, apply weights only for priority
-            # Weights: prof 30%, meta 25%, presence 25%, flex 20%
-            components["proficiency"] = round(prof_score, 3)  # Raw 0-1
-            components["meta"] = round(meta_score, 3)         # Raw 0-1
-            components["presence"] = round(presence, 3)       # Raw 0-1
-            components["flex"] = round(flex, 3)               # Raw 0-1
+            if self.simulator_mode:
+                # Simulator mode: tournament_priority dominates
+                # NOTE: presence is EXCLUDED - it's redundant with tournament_priority
+                # and uses stale meta data, causing inconsistent scoring.
+                # tournament_priority 40%, meta 20%, flex 25%, proficiency 15%
+                tournament_priority = self.tournament_scorer.get_priority(champion)
 
-            # Calculate weighted priority
-            base_priority = (
-                prof_score * 0.30
-                + meta_score * 0.25
-                + presence * 0.25
-                + flex * 0.20
-            )
+                WEIGHT_TOURNAMENT = 0.40
+                WEIGHT_META = 0.20
+                WEIGHT_FLEX = 0.25
+                WEIGHT_PROF = 0.15
 
-            # Apply tier bonuses
-            tier_bonus = 0.0
-            meta_tier_bonus = 0.0
-            if is_high_proficiency and is_high_presence and is_in_pool:
-                # TIER 1: High proficiency + high presence + in pool
-                # High-meta champions get extra weight in Tier 1 (worth banning even without
-                # perfect player targeting). Domain expert feedback: meta should influence
-                # which comfort picks are worth targeting.
-                tier_bonus = 0.15
-                meta_tier_bonus = meta_score * 0.10  # 10% additional meta weight for Tier 1
-                components["tier"] = "T1_POOL_AND_POWER"
-                components["meta_tier_bonus"] = round(meta_tier_bonus, 3)
-            elif is_high_proficiency and is_in_pool:
-                # TIER 2: High proficiency, in pool (comfort pick targeting)
-                tier_bonus = 0.10
-                components["tier"] = "T2_POOL_TARGET"
-            elif is_high_presence:
-                # TIER 3: High presence only (global power ban)
-                tier_bonus = 0.05
-                components["tier"] = "T3_GLOBAL_POWER"
+                components["tournament_priority"] = round(tournament_priority * WEIGHT_TOURNAMENT, 3)
+                components["meta"] = round(meta_score * WEIGHT_META, 3)
+                components["flex"] = round(flex * WEIGHT_FLEX, 3)
+                components["proficiency"] = round(prof_score * WEIGHT_PROF, 3)
+
+                base_priority = (
+                    tournament_priority * WEIGHT_TOURNAMENT
+                    + meta_score * WEIGHT_META
+                    + flex * WEIGHT_FLEX
+                    + prof_score * WEIGHT_PROF
+                )
+
+                # Tier conditions adjusted for tournament priority
+                is_high_tournament = tournament_priority >= 0.50
             else:
-                # TIER 4: General meta ban
+                # Normal mode: meta-first approach
+                # meta 35%, presence 25%, flex 25%, proficiency 15%
+                WEIGHT_META = 0.35
+                WEIGHT_PRESENCE = 0.25
+                WEIGHT_FLEX = 0.25
+                WEIGHT_PROF = 0.15
+
+                components["meta"] = round(meta_score * WEIGHT_META, 3)
+                components["presence"] = round(presence * WEIGHT_PRESENCE, 3)
+                components["flex"] = round(flex * WEIGHT_FLEX, 3)
+                components["proficiency"] = round(prof_score * WEIGHT_PROF, 3)
+
+                base_priority = (
+                    meta_score * WEIGHT_META
+                    + presence * WEIGHT_PRESENCE
+                    + flex * WEIGHT_FLEX
+                    + prof_score * WEIGHT_PROF
+                )
+
+                is_high_tournament = False  # N/A in normal mode
+
+            # Apply tier bonuses (reduced since base weights already prioritize meta)
+            tier_bonus = 0.0
+            # In simulator mode, also check tournament priority for tier determination
+            tier_high_meta = is_high_presence or (self.simulator_mode and is_high_tournament)
+
+            if is_high_proficiency and tier_high_meta and is_in_pool:
+                # TIER 1: High meta + high proficiency (signature power pick)
+                tier_bonus = 0.10
+                components["tier"] = "T1_SIGNATURE_POWER"
+            elif tier_high_meta:
+                # TIER 2: High presence/meta power (global threat)
+                tier_bonus = 0.05
+                components["tier"] = "T2_META_POWER"
+            elif is_high_proficiency and is_in_pool:
+                # TIER 3: Player comfort pick (lower priority in Phase 1)
+                tier_bonus = 0.03
+                components["tier"] = "T3_COMFORT_PICK"
+            else:
+                # TIER 4: General ban
                 tier_bonus = 0.0
                 components["tier"] = "T4_GENERAL"
 
             components["tier_bonus"] = round(tier_bonus, 3)
 
-            # Pool depth exploitation (additive - shallow pools = higher impact)
-            pool_bonus = 0.0
-            if pool_size >= 1:
-                if pool_size <= 3:
-                    pool_bonus = 0.08
-                elif pool_size <= 5:
-                    pool_bonus = 0.04
-            components["pool_depth_bonus"] = round(pool_bonus, 3)
-
-            priority = base_priority + tier_bonus + pool_bonus + meta_tier_bonus
+            priority = base_priority + tier_bonus
         else:
-            # Phase 2: Store RAW 0-1 scores for display, apply weights for priority
-            prof_score = proficiency["score"]
-            components["proficiency"] = round(prof_score, 3)  # Raw 0-1
+            # Phase 2: Strategic bans - synergy disruption and counter denial
+            # LLM priority: break synergies > deny counters > archetype enablers > player comfort
+            # Note: synergy/counter scoring is handled by _get_contextual_phase2_bans
+            # This function handles player-targeted portion
 
+            prof_score = proficiency["score"]
             meta_score = self.meta_scorer.get_meta_score(champion)
-            components["meta"] = round(meta_score, 3)  # Raw 0-1
 
             games = proficiency.get("games", 0)
             comfort = min(1.0, games / 10)
-            components["comfort"] = round(comfort, 3)  # Raw 0-1
 
             conf = proficiency.get("confidence", "LOW")
             conf_value = {"HIGH": 1.0, "MEDIUM": 0.5, "LOW": 0.0}.get(conf, 0)
-            components["confidence"] = round(conf_value, 3)  # Raw 0-1
 
-            pool_depth = 0.0
-            if pool_size >= 1:
-                if pool_size <= 3:
-                    pool_depth = 1.0  # Shallow pool - high impact
-                elif pool_size <= 5:
-                    pool_depth = 0.5  # Medium pool
-                # Deep pools (6+) = 0
-            components["pool_depth"] = round(pool_depth, 3)  # Raw 0-1
+            # Phase 2 weights: meta still important, proficiency secondary
+            # meta 40%, proficiency 30%, comfort 20%, confidence 10%
+            WEIGHT_META = 0.40
+            WEIGHT_PROF = 0.30
+            WEIGHT_COMFORT = 0.20
+            WEIGHT_CONF = 0.10
 
-            # Weighted priority calculation (weights: prof 40%, meta 30%, comfort 15%, conf 10%, pool 5%)
+            # Store WEIGHTED scores for display
+            components["meta"] = round(meta_score * WEIGHT_META, 3)
+            components["proficiency"] = round(prof_score * WEIGHT_PROF, 3)
+            components["comfort"] = round(comfort * WEIGHT_COMFORT, 3)
+            components["confidence"] = round(conf_value * WEIGHT_CONF, 3)
+
             priority = (
-                prof_score * 0.40
-                + meta_score * 0.30
-                + comfort * 0.15
-                + conf_value * 0.10
-                + pool_depth * 0.05
+                meta_score * WEIGHT_META
+                + prof_score * WEIGHT_PROF
+                + comfort * WEIGHT_COMFORT
+                + conf_value * WEIGHT_CONF
             )
 
         return (round(min(1.0, priority), 3), components)
@@ -309,12 +345,23 @@ class BanRecommendationService:
 
         These are always considered regardless of enemy player pool data.
 
+        In simulator mode, uses tournament_priority as the primary signal.
+
         Returns:
             List of ban candidates based on global meta presence
         """
         candidates = []
 
-        for champ in self.meta_scorer.get_top_meta_champions(limit=15):
+        # Collect candidate champions
+        if self.simulator_mode:
+            # Simulator mode: include both meta champions AND tournament priority leaders
+            # This ensures high tournament priority picks aren't missed due to stale meta data
+            candidate_champs = set(self.meta_scorer.get_top_meta_champions(limit=15))
+            candidate_champs.update(self.tournament_scorer.get_top_priority_champions(limit=15))
+        else:
+            candidate_champs = set(self.meta_scorer.get_top_meta_champions(limit=15))
+
+        for champ in candidate_champs:
             if champ in unavailable:
                 continue
 
@@ -322,35 +369,75 @@ class BanRecommendationService:
             presence = self._get_presence_score(champ)
             flex_value = self._get_flex_value(champ)
 
-            # Only include if high enough presence (>= 20%)
-            if presence < 0.20:
-                continue
+            if self.simulator_mode:
+                # Simulator mode: use tournament_priority as primary signal
+                # NOTE: presence is EXCLUDED for consistency with _calculate_ban_priority
+                tournament_priority = self.tournament_scorer.get_priority(champ)
 
-            # Calculate priority: presence(40%) + meta(35%) + flex(25%)
-            priority = presence * 0.40 + meta_score * 0.35 + flex_value * 0.25
+                # Only include if high enough tournament priority (>= 30%)
+                if tournament_priority < 0.30:
+                    continue
 
-            reasons = []
-            tier = self.meta_scorer.get_meta_tier(champ)
-            if tier in ["S", "A"]:
-                reasons.append(f"{tier}-tier power pick")
-            if presence >= 0.30:
-                reasons.append(f"High presence ({presence:.0%})")
-            if flex_value >= 0.5:
-                reasons.append("Role flex value")
+                # Calculate priority: tournament(50%) + meta(25%) + flex(25%)
+                priority = (
+                    tournament_priority * 0.50
+                    + meta_score * 0.25
+                    + flex_value * 0.25
+                )
 
-            candidates.append({
-                "champion_name": champ,
-                "priority": round(priority, 3),
-                "target_player": None,
-                "target_role": None,
-                "reasons": reasons if reasons else ["Global power ban"],
-                "components": {
-                    "presence": round(presence * 0.40, 3),
-                    "meta": round(meta_score * 0.35, 3),
-                    "flex": round(flex_value * 0.25, 3),
-                    "tier": "T3_GLOBAL_POWER",
-                },
-            })
+                reasons = []
+                if tournament_priority >= 0.50:
+                    reasons.append(f"High tournament priority ({tournament_priority:.0%})")
+                tier = self.meta_scorer.get_meta_tier(champ)
+                if tier in ["S", "A"]:
+                    reasons.append(f"{tier}-tier power pick")
+                if flex_value >= 0.5:
+                    reasons.append("Role flex value")
+
+                candidates.append({
+                    "champion_name": champ,
+                    "priority": round(priority, 3),
+                    "target_player": None,
+                    "target_role": None,
+                    "reasons": reasons if reasons else ["Global power ban"],
+                    "components": {
+                        "tournament_priority": round(tournament_priority * 0.50, 3),
+                        "meta": round(meta_score * 0.25, 3),
+                        "flex": round(flex_value * 0.25, 3),
+                        "tier": "T2_META_POWER",
+                    },
+                })
+            else:
+                # Normal mode: original logic
+                # Only include if high enough presence (>= 20%)
+                if presence < 0.20:
+                    continue
+
+                # Calculate priority: presence(40%) + meta(35%) + flex(25%)
+                priority = presence * 0.40 + meta_score * 0.35 + flex_value * 0.25
+
+                reasons = []
+                tier = self.meta_scorer.get_meta_tier(champ)
+                if tier in ["S", "A"]:
+                    reasons.append(f"{tier}-tier power pick")
+                if presence >= 0.30:
+                    reasons.append(f"High presence ({presence:.0%})")
+                if flex_value >= 0.5:
+                    reasons.append("Role flex value")
+
+                candidates.append({
+                    "champion_name": champ,
+                    "priority": round(priority, 3),
+                    "target_player": None,
+                    "target_role": None,
+                    "reasons": reasons if reasons else ["Global power ban"],
+                    "components": {
+                        "presence": round(presence * 0.40, 3),
+                        "meta": round(meta_score * 0.35, 3),
+                        "flex": round(flex_value * 0.25, 3),
+                        "tier": "T2_META_POWER",
+                    },
+                })
 
         return sorted(candidates, key=lambda x: -x["priority"])[:10]
 
