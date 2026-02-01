@@ -17,6 +17,8 @@ services:
     # Docker configuration
     dockerfilePath: ./Dockerfile
     dockerContext: .
+    dockerArgs:
+      DATA_URL: https://github.com/wuTims/ban-teemo/releases/download/v0.1.0/ban-teemo-data.tar.gz
 
     # Instance configuration
     plan: free  # Options: free, starter, standard, pro
