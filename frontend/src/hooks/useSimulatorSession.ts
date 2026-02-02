@@ -14,9 +14,9 @@ import type {
   NextGameResponse,
   FearlessBlocked,
   RecommendationsResponse,
-  RoleGroupedRecommendations,
   FinalizedPick,
   LLMInsightsResponse,
+  DraftQuality,
 } from "../types";
 
 type SimulatorStatus = "setup" | "drafting" | "game_complete" | "series_complete";
@@ -30,7 +30,6 @@ interface SimulatorState {
   draftMode: DraftMode;
   draftState: DraftState | null;
   recommendations: SimulatorRecommendation[] | null;
-  roleGroupedRecommendations: RoleGroupedRecommendations | null;
   teamEvaluation: TeamEvaluation | null;
   isOurTurn: boolean;
   isEnemyThinking: boolean;
@@ -47,6 +46,9 @@ interface SimulatorState {
   llmLoading: boolean;
   llmInsight: LLMInsightsResponse | null;
   llmApiKey: string | null;
+
+  // Draft quality analysis
+  draftQuality: DraftQuality | null;
 }
 
 const initialState: SimulatorState = {
@@ -58,7 +60,6 @@ const initialState: SimulatorState = {
   draftMode: "normal",
   draftState: null,
   recommendations: null,
-  roleGroupedRecommendations: null,
   teamEvaluation: null,
   isOurTurn: false,
   isEnemyThinking: false,
@@ -72,6 +73,7 @@ const initialState: SimulatorState = {
   llmLoading: false,
   llmInsight: null,
   llmApiKey: null,
+  draftQuality: null,
 };
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
@@ -142,7 +144,6 @@ export function useSimulatorSession() {
         return {
           ...s,
           recommendations: data.recommendations,
-          roleGroupedRecommendations: data.role_grouped ?? null,
         };
       });
     } catch (err) {
@@ -318,7 +319,6 @@ export function useSimulatorSession() {
         draftMode: config.draftMode,
         draftState: data.draft_state,
         recommendations: null, // Fetch separately
-        roleGroupedRecommendations: null, // Fetch separately
         teamEvaluation: null,
         isOurTurn: data.is_our_turn,
         gameNumber: data.game_number,
@@ -374,7 +374,6 @@ export function useSimulatorSession() {
           draftState: data.draft_state,
           // Clear recommendations - will be refetched if still our turn (double-pick)
           recommendations: null,
-          roleGroupedRecommendations: null,
           teamEvaluation: data.evaluation ?? null,
           isOurTurn: data.is_our_turn,
           // Store finalized role assignments when draft completes
@@ -428,6 +427,7 @@ export function useSimulatorSession() {
         seriesStatus: data.series_status,
         fearlessBlocked: data.fearless_blocked,
         isRecordingWinner: false,
+        draftQuality: data.draft_quality ?? null,
       }));
     } catch (err) {
       setState((s) => ({ ...s, error: String(err), isRecordingWinner: false }));
@@ -457,11 +457,11 @@ export function useSimulatorSession() {
         gameNumber: data.game_number,
         fearlessBlocked: data.fearless_blocked,
         recommendations: null,
-        roleGroupedRecommendations: null,
         teamEvaluation: null,
         isOurTurn,
         blueCompWithRoles: null,
         redCompWithRoles: null,
+        draftQuality: null,
       }));
 
       if (isOurTurn) {
