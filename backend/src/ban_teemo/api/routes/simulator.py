@@ -968,6 +968,20 @@ def _build_response(
                     recommendations=response["recommendations"],
                 )
 
+            # Track top pick recommendation for draft quality analysis (our picks only)
+            # This captures what we recommended BEFORE the pick happens
+            if is_our_turn and draft_state.next_action == "pick":
+                if response.get("recommendations"):
+                    top_rec_name = response["recommendations"][0]["champion_name"]
+                    # Count how many picks our team has already made
+                    our_pick_count = len([
+                        a for a in draft_state.actions
+                        if a.action_type == "pick" and a.team_side == session.coaching_side
+                    ])
+                    # Only append if we haven't tracked for this pick slot yet
+                    if len(session.recommended_picks) == our_pick_count:
+                        session.recommended_picks.append(top_rec_name)
+
     # Optionally include evaluation (to avoid extra round trip)
     if include_evaluation:
         _, _, _, team_eval_service, _ = _get_or_create_services(request)
