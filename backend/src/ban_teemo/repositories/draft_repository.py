@@ -404,3 +404,20 @@ class DraftRepository:
             side=side,
             players=players,
         )
+
+    def get_tournament_id_for_game(self, game_id: str) -> str | None:
+        """Get tournament_id for a game.
+
+        Args:
+            game_id: The game ID to look up
+
+        Returns:
+            Tournament ID string, or None if not found
+        """
+        results = self._query(f"""
+            SELECT s.tournament_id
+            FROM games g
+            JOIN series s ON g.series_id = s.id
+            WHERE g.id = '{game_id}'
+        """)
+        return results[0]["tournament_id"] if results else None
