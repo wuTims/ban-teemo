@@ -20,6 +20,16 @@ class EnemyStrategy:
     game_team_sides: dict[str, str] = field(default_factory=dict)
     current_script_index: int = 0
 
+    # Team context for smart recommendations
+    team_id: str = ""
+    team_name: str = ""
+    players: list[dict] = field(default_factory=list)  # List of {"name": str, "role": str}
+
+    @property
+    def champion_pool(self) -> set[str]:
+        """Set of champions in the enemy's historical pool."""
+        return set(self.champion_weights.keys())
+
 
 @dataclass
 class GameResult:
