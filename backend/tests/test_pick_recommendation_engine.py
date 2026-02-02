@@ -478,10 +478,11 @@ def test_proficiency_weight_lowest():
     assert engine.BASE_WEIGHTS["proficiency"] == 0.15
 
 
-def test_meta_weight():
-    """Meta weight should be 0.45 (highest - uses hybrid scoring for +5.8% accuracy)."""
+def test_tournament_weights():
+    """Tournament priority should be 0.25, performance should be 0.20."""
     engine = PickRecommendationEngine()
-    assert engine.BASE_WEIGHTS["meta"] == 0.45
+    assert engine.BASE_WEIGHTS["tournament_priority"] == 0.25
+    assert engine.BASE_WEIGHTS["tournament_performance"] == 0.20
 
 
 def test_archetype_weight():
@@ -823,17 +824,17 @@ def test_archetype_score_versatile_not_penalized_first_pick():
 
 # Context-aware weight adjustment tests (Task 5)
 
-def test_get_effective_weights_first_pick_reduces_proficiency():
-    """First pick should reduce proficiency weight, increase meta."""
+def test_get_effective_weights_first_pick_boosts_priority():
+    """First pick should boost tournament_priority, reduce matchup_counter."""
     engine = PickRecommendationEngine()
 
     # First pick scenario: no picks, no enemy picks
     weights = engine._get_effective_weights("HIGH", pick_count=0, has_enemy_picks=False)
 
-    # Proficiency should be reduced from base 0.20
-    assert weights["proficiency"] < 0.20, "First pick should reduce proficiency weight"
-    # Meta should be increased from base 0.25
-    assert weights["meta"] > 0.25, "First pick should increase meta weight"
+    # Tournament priority should be increased from base 0.25
+    assert weights["tournament_priority"] > 0.25, "First pick should increase tournament_priority weight"
+    # Matchup should be reduced (no enemy context yet)
+    assert weights["matchup_counter"] < 0.25, "First pick should reduce matchup_counter weight"
 
 
 def test_first_pick_caps_proficiency_score():
@@ -905,10 +906,10 @@ def test_get_effective_weights_no_data_redistributes():
 
 
 def test_get_effective_weights_matchup_no_data_redistributes():
-    """NO_DATA matchup should redistribute weight to meta only (not archetype).
+    """NO_DATA matchup should redistribute weight to tournament_priority (not archetype).
 
     Archetype is skipped because 29 champions (17%) have archetype=1.0,
-    causing specialists to dominate over balanced high-meta champions like Azir.
+    causing specialists to dominate over balanced high-priority champions like Azir.
     """
     engine = PickRecommendationEngine()
 
@@ -921,9 +922,9 @@ def test_get_effective_weights_matchup_no_data_redistributes():
         f"NO_DATA matchup should reduce weight: {weights_no_data['matchup_counter']} vs {weights_full['matchup_counter']}"
     )
 
-    # Meta should increase to compensate (archetype stays same to avoid specialist bias)
+    # Archetype should stay same to avoid specialist bias, tournament_priority should increase
     assert weights_no_data["archetype"] == weights_full["archetype"], "Archetype should NOT change (avoids specialist bias)"
-    assert weights_no_data["meta"] > weights_full["meta"], "Meta should increase when matchup has no data"
+    assert weights_no_data["tournament_priority"] > weights_full["tournament_priority"], "Tournament priority should increase when matchup has no data"
 
     # Total should still sum to ~1.0
     total = sum(weights_no_data.values())
@@ -1094,3 +1095,19 @@ def test_archetype_score_versatile_vs_specialist_relative():
             f"Versatile {versatile} ({vers_score}) should not be heavily penalized "
             f"vs specialist {specialist} ({spec_score}) in early draft"
         )
+
+
+# ======================================================================
+# Tournament Scoring Tests (Unified scoring)
+# ======================================================================
+
+
+def test_engine_uses_tournament_scoring_by_default():
+    """Engine uses tournament scoring (priority + performance) by default."""
+    engine = PickRecommendationEngine()
+
+    # Verify tournament scorer is used, not meta scorer for main scoring
+    # The engine should have tournament weights as base weights
+    assert "tournament_priority" in engine.BASE_WEIGHTS
+    assert "tournament_performance" in engine.BASE_WEIGHTS
+    assert "meta" not in engine.BASE_WEIGHTS

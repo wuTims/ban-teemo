@@ -22,31 +22,20 @@ ROLE_FILL_THRESHOLD = 0.75
 class PickRecommendationEngine:
     """Generates pick recommendations using weighted multi-factor scoring."""
 
-    # Domain expert priority order (tuned via experiments - see scripts/scoring_experiments.py):
-    # 1. Meta strength - "pick strong champions" (highest - uses hybrid scoring)
+    # Unified weights using tournament data for all modes
+    # Tournament data provides objective pro meta signals (picks/bans/winrates)
+    #
+    # Domain expert priority order:
+    # 1. Tournament priority - "pick contested champions" (role-agnostic contestation)
     # 2. Matchup/Counter - "don't feed"
-    # 3. Team composition (archetype) - reduced to avoid specialist bias
-    # 4. Proficiency - "they're pros anyway"
+    # 3. Tournament performance - "pick winners" (role-specific adjusted winrate)
+    # 4. Team composition (archetype) - reduced to avoid specialist bias
+    # 5. Proficiency - "they're pros anyway"
     #
     # NOTE: Synergy is NOT a base weight - it's applied as a multiplier to the
     # final score. This is intentional: synergy is a team-wide modifier that
     # scales the entire recommendation, not an individual champion attribute.
-    #
-    # Tuning notes (2026-01-31):
-    # - Archetype reduced from 0.30 to 0.15: 29 champions have archetype=1.0,
-    #   causing "specialist bias" where niche picks outscored balanced meta picks
-    # - Meta increased to 0.45 with hybrid scoring: averages original tier-based
-    #   score with presence-based score, improving accuracy by +5.8%
     BASE_WEIGHTS = {
-        "meta": 0.45,            # Champion power level (hybrid scoring)
-        "matchup_counter": 0.25, # Combined lane + team matchups
-        "archetype": 0.15,       # Team composition fit (reduced - specialist bias)
-        "proficiency": 0.15,     # Player comfort (lowest - they're pros)
-    }
-
-    # Simulator mode weights - replaces meta with tournament components
-    # Tournament data provides current pro meta signals (picks/bans/winrates)
-    SIMULATOR_BASE_WEIGHTS = {
         "tournament_priority": 0.25,    # Role-agnostic contestation
         "tournament_performance": 0.20, # Role-specific adjusted winrate
         "matchup_counter": 0.25,        # Combined lane + team matchups
@@ -59,16 +48,15 @@ class PickRecommendationEngine:
     ALL_ROLES = CANONICAL_ROLES  # {top, jungle, mid, bot, support}
     TRANSFER_EXPANSION_LIMIT = 2
 
-    def __init__(self, knowledge_dir: Optional[Path] = None, simulator_mode: bool = False):
-        self.simulator_mode = simulator_mode
-        self.meta_scorer = MetaScorer(knowledge_dir)
+    def __init__(self, knowledge_dir: Optional[Path] = None, tournament_data_file: Optional[str] = None):
+        self.meta_scorer = MetaScorer(knowledge_dir)  # Keep for get_top_meta_champions, blind_pick_safety
         self.flex_resolver = FlexResolver(knowledge_dir)
         self.proficiency_scorer = ProficiencyScorer(knowledge_dir)
         self.matchup_calculator = MatchupCalculator(knowledge_dir)
         self.synergy_service = SynergyService(knowledge_dir)
         self.archetype_service = ArchetypeService(knowledge_dir)
         self.skill_transfer_service = SkillTransferService(knowledge_dir)
-        self.tournament_scorer = TournamentScorer(knowledge_dir)
+        self.tournament_scorer = TournamentScorer(knowledge_dir, data_file=tournament_data_file)
 
     def get_recommendations(
         self,
@@ -315,19 +303,12 @@ class PickRecommendationEngine:
         ) = self._choose_best_role(champion, probs, team_players, role_fill=role_fill)
         suggested_role = suggested_role or "mid"
 
-        # Meta / Tournament scoring
-        if self.simulator_mode:
-            # Simulator mode: use tournament data for current pro meta signals
-            tournament_scores = self.tournament_scorer.get_tournament_scores(
-                champion, suggested_role
-            )
-            components["tournament_priority"] = tournament_scores["priority"]
-            components["tournament_performance"] = tournament_scores["performance"]
-            # Also store meta for reference/fallback but don't weight it
-            components["meta"] = self.meta_scorer.get_meta_score(champion)
-        else:
-            # Normal mode: use existing meta scoring
-            components["meta"] = self.meta_scorer.get_meta_score(champion)
+        # Tournament scoring (unified for all modes)
+        tournament_scores = self.tournament_scorer.get_tournament_scores(
+            champion, suggested_role
+        )
+        components["tournament_priority"] = tournament_scores["priority"]
+        components["tournament_performance"] = tournament_scores["performance"]
 
         # Proficiency - role-assigned player only
         components["proficiency"] = role_prof_score
@@ -400,28 +381,17 @@ class PickRecommendationEngine:
             pick_count=pick_count,
             has_enemy_picks=has_enemy_picks,
             matchup_conf=matchup_conf,
-            simulator_mode=self.simulator_mode,
         )
         # NOTE: Synergy is applied as a multiplier AFTER base_score, not as a component.
         # This avoids double-counting synergy (which is already a multiplier in the
         # current implementation). See synergy_multiplier usage below.
-        if self.simulator_mode:
-            # Simulator mode: tournament components replace meta
-            base_score = (
-                components["tournament_priority"] * effective_weights["tournament_priority"] +
-                components["tournament_performance"] * effective_weights["tournament_performance"] +
-                components["archetype"] * effective_weights["archetype"] +
-                components["matchup_counter"] * effective_weights["matchup_counter"] +
-                components["proficiency"] * effective_weights["proficiency"]
-            )
-        else:
-            # Normal mode: use meta
-            base_score = (
-                components["archetype"] * effective_weights["archetype"] +
-                components["meta"] * effective_weights["meta"] +
-                components["matchup_counter"] * effective_weights["matchup_counter"] +
-                components["proficiency"] * effective_weights["proficiency"]
-            )
+        base_score = (
+            components["tournament_priority"] * effective_weights["tournament_priority"] +
+            components["tournament_performance"] * effective_weights["tournament_performance"] +
+            components["archetype"] * effective_weights["archetype"] +
+            components["matchup_counter"] * effective_weights["matchup_counter"] +
+            components["proficiency"] * effective_weights["proficiency"]
+        )
         # Synergy multiplier is applied separately: total_score = base_score * synergy_multiplier
 
         # Apply blind pick safety factor for early picks without enemy context
@@ -600,23 +570,23 @@ class PickRecommendationEngine:
         pick_count: int = 0,
         has_enemy_picks: bool = False,
         matchup_conf: str = "FULL",
-        simulator_mode: bool = False,
     ) -> dict[str, float]:
         """Get context-adjusted scoring weights.
 
         Priority order (domain expert):
         1. archetype - team composition (NEVER reduced - defines team identity)
-        2. meta/tournament - champion power
+        2. tournament_priority - champion contestation
         3. matchup_counter - don't feed
-        4. proficiency - lowest (pros can play anything)
+        4. tournament_performance - proven performers
+        5. proficiency - lowest (pros can play anything)
 
         Design rationale:
         - Archetype is never reduced because first pick often defines team identity
-        - Meta is boosted early (power picks) and reduced late (counters matter more)
+        - Priority is boosted early (contested picks) and reduced late (counters matter)
         - Matchup_counter is boosted late when counter-picking is possible
         - Proficiency is always lowest priority for pro play
 
-        Simulator mode uses AGGRESSIVE phase adjustments:
+        Phase adjustments (aggressive swings for counter-pick scenarios):
         - Early blind: priority +0.05, performance -0.05, matchup -0.10, archetype +0.10
         - Late counter: priority -0.10, performance +0.05, matchup +0.10, proficiency -0.05
         These larger swings (0.10-0.15) allow counter-picks to overcome raw priority.
@@ -626,79 +596,7 @@ class PickRecommendationEngine:
           component's weight and redistribute to components we DO have data for.
         - This prevents "0.5 defaults" from having outsized influence on scoring.
         """
-        if simulator_mode:
-            return self._get_simulator_weights(
-                prof_conf, pick_count, has_enemy_picks, matchup_conf
-            )
-
-        # Normal mode weights
         weights = dict(self.BASE_WEIGHTS)
-
-        # First pick: boost meta, reduce proficiency further
-        # NOTE: Archetype is NOT reduced - first pick often sets team identity
-        if pick_count == 0 and not has_enemy_picks:
-            # Blind picks are about power level + team identity
-            weights["meta"] += 0.05           # 0.45 -> 0.50
-            weights["proficiency"] -= 0.05    # 0.15 -> 0.10
-
-        # Late draft: boost matchup_counter, reduce meta
-        elif has_enemy_picks and pick_count >= 3:
-            weights["matchup_counter"] += 0.05  # 0.25 -> 0.30
-            weights["meta"] -= 0.05             # 0.45 -> 0.40
-
-        # Handle NO_DATA matchup - reduce weight to avoid 0.5 defaults dominating
-        # This happens when champion has insufficient pro play matchup data
-        #
-        # IMPORTANT: Redistribute to META only (not archetype) because archetype
-        # scores are biased toward specialists (29 champs have arch=1.0).
-        # Redistributing to archetype causes specialists to dominate over
-        # balanced high-meta champions like Azir.
-        if matchup_conf == "NO_DATA":
-            redistribute = weights["matchup_counter"] * 0.5  # Keep 50% weight
-            weights["matchup_counter"] *= 0.5
-            # Redistribute to meta only - archetype bias causes specialist domination
-            weights["meta"] += redistribute
-        elif matchup_conf == "PARTIAL":
-            # Partial data - reduce weight by 25%
-            redistribute = weights["matchup_counter"] * 0.25
-            weights["matchup_counter"] *= 0.75
-            # Redistribute mostly to meta, small amount to archetype
-            weights["meta"] += redistribute * 0.8
-            weights["archetype"] += redistribute * 0.2
-
-        # Handle NO_DATA proficiency
-        if prof_conf == "NO_DATA":
-            redistribute = weights["proficiency"] * 0.8
-            weights["proficiency"] *= 0.2
-            # Distribute to meta and matchup (avoid archetype bias toward specialists)
-            weights["meta"] += redistribute * 0.6
-            weights["matchup_counter"] += redistribute * 0.4
-
-        return weights
-
-    def _get_simulator_weights(
-        self,
-        prof_conf: str,
-        pick_count: int,
-        has_enemy_picks: bool,
-        matchup_conf: str,
-    ) -> dict[str, float]:
-        """Get simulator mode weights with aggressive phase adjustments.
-
-        Aggressive phase swings allow counter-picks to overcome raw tournament priority:
-        - Early blind: Prioritize contested picks (priority) + team identity (archetype)
-        - Late counter: Prioritize proven performers (performance) + counter-picking (matchup)
-
-        Phase adjustments:
-        | Component              | Base | Early | Late  |
-        |------------------------|------|-------|-------|
-        | tournament_priority    | 0.25 | +0.05 | -0.10 |
-        | tournament_performance | 0.20 | -0.05 | +0.05 |
-        | matchup_counter        | 0.25 | -0.10 | +0.10 |
-        | archetype              | 0.15 | +0.10 | 0     |
-        | proficiency            | 0.15 | 0     | -0.05 |
-        """
-        weights = dict(self.SIMULATOR_BASE_WEIGHTS)
 
         # Early blind picks (pick_count == 0, no enemy context)
         if pick_count == 0 and not has_enemy_picks:
