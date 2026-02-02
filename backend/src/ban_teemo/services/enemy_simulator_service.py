@@ -214,3 +214,107 @@ class EnemySimulatorService:
             return random.choice(available), "weighted_random"
 
         raise ValueError("No available champions for enemy action")
+
+    def generate_smart_action(
+        self,
+        strategy: EnemyStrategy,
+        action_type: str,  # "ban" or "pick"
+        our_picks: list[str],
+        enemy_picks: list[str],
+        banned: list[str],
+        unavailable: set[str],
+    ) -> tuple[str, str]:
+        """Generate enemy action using recommendation services filtered by champion pool.
+
+        Uses the same scoring logic as user recommendations, but filtered to champions
+        the enemy team has historically played. Selects randomly from top 3 overlapping
+        recommendations for variety.
+
+        Falls back to legacy generate_action if no recommendations overlap with pool.
+
+        Args:
+            strategy: Enemy's draft strategy with champion pool
+            action_type: "ban" or "pick"
+            our_picks: Enemy's picks so far (from their perspective)
+            enemy_picks: User's picks (enemy to them)
+            banned: All banned champions
+            unavailable: Set of unavailable champions (picked, banned, fearless)
+
+        Returns:
+            Tuple of (champion_name, source) where source indicates selection method
+        """
+        pool = strategy.champion_pool - unavailable
+
+        if not pool:
+            # No champions in pool available, fall back to legacy
+            return self.generate_action(strategy, sequence=1, unavailable=unavailable)
+
+        if action_type == "ban":
+            recommendations = self._get_smart_ban_recommendations(
+                strategy, our_picks, enemy_picks, banned
+            )
+        else:
+            recommendations = self._get_smart_pick_recommendations(
+                strategy, our_picks, enemy_picks, banned
+            )
+
+        # Filter recommendations to champions in pool and available
+        pool_recommendations = [
+            r for r in recommendations
+            if r["champion_name"] in pool
+        ]
+
+        if not pool_recommendations:
+            # No overlap with pool, fall back to legacy generation
+            # Calculate sequence based on action count
+            sequence = len(banned) + len(our_picks) + len(enemy_picks) + 1
+            return self.generate_action(strategy, sequence=sequence, unavailable=unavailable)
+
+        # Select randomly from top 3 for variety (avoid being too predictable)
+        top_n = min(3, len(pool_recommendations))
+        selected = random.choice(pool_recommendations[:top_n])
+
+        return selected["champion_name"], "smart_recommendation"
+
+    def _get_smart_ban_recommendations(
+        self,
+        strategy: EnemyStrategy,
+        our_picks: list[str],
+        enemy_picks: list[str],
+        banned: list[str],
+    ) -> list[dict]:
+        """Get ban recommendations from enemy's perspective."""
+        # Determine phase based on ban count
+        ban_count = len(banned)
+        phase = "BAN_PHASE_1" if ban_count < 6 else "BAN_PHASE_2"
+
+        # Get recommendations - note: from enemy's perspective:
+        # - "our_picks" = enemy team's picks (the simulator's team)
+        # - "enemy_picks" = user's team's picks (enemy to the simulator)
+        # - enemy_team_id = user's team (who enemy wants to target)
+        # But we don't have user's team_id easily, so we pass empty and rely on meta
+        return self.ban_service.get_ban_recommendations(
+            enemy_team_id="",  # Will use global meta bans
+            our_picks=our_picks,
+            enemy_picks=enemy_picks,
+            banned=banned,
+            phase=phase,
+            enemy_players=None,  # Will use global meta
+            limit=10,
+        )
+
+    def _get_smart_pick_recommendations(
+        self,
+        strategy: EnemyStrategy,
+        our_picks: list[str],
+        enemy_picks: list[str],
+        banned: list[str],
+    ) -> list[dict]:
+        """Get pick recommendations from enemy's perspective."""
+        return self.pick_engine.get_recommendations(
+            team_players=strategy.players,
+            our_picks=our_picks,
+            enemy_picks=enemy_picks,
+            banned=banned,
+            limit=10,
+        )
