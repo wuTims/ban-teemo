@@ -2,6 +2,7 @@
 import type { TeamContext, TeamEvaluation, DraftQuality } from "../../types";
 import { DraftAnalysis } from "./DraftAnalysis";
 import { DraftReport } from "./DraftReport";
+import { getTeamAbbreviation } from "../../data/teamAbbreviations";
 
 interface DraftCompletePanelProps {
   blueTeam: TeamContext;
@@ -96,33 +97,34 @@ export function DraftCompletePanel({
           <p className="text-sm text-text-tertiary mt-1">{matchupDesc}</p>
         </div>
 
-        <div className="flex items-stretch justify-center gap-4 mb-6">
-          <div className="flex-1 max-w-[200px] bg-blue-team/10 border border-blue-team/30 rounded-lg p-4 text-center">
-            <div className="text-blue-team font-semibold text-sm uppercase mb-2">
-              {blueTeam.name}
+        {/* Team comparison - stacks vertically on very small screens */}
+        <div className="flex flex-col items-center gap-3 mb-6 xs:flex-row xs:items-stretch xs:justify-center xs:gap-4">
+          <div className="w-full max-w-[200px] bg-blue-team/10 border border-blue-team/30 rounded-lg p-3 xs:p-4 text-center">
+            <div className="text-blue-team font-semibold text-sm uppercase mb-2" title={blueTeam.name}>
+              {getTeamAbbreviation(blueTeam.name)}
             </div>
-            <div className="text-3xl font-bold text-blue-team mb-2">
+            <div className="text-2xl xs:text-3xl font-bold text-blue-team mb-2">
               {bluePoints}
               <span className="text-sm font-normal text-text-tertiary ml-1">pts</span>
             </div>
-            <div className="text-xs text-text-secondary truncate" title={blueStrength}>
+            <div className="text-xs text-text-secondary leading-relaxed" title={blueStrength}>
               {blueStrength}
             </div>
           </div>
 
-          <div className="flex items-center">
+          <div className="flex items-center py-1 xs:py-0">
             <span className="text-gold-dim font-bold text-lg">VS</span>
           </div>
 
-          <div className="flex-1 max-w-[200px] bg-red-team/10 border border-red-team/30 rounded-lg p-4 text-center">
-            <div className="text-red-team font-semibold text-sm uppercase mb-2">
-              {redTeam.name}
+          <div className="w-full max-w-[200px] bg-red-team/10 border border-red-team/30 rounded-lg p-3 xs:p-4 text-center">
+            <div className="text-red-team font-semibold text-sm uppercase mb-2" title={redTeam.name}>
+              {getTeamAbbreviation(redTeam.name)}
             </div>
-            <div className="text-3xl font-bold text-red-team mb-2">
+            <div className="text-2xl xs:text-3xl font-bold text-red-team mb-2">
               {redPoints}
               <span className="text-sm font-normal text-text-tertiary ml-1">pts</span>
             </div>
-            <div className="text-xs text-text-secondary truncate" title={redStrength}>
+            <div className="text-xs text-text-secondary leading-relaxed" title={redStrength}>
               {redStrength}
             </div>
           </div>

@@ -1,4 +1,5 @@
 import type { DraftQuality, TeamContext } from "../../types";
+import { getTeamAbbreviation } from "../../data/teamAbbreviations";
 
 interface DraftReportCardProps {
   teamName: string;
@@ -7,10 +8,10 @@ interface DraftReportCardProps {
 }
 
 function getPicksMatchedLabel(matched: number, total: number): string {
-  if (matched === total) return "Perfect alignment";
+  if (matched === total) return "Strongly aligned";
   if (matched >= total * 0.6) return "Good alignment";
-  if (matched >= total * 0.2) return "Different approach";
-  return "Fully independent";
+  if (matched >= total * 0.4) return "Partial alignment";
+  return "Independent approach";
 }
 
 function getDeltaLabel(delta: number): string {
@@ -26,17 +27,18 @@ function DraftReportCard({ teamName, teamSide, quality }: DraftReportCardProps) 
   const scoreDelta = comparison.score_delta;
 
   const deltaColor = scoreDelta > 0.02 ? "text-danger" : scoreDelta < -0.02 ? "text-success" : "text-text-tertiary";
+  const abbreviatedName = getTeamAbbreviation(teamName);
 
   return (
-    <div className={`bg-lol-light rounded-lg p-3 border ${teamSide === "blue" ? "border-blue-team/30" : "border-red-team/30"}`}>
-      <h4 className={`text-xs font-semibold uppercase text-center mb-3 ${teamSide === "blue" ? "text-blue-team" : "text-red-team"}`}>
-        {teamName}'s Draft Report
+    <div className={`bg-lol-light rounded-lg p-2 xs:p-3 border ${teamSide === "blue" ? "border-blue-team/30" : "border-red-team/30"}`}>
+      <h4 className={`text-xs font-semibold uppercase text-center mb-2 xs:mb-3 ${teamSide === "blue" ? "text-blue-team" : "text-red-team"}`} title={teamName}>
+        {abbreviatedName}'s Report
       </h4>
 
-      {/* Picks Matched */}
+      {/* Picks in Top 5 */}
       <div className="mb-3">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-[10px] text-text-tertiary uppercase">Picks Matched</span>
+          <span className="text-[10px] text-text-tertiary uppercase">Picks in Top 5</span>
           <span className="text-xs font-mono text-text-primary">{picksMatched}/{picksTotal}</span>
         </div>
         <div className="flex gap-1">
@@ -85,12 +87,12 @@ export function DraftReport({ blueTeam, redTeam, blueDraftQuality, redDraftQuali
   if (!hasBlue && !hasRed) return null;
 
   return (
-    <div className="bg-lol-dark rounded-lg p-4 border border-gold-dim/30">
-      <h3 className="text-sm font-semibold uppercase tracking-wide text-gold-bright text-center mb-4">
+    <div className="bg-lol-dark rounded-lg p-3 xs:p-4 border border-gold-dim/30">
+      <h3 className="text-sm font-semibold uppercase tracking-wide text-gold-bright text-center mb-3 xs:mb-4">
         Draft Report
       </h3>
 
-      <div className={`grid gap-4 ${hasBlue && hasRed ? "grid-cols-2" : "grid-cols-1 max-w-sm mx-auto"}`}>
+      <div className={`grid gap-3 xs:gap-4 ${hasBlue && hasRed ? "grid-cols-1 xs:grid-cols-2" : "grid-cols-1 max-w-sm mx-auto"}`}>
         {hasBlue && (
           <DraftReportCard teamName={blueTeam.name} teamSide="blue" quality={blueDraftQuality} />
         )}

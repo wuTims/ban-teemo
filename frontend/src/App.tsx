@@ -134,7 +134,8 @@ export default function App() {
               apiKey={settings.apiKey}
             />
 
-            <div className="flex flex-row gap-6">
+            {/* DraftBoard + ActionLog - stacks until 2xl, then side by side */}
+            <div className="flex flex-col gap-3 2xl:flex-row 2xl:gap-6">
               <div className="flex-1">
                 <DraftBoard
                   blueTeam={replay.blueTeam}
@@ -146,13 +147,26 @@ export default function App() {
               </div>
 
               {replay.status !== "idle" && (
-                <ActionLog
-                  actions={replay.actionHistory}
-                  blueTeam={replay.blueTeam}
-                  redTeam={replay.redTeam}
-                />
+                <div className="2xl:w-72 2xl:shrink-0">
+                  <ActionLog
+                    actions={replay.actionHistory}
+                    blueTeam={replay.blueTeam}
+                    redTeam={replay.redTeam}
+                  />
+                </div>
               )}
             </div>
+
+            {/* Draft Complete Panel - shown when replay is complete, before insights log */}
+            {replay.status === "complete" && replay.blueTeam && replay.redTeam && (
+              <DraftCompletePanel
+                blueTeam={replay.blueTeam}
+                redTeam={replay.redTeam}
+                winnerSide={replay.winnerSide}
+                blueDraftQuality={replay.blueDraftQuality}
+                redDraftQuality={replay.redDraftQuality}
+              />
+            )}
 
             <RecommendationPanel
               recommendationHistory={replay.recommendationHistory}
@@ -164,17 +178,6 @@ export default function App() {
               isWaitingForLLM={replay.isWaitingForLLM}
               waitingForActionCount={replay.waitingForActionCount}
             />
-
-            {/* Draft Complete Panel - shown when replay is complete */}
-            {replay.status === "complete" && replay.blueTeam && replay.redTeam && (
-              <DraftCompletePanel
-                blueTeam={replay.blueTeam}
-                redTeam={replay.redTeam}
-                winnerSide={replay.winnerSide}
-                blueDraftQuality={replay.blueDraftQuality}
-                redDraftQuality={replay.redDraftQuality}
-              />
-            )}
           </>
         ) : (
           <>

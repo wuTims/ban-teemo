@@ -1,5 +1,6 @@
 import { MetricBar } from "../shared";
 import type { TeamContext } from "../../types";
+import { getTeamAbbreviation } from "../../data/teamAbbreviations";
 
 interface DraftAnalysisProps {
   blueTeam: TeamContext;
@@ -29,6 +30,33 @@ function getCompositionExplanation(score: number, archetype: string | null): str
   return "Lacks clear identity";
 }
 
+function getMatchupDescription(
+  advantage: number,
+  blueArch: string | null,
+  redArch: string | null,
+): { text: string; favoredTeam: "blue" | "red" | null } {
+  // advantage is a multiplier: >1.0 = blue favored, <1.0 = red favored
+  const blueArchLabel = blueArch ?? "comp";
+  const redArchLabel = redArch ?? "comp";
+
+  // Same archetype = mirror matchup
+  if (blueArch && redArch && blueArch === redArch) {
+    return { text: `Mirror ${blueArch} matchup`, favoredTeam: null };
+  }
+
+  // Determine advantage level
+  if (advantage > 1.1) {
+    return { text: `${blueArchLabel} favored vs ${redArchLabel}`, favoredTeam: "blue" };
+  } else if (advantage < 0.9) {
+    return { text: `${redArchLabel} favored vs ${blueArchLabel}`, favoredTeam: "red" };
+  } else if (advantage > 1.01) {
+    return { text: `${blueArchLabel} slightly favored vs ${redArchLabel}`, favoredTeam: "blue" };
+  } else if (advantage < 0.99) {
+    return { text: `${redArchLabel} slightly favored vs ${blueArchLabel}`, favoredTeam: "red" };
+  }
+  return { text: "Even matchup", favoredTeam: null };
+}
+
 export function DraftAnalysis({
   blueTeam,
   redTeam,
@@ -36,25 +64,19 @@ export function DraftAnalysis({
   redData,
   matchupAdvantage,
 }: DraftAnalysisProps) {
-  // matchupAdvantage is a multiplier centered at 1.0:
-  // 1.0 = neutral, >1.0 = blue favored, <1.0 = red favored
-  // Convert to percentage: (1.1 - 1.0) * 100 = +10%
-  const advantagePercent = (matchupAdvantage - 1.0) * 100;
-  const favoredTeam = advantagePercent > 1 ? "blue" : advantagePercent < -1 ? "red" : null;
-  const favoredName = favoredTeam === "blue" ? blueTeam.name : favoredTeam === "red" ? redTeam.name : null;
-  const advantageAbs = Math.abs(advantagePercent);
+  const matchup = getMatchupDescription(matchupAdvantage, blueData.archetype, redData.archetype);
 
   return (
-    <div className="bg-lol-dark rounded-lg p-4 border border-gold-dim/30">
-      <h3 className="text-sm font-semibold uppercase tracking-wide text-gold-bright text-center mb-4">
+    <div className="bg-lol-dark rounded-lg p-3 xs:p-4 border border-gold-dim/30">
+      <h3 className="text-sm font-semibold uppercase tracking-wide text-gold-bright text-center mb-3 xs:mb-4">
         Draft Analysis
       </h3>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-2 gap-3 xs:gap-6">
         {/* Blue Team Column */}
-        <div className="space-y-3">
-          <div className="text-xs font-semibold text-blue-team uppercase text-center mb-2">
-            {blueTeam.name}
+        <div className="space-y-2 xs:space-y-3">
+          <div className="text-xs font-semibold text-blue-team uppercase text-center mb-2" title={blueTeam.name}>
+            {getTeamAbbreviation(blueTeam.name)}
           </div>
           <MetricBar
             label="Synergy"
@@ -66,15 +88,15 @@ export function DraftAnalysis({
             value={blueData.composition_score}
             explanation={getCompositionExplanation(blueData.composition_score, blueData.archetype)}
           />
-          <div className="text-xs text-text-secondary">
+          <div className="text-[10px] xs:text-xs text-text-secondary">
             Archetype: <span className="text-gold-dim">{blueData.archetype ?? "None"}</span>
           </div>
         </div>
 
         {/* Red Team Column */}
-        <div className="space-y-3">
-          <div className="text-xs font-semibold text-red-team uppercase text-center mb-2">
-            {redTeam.name}
+        <div className="space-y-2 xs:space-y-3">
+          <div className="text-xs font-semibold text-red-team uppercase text-center mb-2" title={redTeam.name}>
+            {getTeamAbbreviation(redTeam.name)}
           </div>
           <MetricBar
             label="Synergy"
@@ -86,7 +108,7 @@ export function DraftAnalysis({
             value={redData.composition_score}
             explanation={getCompositionExplanation(redData.composition_score, redData.archetype)}
           />
-          <div className="text-xs text-text-secondary">
+          <div className="text-[10px] xs:text-xs text-text-secondary">
             Archetype: <span className="text-gold-dim">{redData.archetype ?? "None"}</span>
           </div>
         </div>
@@ -95,13 +117,13 @@ export function DraftAnalysis({
       {/* Matchup Indicator */}
       <div className="mt-4 pt-3 border-t border-gold-dim/20 text-center">
         <span className="text-xs text-text-secondary">Matchup: </span>
-        {favoredTeam ? (
-          <span className={`text-xs font-semibold ${favoredTeam === "blue" ? "text-blue-team" : "text-red-team"}`}>
-            {favoredName} favored (+{advantageAbs.toFixed(0)}%)
-          </span>
-        ) : (
-          <span className="text-xs text-text-tertiary">Even matchup</span>
-        )}
+        <span className={`text-xs font-semibold ${
+          matchup.favoredTeam === "blue" ? "text-blue-team" :
+          matchup.favoredTeam === "red" ? "text-red-team" :
+          "text-text-tertiary"
+        }`}>
+          {matchup.text}
+        </span>
       </div>
     </div>
   );

@@ -2,6 +2,9 @@
 
 /* LoL Hextech Theme - from style guide */
 @theme {
+  /* Custom breakpoint for very small screens */
+  --breakpoint-xs: 400px;
+
   /* Backgrounds */
   --color-lol-darkest: #010A13;
   --color-lol-dark: #0A1428;
@@ -78,5 +81,25 @@ body {
   }
   .scrollbar-none::-webkit-scrollbar {
     display: none; /* Chrome/Safari */
+  }
+
+  /* Thin themed scrollbars */
+  .scrollbar-thin {
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: var(--color-gold-dim) transparent; /* Firefox */
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: var(--color-gold-dim);
+    border-radius: 3px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: var(--color-gold);
   }
 }
