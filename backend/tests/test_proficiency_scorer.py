@@ -376,32 +376,3 @@ def test_get_champion_proficiency_cap_respected(tmp_path):
     assert score <= ProficiencyScorer.PROFICIENCY_CAP
 
 
-# ======================================================================
-# Backward Compatibility Tests
-# ======================================================================
-
-
-def test_deprecated_transfer_method_still_works(tmp_path):
-    """get_role_proficiency_with_transfer still functions for backward compatibility."""
-    knowledge_dir = _write_proficiency_data(
-        tmp_path,
-        proficiencies={
-            "MidPlayer": {
-                "Azir": {"games_weighted": 12, "win_rate_weighted": 0.7},
-            },
-        },
-        role_history={
-            "Azir": {"canonical_role": "MID"},
-        },
-    )
-    scorer = ProficiencyScorer(knowledge_dir)
-    team_players = [{"name": "MidPlayer", "role": "mid"}]
-
-    score, conf, player, source = scorer.get_role_proficiency_with_transfer(
-        "Azir", "mid", team_players
-    )
-
-    assert score > 0
-    assert conf in {"HIGH", "MEDIUM", "LOW", "NO_DATA"}
-    assert player == "MidPlayer"
-    assert source in {"direct", "transfer", "none"}

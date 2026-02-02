@@ -3,7 +3,6 @@ import json
 from pathlib import Path
 from typing import Optional
 
-from ban_teemo.services.scorers.skill_transfer_service import SkillTransferService
 from ban_teemo.utils.champion_roles import ChampionRoleLookup
 from ban_teemo.utils.role_normalizer import normalize_role
 
@@ -12,7 +11,6 @@ class ProficiencyScorer:
     """Scores player proficiency on champions."""
 
     CONFIDENCE_THRESHOLDS = {"HIGH": 8, "MEDIUM": 4, "LOW": 1}
-    TRANSFER_MAX_WEIGHT = 0.5
 
     # Champion Comfort + Role Strength constants
     COMFORT_BASELINE = 0.5  # Starting comfort for all unplayed champions
@@ -26,7 +24,6 @@ class ProficiencyScorer:
             knowledge_dir = Path(__file__).parents[5] / "knowledge"
         self.knowledge_dir = knowledge_dir
         self._proficiency_data: dict = {}
-        self.skill_transfer = SkillTransferService(knowledge_dir)
         self.champion_roles = ChampionRoleLookup(knowledge_dir)
         self._load_data()
 
@@ -191,64 +188,6 @@ class ProficiencyScorer:
         confidence = self._games_to_confidence(int(games)) if games > 0 else "LOW"
         source = "direct" if games > 0 else "comfort_only"
         return round(proficiency, 3), confidence, player_name, source
-
-    def get_role_proficiency_with_transfer(
-        self,
-        champion_name: str,
-        role: str,
-        team_players: list[dict],
-        min_games: int = 4,
-    ) -> tuple[float, str, Optional[str], str]:
-        """Return role proficiency with skill transfer fallback.
-
-        DEPRECATED: Use get_champion_proficiency instead.
-        This method is kept for backward compatibility but should not be used
-        for new code. The comfort + role strength approach provides more stable
-        and predictable proficiency scores.
-
-        Returns:
-            (score, confidence, player_name, source)
-            source: direct | transfer | none
-        """
-        score, conf, player_name = self.get_role_proficiency(
-            champion_name, role, team_players
-        )
-        if not player_name:
-            return 0.5, "NO_DATA", None, "none"
-
-        if conf in {"HIGH", "MEDIUM"}:
-            return score, conf, player_name, "direct"
-
-        if conf not in {"LOW", "NO_DATA"}:
-            return score, conf, player_name, "direct"
-
-        pool = self.get_player_champion_pool(player_name, min_games=min_games)
-        available = {
-            entry["champion"]
-            for entry in pool
-            if entry.get("confidence") in {"HIGH", "MEDIUM"}
-        }
-        transfer = self.skill_transfer.get_best_transfer(champion_name, available)
-        if not transfer:
-            source = "direct" if conf != "NO_DATA" else "none"
-            return score, conf, player_name, source
-
-        co_play_rate = transfer.get("co_play_rate", 0)
-        if not co_play_rate:
-            source = "direct" if conf != "NO_DATA" else "none"
-            return score, conf, player_name, source
-
-        transfer_champ = transfer.get("champion")
-        if not transfer_champ:
-            source = "direct" if conf != "NO_DATA" else "none"
-            return score, conf, player_name, source
-
-        transfer_score, _ = self.get_proficiency_score(player_name, transfer_champ)
-        transfer_weight = min(self.TRANSFER_MAX_WEIGHT, self.TRANSFER_MAX_WEIGHT * co_play_rate)
-        blended = (score * (1 - transfer_weight)) + (transfer_score * transfer_weight)
-        blended = max(0.0, min(1.0, blended))
-        transfer_conf = conf if conf != "NO_DATA" else "LOW"
-        return round(blended, 3), transfer_conf, player_name, "transfer"
 
     def _games_to_confidence(self, games: int) -> str:
         """Convert game count to confidence level."""
