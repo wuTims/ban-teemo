@@ -142,7 +142,7 @@ export function TeamPanel({
                 championName={pick}
                 state={pick ? "picked" : isPicking ? "picking" : "empty"}
                 team={side}
-                className="w-14 h-14 lg:w-[66px] lg:h-[66px] 2xl:w-[88px] 2xl:h-[88px] shrink-0"
+                className="w-12 h-12 lg:w-[66px] lg:h-[66px] 2xl:w-[88px] 2xl:h-[88px] shrink-0"
               />
 
               {/* Champion name - hidden on mobile, shown on desktop */}
