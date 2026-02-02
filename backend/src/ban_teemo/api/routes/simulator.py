@@ -384,6 +384,28 @@ async def complete_game(request: Request, session_id: str, body: CompleteGameReq
         if session_id in _session_loggers:
             _session_loggers[session_id].save(suffix=f"_g{session.current_game}")
 
+        # Include draft quality analysis
+        from ban_teemo.services.draft_quality_analyzer import DraftQualityAnalyzer
+        if not hasattr(request.app.state, "draft_quality_analyzer"):
+            request.app.state.draft_quality_analyzer = DraftQualityAnalyzer()
+
+        our_picks = (
+            draft_state.blue_picks
+            if session.coaching_side == "blue"
+            else draft_state.red_picks
+        )
+        enemy_picks = (
+            draft_state.red_picks
+            if session.coaching_side == "blue"
+            else draft_state.blue_picks
+        )
+
+        draft_quality = request.app.state.draft_quality_analyzer.analyze(
+            actual_picks=our_picks,
+            recommended_picks=session.recommended_picks,
+            enemy_picks=enemy_picks,
+        )
+
         return {
             "series_status": {
                 "blue_wins": session.series_score[0],
@@ -395,6 +417,7 @@ async def complete_game(request: Request, session_id: str, body: CompleteGameReq
             "next_game_ready": not session.series_complete,
             "blue_comp_with_roles": blue_with_roles,
             "red_comp_with_roles": red_with_roles,
+            "draft_quality": draft_quality,
         }
 
 
