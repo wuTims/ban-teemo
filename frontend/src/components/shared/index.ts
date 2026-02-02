@@ -1,3 +1,8 @@
+// frontend/src/components/shared/index.ts
+// Barrel export for shared components (used by both Simulator and Replay modes)
+
 export { ChampionPortrait } from "./ChampionPortrait";
-export { CHAMPION_ICON_SIZE_CLASS, RECOMMENDATION_ICON_SIZE_CLASS, BAN_ICON_SIZE_CLASS } from "./championIconSizing";
+export { MetricBar } from "./MetricBar";
+export { PhaseIndicator } from "./PhaseIndicator";
+export { TeamPanel } from "./TeamPanel";
 
