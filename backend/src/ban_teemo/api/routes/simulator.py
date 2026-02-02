@@ -453,6 +453,8 @@ async def next_game(request: Request, session_id: str):
             next_action="ban",
         )
 
+        session.recommended_picks = []  # Reset for new game
+
         # Re-initialize enemy strategy
         enemy_team_id = session.red_team.id if session.coaching_side == "blue" else session.blue_team.id
         session.enemy_strategy = enemy_service.initialize_enemy_strategy(enemy_team_id)
