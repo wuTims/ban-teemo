@@ -67,6 +67,9 @@ class SimulatorSession:
     # Structure: {"Azir": {"team": "blue", "game": 1}, ...}
     fearless_blocked: dict[str, dict] = field(default_factory=dict)
 
+    # Track top recommendations during pick phases for draft quality scoring
+    recommended_picks: list[str] = field(default_factory=list)
+
     @property
     def fearless_blocked_set(self) -> set[str]:
         """All fearless-blocked champion names as a set for filtering."""
