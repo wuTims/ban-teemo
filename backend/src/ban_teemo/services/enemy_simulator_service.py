@@ -103,12 +103,25 @@ class EnemySimulatorService:
                     game_side = "red"
             game_team_sides[game["game_id"]] = game_side
 
+        # Load team info and roster for smart recommendations
+        team_info = self.repo.get_team_with_name(enemy_team_id)
+        team_name = team_info["name"] if team_info else ""
+
+        roster = self.repo.get_team_roster(enemy_team_id)
+        players = [
+            {"name": p["player_name"], "role": p["role"]}
+            for p in roster
+        ] if roster else []
+
         return EnemyStrategy(
             reference_game_id=reference["game_id"],
             draft_script=enemy_actions,
             fallback_game_ids=[g["game_id"] for g in fallbacks],
             champion_weights=weights,
             game_team_sides=game_team_sides,
+            team_id=enemy_team_id,
+            team_name=team_name,
+            players=players,
         )
 
     def _build_champion_weights(self, team_id: str, games: list[dict]) -> dict[str, float]:
