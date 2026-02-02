@@ -85,12 +85,15 @@ class TournamentScorer:
         roles = champ_data.get("roles", {})
 
         normalized_role = normalize_role(role)
-        if normalized_role not in roles:
-            # Champion exists but not played in this role
-            # Use a slightly higher penalty than missing entirely
-            return default_perf
+        if normalized_role in roles:
+            return roles[normalized_role].get("adjusted_performance", default_perf)
 
-        return roles[normalized_role].get("adjusted_performance", default_perf)
+        # Fall back to "all" role data if specific role not found
+        # This handles replay_meta files that don't have per-role breakdowns
+        if "all" in roles:
+            return roles["all"].get("adjusted_performance", default_perf)
+
+        return default_perf
 
     def get_tournament_scores(self, champion_name: str, role: str) -> dict:
         """Get both tournament scores plus metadata for UI display.
@@ -118,6 +121,10 @@ class TournamentScorer:
             if normalized_role in roles:
                 role_has_data = True
                 picks = roles[normalized_role].get("picks", 0)
+            elif "all" in roles:
+                # Fall back to "all" role data for replay_meta files
+                role_has_data = True
+                picks = roles["all"].get("picks", 0)
 
         return {
             "priority": self.get_priority(champion_name),

@@ -159,6 +159,37 @@ def test_get_performance_missing_champion_returns_penalty(tmp_path):
     assert scorer.get_performance("Teemo", "top") == 0.35
 
 
+def test_get_performance_falls_back_to_all_role(tmp_path):
+    """When specific role missing but 'all' exists, use 'all' data."""
+    # This is the format used by replay_meta files which don't have per-role breakdown
+    knowledge_dir = _write_tournament_data(
+        tmp_path,
+        {
+            "Varus": {
+                "priority": 0.358,
+                "roles": {
+                    "all": {"winrate": 0.527, "picks": 91, "adjusted_performance": 0.527}
+                },
+            }
+        },
+        defaults={
+            "missing_champion_priority": 0.05,
+            "missing_champion_performance": 0.35,
+        },
+    )
+    scorer = TournamentScorer(knowledge_dir=knowledge_dir)
+
+    # Should fall back to "all" instead of returning penalty
+    assert scorer.get_performance("Varus", "bot") == 0.527
+    assert scorer.get_performance("Varus", "mid") == 0.527
+
+    # Tournament scores should also reflect "all" data
+    scores = scorer.get_tournament_scores("Varus", "bot")
+    assert scores["performance"] == 0.527
+    assert scores["role_has_data"] is True
+    assert scores["picks"] == 91
+
+
 # ======================================================================
 # Asymmetric Blending Tests (verified through build script output)
 # ======================================================================
