@@ -10,6 +10,8 @@ interface ChampionPortraitProps {
   team?: Team | null;
   className?: string;
   imageClassName?: string;
+  /** When empty, show this champion greyed out as a placeholder (e.g., "Teemo" for ban slots) */
+  placeholderChampion?: string;
 }
 
 export function ChampionPortrait({
@@ -18,6 +20,7 @@ export function ChampionPortrait({
   team = null,
   className = "",
   imageClassName = "",
+  placeholderChampion,
 }: ChampionPortraitProps) {
   // bg-lol-dark provides a dark placeholder matching icon colors to reduce flash
   const baseClasses = "relative rounded-sm overflow-hidden bg-lol-dark";
@@ -33,10 +36,24 @@ export function ChampionPortrait({
   };
 
   if (state === "empty" || !championName) {
+    // Show placeholder champion (greyed out) if provided - Easter egg for "Ban Teemo"!
+    if (placeholderChampion) {
+      return (
+        <div className={`${baseClasses} ${stateClasses.empty} ${className}`}>
+          <img
+            src={getCachedChampionIconUrl(placeholderChampion)}
+            alt=""
+            loading="eager"
+            decoding="sync"
+            className={`w-full h-full object-cover grayscale opacity-30 ${imageClassName}`}
+          />
+        </div>
+      );
+    }
     return (
       <div className={`${baseClasses} ${stateClasses.empty} ${className}`}>
         <div className="w-full h-full flex items-center justify-center">
-          <span className="text-gold-dim text-lg">?</span>
+          <span className="text-gold-dim text-lg"></span>
         </div>
       </div>
     );
@@ -53,7 +70,7 @@ export function ChampionPortrait({
       />
       {state === "banned" && (
         <div className="absolute inset-0 flex items-center justify-center bg-lol-darkest/40">
-          <span className="text-red-team text-2xl font-bold">✕</span>
+          <span className="text-red-team text-2xl font-bold"></span>
         </div>
       )}
     </div>

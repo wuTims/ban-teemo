@@ -1,9 +1,10 @@
-// frontend/src/components/LLMInsightsPanel/index.tsx
+// frontend/src/components/replay/ReplayInsightsPanel/index.tsx
+// Displays AI insights with team context in Replay mode
 import { useState, useEffect, useRef } from "react";
-import type { LLMInsight, Team } from "../../types";
-import { ChampionPortrait } from "../shared/ChampionPortrait";
+import type { LLMInsight, Team } from "../../../types";
+import { ChampionPortrait } from "../../shared/ChampionPortrait";
 
-interface LLMInsightsPanelProps {
+interface ReplayInsightsPanelProps {
   insight: LLMInsight | null;
   isLoading?: boolean;
   forTeam?: Team;
@@ -23,10 +24,10 @@ function ConfidenceBar({ confidence }: { confidence: number }) {
   );
 }
 
-export function LLMInsightsPanel({
+export function ReplayInsightsPanel({
   insight,
   isLoading = false,
-}: LLMInsightsPanelProps) {
+}: ReplayInsightsPanelProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const wasLoadingRef = useRef(false);
 

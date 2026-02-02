@@ -1,7 +1,7 @@
-// frontend/src/components/ReplayControls/index.tsx
+// frontend/src/components/replay/ReplayControls/index.tsx
 import { useState, useEffect, useMemo } from "react";
-import type { SeriesInfo, GameInfo, GamePreview } from "../../types";
-import { getTeamLogoUrl, getTeamInitials } from "../../utils/teamLogos";
+import type { SeriesInfo, GameInfo, GamePreview } from "../../../types";
+import { getTeamLogoUrl, getTeamInitials } from "../../../utils/teamLogos";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
 

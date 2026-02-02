@@ -1,6 +1,6 @@
-// frontend/src/components/RecommendationPanel/index.tsx
+// frontend/src/components/replay/RecommendationPanel/index.tsx
 import { InsightsLog } from "../InsightsLog";
-import type { InsightEntry, TeamContext, LLMInsight } from "../../types";
+import type { InsightEntry, TeamContext, LLMInsight } from "../../../types";
 
 interface RecommendationPanelProps {
   recommendationHistory: InsightEntry[];

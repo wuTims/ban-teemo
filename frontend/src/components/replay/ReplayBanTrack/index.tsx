@@ -1,23 +1,26 @@
-// frontend/src/components/draft/BanTrack.tsx
-import { ChampionPortrait } from "../shared";
-import type { Team } from "../../types";
-import { CHAMPION_ICON_SIZE_CLASS } from "../shared";
+// frontend/src/components/replay/ReplayBanTrack/index.tsx
+// Displays bans in a vertical stacked layout for Replay mode
+import { ChampionPortrait } from "../../shared";
+import type { Team } from "../../../types";
 
-interface BanTrackProps {
+interface ReplayBanTrackProps {
   blueBans: string[];
   redBans: string[];
   currentBanTeam?: Team | null;
   currentBanIndex?: number; // 0-4 for each team
 }
 
-export function BanTrack({
+export function ReplayBanTrack({
   blueBans,
   redBans,
   currentBanTeam,
   currentBanIndex,
-}: BanTrackProps) {
+}: ReplayBanTrackProps) {
   // Display bans grouped by team (simpler, works regardless of ban order)
   // Each team has up to 5 bans (3 in phase 1, 2 in phase 2)
+
+  // Show Teemo placeholders only in pristine state (no bans yet and replay hasn't started)
+  const draftStarted = blueBans.length > 0 || redBans.length > 0 || currentBanTeam != null;
 
   const renderBanSlot = (team: Team, index: number) => {
     const bans = team === "blue" ? blueBans : redBans;
@@ -30,7 +33,8 @@ export function BanTrack({
         championName={ban}
         state={ban ? "banned" : isCurrent ? "picking" : "empty"}
         team={team}
-        className={`${CHAMPION_ICON_SIZE_CLASS} shrink-0`}
+        className="w-11 h-11 lg:w-[88px] lg:h-[88px] 2xl:w-[104px] 2xl:h-[104px] shrink-0"
+        placeholderChampion={draftStarted ? undefined : "Teemo"}
       />
     );
   };

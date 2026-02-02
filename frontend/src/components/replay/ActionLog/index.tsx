@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
-import { CHAMPION_ICON_SIZE_CLASS, ChampionPortrait } from "../shared";
-import type { DraftAction, ReplayActionLogEntry, TeamContext } from "../../types";
+import { ChampionPortrait } from "../../shared";
+import type { DraftAction, ReplayActionLogEntry, TeamContext } from "../../../types";
 
 interface ActionLogProps {
   actions: ReplayActionLogEntry[];
@@ -24,7 +24,7 @@ export function ActionLog({ actions, blueTeam, redTeam }: ActionLogProps) {
   };
 
   return (
-    <div className="w-72 bg-lol-dark rounded-lg border border-gold-dim/30 flex flex-col">
+    <div className="w-full 2xl:w-72 bg-lol-dark rounded-lg border border-gold-dim/30 flex flex-col">
       {/* Header */}
       <div className="px-4 py-3 border-b border-gold-dim/30">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-gold-bright">
@@ -33,10 +33,11 @@ export function ActionLog({ actions, blueTeam, redTeam }: ActionLogProps) {
       </div>
 
       {/* Action list */}
-      <div
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto p-3 space-y-2 max-h-[750px]"
-      >
+      <div className="relative flex-1">
+        <div
+          ref={scrollRef}
+          className="overflow-y-auto p-3 space-y-2 max-h-[400px] 2xl:max-h-[750px] scrollbar-thin"
+        >
         {actions.length === 0 ? (
           <p className="text-text-tertiary text-sm text-center py-4">
             Waiting for draft to begin...
@@ -73,6 +74,9 @@ export function ActionLog({ actions, blueTeam, redTeam }: ActionLogProps) {
             );
           })
         )}
+        </div>
+        {/* Fade gradient hint at bottom when content overflows */}
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-lol-dark to-transparent" />
       </div>
     </div>
   );
@@ -93,7 +97,7 @@ function ActionEntry({ action, teamName }: ActionEntryProps) {
         championName={action.champion_name}
         state={isBan ? "banned" : "picked"}
         team={action.team_side}
-        className={`${CHAMPION_ICON_SIZE_CLASS} shrink-0`}
+        className="w-11 h-11 lg:w-[88px] lg:h-[88px] 2xl:w-[104px] 2xl:h-[104px] shrink-0"
       />
       <div className="flex-1 min-w-0">
         <p className={`text-sm font-medium truncate ${teamColorClass}`}>

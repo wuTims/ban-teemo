@@ -1,6 +1,7 @@
-// frontend/src/components/DraftBoard/index.tsx
-import { TeamPanel, BanTrack, PhaseIndicator } from "../draft";
-import type { TeamContext, DraftState, Team, ActionType, FinalizedPick } from "../../types";
+// frontend/src/components/replay/DraftBoard/index.tsx
+import { TeamPanel, PhaseIndicator } from "../../shared";
+import { ReplayBanTrack } from "../ReplayBanTrack";
+import type { TeamContext, DraftState, Team, ActionType, FinalizedPick } from "../../../types";
 
 interface DraftBoardProps {
   blueTeam: TeamContext | null;
@@ -31,9 +32,9 @@ export function DraftBoard({ blueTeam, redTeam, draftState, blueCompWithRoles, r
   const redPicks = draftState?.red_picks ?? [];
 
   return (
-    <div className="bg-lol-dark rounded-lg p-6">
+    <div className="bg-lol-dark rounded-lg p-3 sm:p-4 lg:p-6">
       {/* Phase Indicator - Top Center */}
-      <div className="flex justify-center mb-6">
+      <div className="flex justify-center mb-3 sm:mb-4 lg:mb-6">
         <PhaseIndicator
           currentPhase={phase}
           nextTeam={nextTeam}
@@ -41,9 +42,9 @@ export function DraftBoard({ blueTeam, redTeam, draftState, blueCompWithRoles, r
         />
       </div>
 
-      {/* Main Draft Grid */}
-      <div className="grid grid-cols-[1fr_auto_1fr] gap-6 items-start">
-        {/* Blue Team Panel - Left */}
+      {/* Main Draft Layout - Vertical on mobile, 3-column grid on desktop */}
+      <div className="flex flex-col gap-3 sm:gap-4 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:gap-6 lg:items-start">
+        {/* Blue Team Panel */}
         <TeamPanel
           team={blueTeam}
           picks={bluePicks}
@@ -54,9 +55,9 @@ export function DraftBoard({ blueTeam, redTeam, draftState, blueCompWithRoles, r
           players={blueTeam?.players}
         />
 
-        {/* Center: Ban Track */}
-        <div className="flex flex-col items-center pt-8">
-          <BanTrack
+        {/* Center: Ban Track + Action Counter */}
+        <div className="flex flex-col items-center lg:pt-8">
+          <ReplayBanTrack
             blueBans={blueBans}
             redBans={redBans}
             currentBanTeam={nextAction === "ban" ? nextTeam : null}
@@ -68,17 +69,17 @@ export function DraftBoard({ blueTeam, redTeam, draftState, blueCompWithRoles, r
           />
 
           {/* Action Counter */}
-          <div className="mt-6 text-center">
-            <div className="text-3xl font-bold text-gold-bright">
+          <div className="mt-3 sm:mt-4 lg:mt-6 text-center">
+            <div className="text-2xl sm:text-3xl font-bold text-gold-bright">
               {draftState?.action_count ?? 0}
             </div>
-            <div className="text-xs text-text-tertiary uppercase">
+            <div className="text-[10px] sm:text-xs text-text-tertiary uppercase">
               / 20 actions
             </div>
           </div>
         </div>
 
-        {/* Red Team Panel - Right */}
+        {/* Red Team Panel */}
         <TeamPanel
           team={redTeam}
           picks={redPicks}

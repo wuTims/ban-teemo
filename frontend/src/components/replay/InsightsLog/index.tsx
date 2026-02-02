@@ -1,4 +1,4 @@
-// frontend/src/components/InsightsLog/index.tsx
+// frontend/src/components/replay/InsightsLog/index.tsx
 import { useEffect, useRef, useState } from "react";
 import type {
   InsightEntry,
@@ -6,10 +6,12 @@ import type {
   BanRecommendation,
   TeamContext,
   LLMInsight,
-  RoleGroupedRecommendations,
-  SimulatorPickRecommendation,
-} from "../../types";
-import { ChampionPortrait } from "../shared/ChampionPortrait";
+} from "../../../types";
+import { ChampionPortrait } from "../../shared/ChampionPortrait";
+import {
+  PICK_COMPONENT_LABELS,
+  getTopBanComponents,
+} from "../../../utils/scoreLabels";
 
 interface InsightsLogProps {
   entries: InsightEntry[];
@@ -23,7 +25,8 @@ interface InsightsLogProps {
 }
 
 // Helper to format component scores with color
-// isWeighted: true for ban components (max ~0.35), false for pick components (raw 0-1)
+// isWeighted: true for weighted components (both picks and bans use weighted display)
+// Weighted scores use lower thresholds since max per component is ~0.35
 function ScoreCell({
   label,
   value,
@@ -34,55 +37,22 @@ function ScoreCell({
   isWeighted?: boolean;
 }) {
   if (value === undefined) return null;
-  // Weighted ban scores use lower thresholds (max ~0.35 per component)
-  // Raw pick scores use original thresholds (0-1 scale)
+  // Weighted scores use lower thresholds (max ~0.35 per component)
+  // Raw scores (legacy) use original thresholds (0-1 scale)
   const color = isWeighted
     ? (value >= 0.20 ? "text-success" : value >= 0.10 ? "text-warning" : "text-danger")
     : (value >= 0.7 ? "text-success" : value >= 0.5 ? "text-warning" : "text-danger");
   return (
-    <div className="flex justify-between text-[10px]">
+    <div className="flex justify-between text-xs">
       <span className="text-text-tertiary">{label}</span>
       <span className={`font-mono ${color}`}>{value.toFixed(2)}</span>
     </div>
   );
 }
 
-const BAN_COMPONENT_LABELS: Record<string, string> = {
-  // Tournament components (simulator mode)
-  tournament_priority: "prio",
-  // Phase 1 components (weighted)
-  meta: "meta",
-  presence: "pres",
-  flex: "flex",
-  proficiency: "prof",
-  tier_bonus: "tier",
-  // Phase 2 components (weighted)
-  comfort: "comf",
-  confidence: "conf",
-  // Contextual ban components
-  archetype_counter: "arch",
-  synergy_denial: "syn",
-  role_denial: "role",
-  counter_our_picks: "cntr",
-  counter: "cntr",
-};
-
-function getTopBanComponents(
-  components?: Record<string, number>,
-  limit: number = 5
-): Array<{ label: string; value: number }> {
-  if (!components) return [];
-  return Object.entries(components)
-    .filter(([key, value]) => BAN_COMPONENT_LABELS[key] && value !== undefined)
-    .map(([key, value]) => ({
-      label: BAN_COMPONENT_LABELS[key],
-      value,
-    }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, limit);
-}
 
 // Compact recommendation card showing champion + all scores
+// On mobile: expandable to show details; on desktop: always shows details
 function CompactRecommendationCard({
   champion,
   score,
@@ -90,6 +60,8 @@ function CompactRecommendationCard({
   components,
   isMatch,
   isPick,
+  isExpanded,
+  onToggle,
 }: {
   champion: string;
   score: number;
@@ -97,27 +69,34 @@ function CompactRecommendationCard({
   components?: Record<string, number>;
   isMatch: boolean;
   isPick: boolean;
+  isExpanded: boolean;
+  onToggle: () => void;
 }) {
   const scoreColor =
     score >= 0.7 ? "text-success" :
     score >= 0.5 ? "text-warning" : "text-danger";
 
+  const hasComponents = components && Object.keys(components).length > 0;
+
   return (
     <div
       className={`
-        rounded border p-1.5 min-w-[100px] flex-1
+        rounded border p-1.5 w-full
         ${isMatch
           ? "border-success bg-success/10"
           : "border-gold-dim/30 bg-lol-dark/50"
         }
       `}
     >
-      {/* Header: champion + score */}
-      <div className="flex items-center gap-1.5 mb-1">
+      {/* Header: champion + score - clickable on mobile to expand */}
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center gap-1.5 text-left lg:cursor-default"
+      >
         <ChampionPortrait
           championName={champion}
           state="picked"
-          className="w-5 h-5 rounded-sm"
+          className="w-8 h-8 rounded-sm shrink-0"
         />
         <div className="flex-1 min-w-0">
           <div className="text-[10px] font-medium text-gold-bright truncate">
@@ -127,39 +106,51 @@ function CompactRecommendationCard({
             <div className="text-[9px] text-magic uppercase">{role}</div>
           )}
         </div>
-        <span className={`text-xs font-bold ${scoreColor}`}>
+        <span className={`text-sm font-bold ${scoreColor}`}>
           {Math.round(score * 100)}
         </span>
         {isMatch && <span className="text-success text-[10px]">✓</span>}
-      </div>
+        {/* Mobile expand indicator */}
+        {hasComponents && (
+          <span className={`lg:hidden text-[10px] text-text-tertiary transition-transform ${isExpanded ? "rotate-90" : ""}`}>
+            ▶
+          </span>
+        )}
+      </button>
 
-      {/* Component scores */}
-      {components && (
-        <div className="space-y-0 border-t border-gold-dim/20 pt-1">
-          {isPick ? (
-            <>
-              {/* Tournament components (simulator mode) or meta (replay mode) */}
-              {components.tournament_priority !== undefined ? (
-                <>
-                  <ScoreCell label="prio" value={components.tournament_priority} />
-                  <ScoreCell label="perf" value={components.tournament_performance} />
-                </>
-              ) : (
-                <ScoreCell label="meta" value={components.meta} />
-              )}
-              <ScoreCell label="prof" value={components.proficiency} />
-              <ScoreCell label="match" value={components.matchup} />
-              <ScoreCell label="count" value={components.counter} />
-              <ScoreCell label="arch" value={components.archetype} />
-              <ScoreCell label="syn" value={components.synergy} />
-            </>
-          ) : (
-            <>
-              {getTopBanComponents(components).map((item) => (
-                <ScoreCell key={item.label} label={item.label} value={item.value} isWeighted />
-              ))}
-            </>
-          )}
+      {/* Component scores - expandable on mobile, always visible on desktop */}
+      {hasComponents && (
+        <div className={`
+          overflow-hidden transition-all duration-200 ease-out
+          ${isExpanded ? "max-h-48 opacity-100 mt-1" : "max-h-0 opacity-0 lg:max-h-48 lg:opacity-100 lg:mt-1"}
+        `}>
+          <div className="space-y-0 border-t border-gold-dim/20 pt-1">
+            {isPick ? (
+              <>
+                {/* Tournament components (simulator mode) or meta (replay mode) */}
+                {/* All pick components now use weighted display (same scale as bans) */}
+                {components.tournament_priority !== undefined ? (
+                  <>
+                    <ScoreCell label={PICK_COMPONENT_LABELS.tournament_priority} value={components.tournament_priority} isWeighted />
+                    <ScoreCell label={PICK_COMPONENT_LABELS.tournament_performance} value={components.tournament_performance} isWeighted />
+                  </>
+                ) : (
+                  <ScoreCell label={PICK_COMPONENT_LABELS.meta} value={components.meta} isWeighted />
+                )}
+                <ScoreCell label={PICK_COMPONENT_LABELS.proficiency} value={components.proficiency} isWeighted />
+                <ScoreCell label={PICK_COMPONENT_LABELS.matchup} value={components.matchup} isWeighted />
+                <ScoreCell label={PICK_COMPONENT_LABELS.counter} value={components.counter} isWeighted />
+                <ScoreCell label={PICK_COMPONENT_LABELS.archetype} value={components.archetype} isWeighted />
+                <ScoreCell label={PICK_COMPONENT_LABELS.synergy} value={components.synergy} isWeighted />
+              </>
+            ) : (
+              <>
+                {getTopBanComponents(components).map((item) => (
+                  <ScoreCell key={item.key} label={item.label} value={item.value} isWeighted />
+                ))}
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -198,14 +189,7 @@ function calculateActionNumber(sequence: number, isBan: boolean): number {
   return 1;
 }
 
-// Frontend display names to backend canonical role names
-const ROLE_DISPLAY_ORDER = [
-  { display: "TOP", backend: "top" },
-  { display: "JNG", backend: "jungle" },
-  { display: "MID", backend: "mid" },
-  { display: "ADC", backend: "bot" },
-  { display: "SUP", backend: "support" },
-] as const;
+// Note: For role utilities, use ../../utils/roles (ROLE_INFO, toDisplayRole, etc.)
 
 // Confidence bar component for visual score indicator
 function ConfidenceBar({ confidence }: { confidence: number }) {
@@ -218,95 +202,6 @@ function ConfidenceBar({ confidence }: { confidence: number }) {
   return (
     <div className="w-12 h-1.5 bg-lol-dark rounded-full overflow-hidden">
       <div className={`h-full ${color}`} style={{ width: `${width}%` }} />
-    </div>
-  );
-}
-
-// Inline Role View for per-entry "By Role" display
-// Uses same format as CompactRecommendationCard for consistency
-function InlineRoleView({
-  roleGrouped,
-  expandedCards,
-  onToggleCard,
-}: {
-  roleGrouped: RoleGroupedRecommendations;
-  expandedCards: Set<string>;
-  onToggleCard: (key: string) => void;
-}) {
-  return (
-    <div className="space-y-1">
-      {ROLE_DISPLAY_ORDER.map(({ display, backend }) => {
-        const picks = (roleGrouped.by_role?.[backend] || []) as SimulatorPickRecommendation[];
-        return (
-          <div key={display} className="flex items-start gap-2">
-            <span className="w-10 text-xs font-medium text-text-tertiary shrink-0 pt-1">{display}</span>
-            <div className="flex gap-2 flex-1">
-              {picks.length > 0 ? (
-                picks.slice(0, 2).map((pick, i) => {
-                  const cardKey = `${display}-${i}`;
-                  const isExpanded = expandedCards.has(cardKey);
-                  const scoreColor =
-                    pick.score >= 0.7 ? "text-success" :
-                    pick.score >= 0.5 ? "text-warning" : "text-danger";
-
-                  return (
-                    <div
-                      key={pick.champion_name}
-                      className="flex-1 border border-gold-dim/30 rounded p-1.5 bg-lol-dark/50 min-w-[100px]"
-                    >
-                      {/* Header: champion + score (matching CompactRecommendationCard) */}
-                      <button
-                        onClick={() => onToggleCard(cardKey)}
-                        className="flex items-center gap-1.5 w-full mb-1"
-                      >
-                        <ChampionPortrait
-                          championName={pick.champion_name}
-                          state="picked"
-                          className="w-5 h-5 rounded-sm"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[10px] font-medium text-gold-bright truncate">
-                            {pick.champion_name}
-                          </div>
-                        </div>
-                        <span className={`text-xs font-bold ${scoreColor}`}>
-                          {Math.round(pick.score * 100)}
-                        </span>
-                        <span className="text-[10px] text-text-tertiary">
-                          {isExpanded ? "▼" : "▶"}
-                        </span>
-                      </button>
-                      {/* Component scores (matching CompactRecommendationCard format) */}
-                      {isExpanded && pick.components && (
-                        <div className="space-y-0 border-t border-gold-dim/20 pt-1">
-                          {/* Tournament components (simulator mode) or meta (replay mode) */}
-                          {pick.components.tournament_priority !== undefined ? (
-                            <>
-                              <ScoreCell label="prio" value={pick.components.tournament_priority} />
-                              <ScoreCell label="perf" value={pick.components.tournament_performance} />
-                            </>
-                          ) : (
-                            <ScoreCell label="meta" value={pick.components.meta} />
-                          )}
-                          <ScoreCell label="prof" value={pick.components.proficiency} />
-                          <ScoreCell label="match" value={pick.components.matchup} />
-                          <ScoreCell label="count" value={pick.components.counter} />
-                          <ScoreCell label="arch" value={pick.components.archetype} />
-                          <ScoreCell label="syn" value={pick.components.synergy} />
-                        </div>
-                      )}
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="flex-1 text-[10px] text-text-tertiary italic py-1">
-                  No picks for {display}
-                </div>
-              )}
-            </div>
-          </div>
-        );
-      })}
     </div>
   );
 }
@@ -356,7 +251,7 @@ function InlineAIInsight({
                     <ChampionPortrait
                       championName={rec.champion_name}
                       state="picked"
-                      className="w-6 h-6 rounded-sm shrink-0"
+                      className="w-8 h-8 rounded-sm shrink-0"
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
@@ -403,15 +298,14 @@ function InlineAIInsight({
 // Entry UI state interface
 interface EntryUIState {
   aiInsightExpanded: boolean;
-  showRoleGrouped: boolean;
-  expandedRoleCards: Set<string>;
+  expandedRecCards: Set<string>; // Track which recommendation cards are expanded (by champion name)
 }
 
 export function InsightsLog({
   entries,
   isLive,
-  blueTeam,
-  redTeam,
+  blueTeam: _blueTeam,  // Reserved for future role-grouped view
+  redTeam: _redTeam,    // Reserved for future role-grouped view
   llmInsights,
   llmTimeouts,
   isWaitingForLLM = false,
@@ -425,8 +319,7 @@ export function InsightsLog({
   const getEntryState = (sequence: number): EntryUIState => {
     return entryStates.get(sequence) || {
       aiInsightExpanded: false,  // Start collapsed, user expands to view
-      showRoleGrouped: false,
-      expandedRoleCards: new Set(),
+      expandedRecCards: new Set(),
     };
   };
 
@@ -440,28 +333,18 @@ export function InsightsLog({
     });
   };
 
-  // Toggle role-grouped view for an entry
-  const toggleRoleGrouped = (sequence: number) => {
+  // Toggle recommendation card expanded state for an entry
+  const toggleRecCard = (sequence: number, championName: string) => {
     setEntryStates((prev) => {
       const next = new Map(prev);
       const state = getEntryState(sequence);
-      next.set(sequence, { ...state, showRoleGrouped: !state.showRoleGrouped });
-      return next;
-    });
-  };
-
-  // Toggle individual role card expansion
-  const toggleRoleCard = (sequence: number, cardKey: string) => {
-    setEntryStates((prev) => {
-      const next = new Map(prev);
-      const state = getEntryState(sequence);
-      const newExpandedCards = new Set(state.expandedRoleCards);
-      if (newExpandedCards.has(cardKey)) {
-        newExpandedCards.delete(cardKey);
+      const expandedRecCards = new Set(state.expandedRecCards);
+      if (expandedRecCards.has(championName)) {
+        expandedRecCards.delete(championName);
       } else {
-        newExpandedCards.add(cardKey);
+        expandedRecCards.add(championName);
       }
-      next.set(sequence, { ...state, expandedRoleCards: newExpandedCards });
+      next.set(sequence, { ...state, expandedRecCards });
       return next;
     });
   };
@@ -513,10 +396,11 @@ export function InsightsLog({
       )}
 
       {/* Scrollable log - most recent on top */}
-      <div
-        ref={scrollRef}
-        className="space-y-3 max-h-[600px] overflow-y-auto pr-2"
-      >
+      <div className="relative">
+        <div
+          ref={scrollRef}
+          className="space-y-3 max-h-[600px] overflow-y-auto pr-2 scrollbar-thin"
+        >
         {reversedEntries.map((entry, idx) => {
           const isLatest = idx === 0;
           if (entry.kind === "marker") {
@@ -569,13 +453,6 @@ export function InsightsLog({
           // Get entry UI state
           const entryState = getEntryState(sequenceNum);
 
-          // Get role_grouped data if available (for picks only)
-          const roleGrouped = !isBan ? entry.recommendations?.role_grouped : null;
-
-          // Determine which team context to use for role info
-          const forTeam = entry.recommendations?.for_team;
-          const ourTeam = forTeam === "blue" ? blueTeam : forTeam === "red" ? redTeam : null;
-
           return (
             <div
               key={`${entry.sessionId}-${sequenceNum}`}
@@ -598,21 +475,6 @@ export function InsightsLog({
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  {/* Per-entry By Role toggle - only for picks with role_grouped data */}
-                  {roleGrouped && ourTeam && (
-                    <button
-                      onClick={() => toggleRoleGrouped(sequenceNum)}
-                      className={`
-                        text-xs px-2 py-0.5 rounded transition-colors
-                        ${entryState.showRoleGrouped
-                          ? "bg-magic/20 text-magic border border-magic/40"
-                          : "bg-lol-light text-text-tertiary hover:text-text-secondary"
-                        }
-                      `}
-                    >
-                      {entryState.showRoleGrouped ? "Detailed" : "By Role"}
-                    </button>
-                  )}
                   {isLatest && isLive && (
                     <span className="text-xs bg-magic/20 text-magic px-2 py-0.5 rounded">
                       LIVE
@@ -638,31 +500,24 @@ export function InsightsLog({
                 </div>
               )}
 
-              {/* Recommendations - either role-grouped or detailed top 5 */}
+              {/* Top Recommendations - 2x2 grid on mobile (top 4), horizontal scroll on desktop (top 5) */}
               {hasRecommendations ? (
-                entryState.showRoleGrouped && roleGrouped ? (
                   <div className="mb-2">
                     <div className="text-[10px] text-text-tertiary uppercase mb-1.5">
-                      Top 2 by Role
+                      Top Recommendations
                     </div>
-                    <InlineRoleView
-                      roleGrouped={roleGrouped}
-                      expandedCards={entryState.expandedRoleCards}
-                      onToggleCard={(key) => toggleRoleCard(sequenceNum, key)}
-                    />
-                  </div>
-                ) : (
-                  <div className="mb-2">
-                    <div className="text-[10px] text-text-tertiary uppercase mb-1.5">
-                      Top 5 Recommendations
-                    </div>
-                    <div className="flex gap-1.5 overflow-x-auto pb-1">
-                      {top5.map((rec) => {
+                    {/* Mobile: 2x2 grid showing top 4 */}
+                    <div className="grid grid-cols-2 gap-1.5 lg:hidden">
+                      {top5.slice(0, 4).map((rec) => {
                         const isPick = "score" in rec;
                         const score = isPick
                           ? (rec as PickRecommendation).score ?? (rec as PickRecommendation).confidence
                           : (rec as BanRecommendation).priority;
                         const role = isPick ? (rec as PickRecommendation).suggested_role : null;
+                        const components = isPick
+                          ? ((rec as PickRecommendation).weighted_components ?? rec.components)
+                          : rec.components;
+                        const isCardExpanded = entryState.expandedRecCards.has(rec.champion_name);
 
                         return (
                           <CompactRecommendationCard
@@ -670,15 +525,43 @@ export function InsightsLog({
                             champion={rec.champion_name}
                             score={score}
                             role={role}
-                            components={rec.components}
+                            components={components}
                             isMatch={rec.champion_name === actualChampion}
                             isPick={isPick}
+                            isExpanded={isCardExpanded}
+                            onToggle={() => toggleRecCard(sequenceNum, rec.champion_name)}
+                          />
+                        );
+                      })}
+                    </div>
+                    {/* Desktop: horizontal row showing top 5 */}
+                    <div className="hidden lg:flex gap-1.5 overflow-x-auto pb-1">
+                      {top5.map((rec) => {
+                        const isPick = "score" in rec;
+                        const score = isPick
+                          ? (rec as PickRecommendation).score ?? (rec as PickRecommendation).confidence
+                          : (rec as BanRecommendation).priority;
+                        const role = isPick ? (rec as PickRecommendation).suggested_role : null;
+                        const components = isPick
+                          ? ((rec as PickRecommendation).weighted_components ?? rec.components)
+                          : rec.components;
+
+                        return (
+                          <CompactRecommendationCard
+                            key={rec.champion_name}
+                            champion={rec.champion_name}
+                            score={score}
+                            role={role}
+                            components={components}
+                            isMatch={rec.champion_name === actualChampion}
+                            isPick={isPick}
+                            isExpanded={true}
+                            onToggle={() => {}}
                           />
                         );
                       })}
                     </div>
                   </div>
-                )
               ) : (
                 <div className="text-xs text-text-tertiary italic mb-2">
                   No recommendations available (draft complete)
@@ -690,7 +573,7 @@ export function InsightsLog({
                 <ChampionPortrait
                   championName={actualChampion}
                   state="picked"
-                  className="w-8 h-8 rounded"
+                  className="w-10 h-10 rounded"
                 />
                 <div className="flex-1">
                   <span className="text-gold-bright font-medium">{actualChampion}</span>
@@ -704,6 +587,9 @@ export function InsightsLog({
             </div>
           );
         })}
+        </div>
+        {/* Fade gradient hint at bottom when content overflows */}
+        <div className="pointer-events-none absolute bottom-0 left-0 right-2 h-8 bg-gradient-to-t from-lol-dark to-transparent" />
       </div>
     </div>
   );

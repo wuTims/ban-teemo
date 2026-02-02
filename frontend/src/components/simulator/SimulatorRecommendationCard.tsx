@@ -1,8 +1,9 @@
-// frontend/src/components/recommendations/RecommendationCard.tsx
-import { ChampionPortrait, RECOMMENDATION_ICON_SIZE_CLASS } from "../shared";
+// frontend/src/components/simulator/SimulatorRecommendationCard.tsx
+// Displays individual pick recommendations in Simulator mode
+import { ChampionPortrait } from "../shared";
 import type { PickRecommendation, RecommendationFlag } from "../../types";
 
-interface RecommendationCardProps {
+interface SimulatorRecommendationCardProps {
   recommendation: PickRecommendation;
   isTopPick?: boolean;
   rank?: number;
@@ -45,11 +46,11 @@ function FlagBadge({ flag }: { flag: RecommendationFlag }) {
   );
 }
 
-export function RecommendationCard({
+export function SimulatorRecommendationCard({
   recommendation,
   isTopPick = false,
   rank,
-}: RecommendationCardProps) {
+}: SimulatorRecommendationCardProps) {
   const { champion_name, confidence, flag, reasons } = recommendation;
 
   const confidenceColor =
@@ -72,7 +73,7 @@ export function RecommendationCard({
           championName={champion_name}
           state="picked"
           team="blue"
-          className={`${RECOMMENDATION_ICON_SIZE_CLASS} shrink-0`}
+          className="w-11 h-11 lg:w-[52px] lg:h-[52px] 2xl:w-[60px] 2xl:h-[60px] shrink-0"
         />
         <div className="flex-1">
           <div className="flex items-center gap-2">
@@ -84,7 +85,7 @@ export function RecommendationCard({
             </h3>
           </div>
           <div className="flex items-center gap-2 mt-1">
-            <span className={`text-sm font-semibold ${confidenceColor}`}>
+            <span className={`text-base font-semibold ${confidenceColor}`}>
               {Math.round(confidence * 100)}%
             </span>
             <ConfidenceBar confidence={confidence} />

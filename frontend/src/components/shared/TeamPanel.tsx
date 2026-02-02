@@ -1,9 +1,11 @@
-// frontend/src/components/draft/TeamPanel.tsx
+// frontend/src/components/shared/TeamPanel.tsx
+// Displays team info and pick slots (used by both Simulator and Replay modes)
 import { useMemo } from "react";
-import { ChampionPortrait } from "../shared";
+import { ChampionPortrait } from "./ChampionPortrait";
 import type { TeamContext, Team, FinalizedPick, Player } from "../../types";
 import { getTeamLogoUrl, getTeamInitials } from "../../utils/teamLogos";
 import { getTeamAbbreviation } from "../../data/teamAbbreviations";
+import { ROLE_ORDER, toDisplayRole } from "../../utils/roles";
 
 interface TeamPanelProps {
   team: TeamContext | null;
@@ -14,17 +16,6 @@ interface TeamPanelProps {
   picksWithRoles?: FinalizedPick[]; // Optional finalized role assignments
   players?: Player[]; // Optional player roster for displaying names
 }
-
-const ROLE_ORDER = ["TOP", "JNG", "MID", "ADC", "SUP"] as const;
-
-// Map backend role names to display role names
-const ROLE_DISPLAY_MAP: Record<string, typeof ROLE_ORDER[number]> = {
-  top: "TOP",
-  jungle: "JNG",
-  mid: "MID",
-  bot: "ADC",
-  support: "SUP",
-};
 
 function TeamLogo({ team, borderClass, textClass }: {
   team: TeamContext | null;
@@ -46,7 +37,7 @@ function TeamLogo({ team, borderClass, textClass }: {
   return (
     <div className={`w-10 h-10 rounded bg-lol-dark flex items-center justify-center border ${borderClass}`}>
       <span className={`font-bold text-sm ${textClass}`}>
-        {team?.name ? getTeamInitials(team.name) : "??"}
+        {team?.name ? getTeamInitials(team.name) : ""}
       </span>
     </div>
   );
@@ -71,10 +62,8 @@ export function TeamPanel({
     // Create a map of role -> champion from finalized assignments
     const roleToChampion: Record<string, string> = {};
     for (const fp of picksWithRoles) {
-      const displayRole = ROLE_DISPLAY_MAP[fp.role];
-      if (displayRole) {
-        roleToChampion[displayRole] = fp.champion;
-      }
+      const displayRole = toDisplayRole(fp.role);
+      roleToChampion[displayRole] = fp.champion;
     }
 
     // Build ordered picks array matching ROLE_ORDER
@@ -86,8 +75,8 @@ export function TeamPanel({
     const map: Record<string, string> = {};
     if (players) {
       for (const player of players) {
-        // Player.role is already in display format (TOP, JNG, MID, ADC, SUP)
-        map[player.role] = player.name;
+        const displayRole = toDisplayRole(player.role);
+        map[displayRole] = player.name;
       }
     }
     return map;
@@ -119,7 +108,7 @@ export function TeamPanel({
         <TeamLogo team={team} borderClass={sideColors.border} textClass={sideColors.text} />
         <div>
           <h2 className={`font-semibold uppercase tracking-wide ${sideColors.text}`} title={team?.name}>
-            {team?.name ? getTeamAbbreviation(team.name) : "???"}
+            {team?.name ? getTeamAbbreviation(team.name) : ""}
           </h2>
           <span className="text-xs text-text-tertiary uppercase">
             {side} side
@@ -143,9 +132,9 @@ export function TeamPanel({
                 transition-colors duration-200
               `}
             >
-              {/* Pick slot number - hidden on mobile */}
-              <span className="hidden lg:block w-10 text-xs font-medium text-text-tertiary">
-                Pick {index + 1}
+              {/* Pick slot label - shows player name if available, otherwise "Pick X" */}
+              <span className="hidden lg:block w-16 text-xs font-medium text-text-tertiary truncate">
+                {roleToPlayer[role] || `Pick ${index + 1}`}
               </span>
 
               {/* Champion portrait - smaller on mobile */}
@@ -153,20 +142,15 @@ export function TeamPanel({
                 championName={pick}
                 state={pick ? "picked" : isPicking ? "picking" : "empty"}
                 team={side}
-                className="w-8 h-8 sm:w-10 sm:h-10 lg:w-[66px] lg:h-[66px] 2xl:w-[88px] 2xl:h-[88px] shrink-0"
+                className="w-14 h-14 lg:w-[66px] lg:h-[66px] 2xl:w-[88px] 2xl:h-[88px] shrink-0"
               />
 
-              {/* Champion name and player - hidden on mobile, shown on desktop */}
+              {/* Champion name - hidden on mobile, shown on desktop */}
               {pick && (
                 <div className="hidden lg:flex flex-col flex-1 min-w-0">
                   <span className="text-sm text-gold-bright truncate">
                     {pick}
                   </span>
-                  {roleToPlayer[role] && (
-                    <span className="text-xs text-text-secondary truncate">
-                      {roleToPlayer[role]}
-                    </span>
-                  )}
                 </div>
               )}
             </div>

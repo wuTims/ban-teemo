@@ -1,15 +1,16 @@
-// frontend/src/components/recommendations/InsightPanel.tsx
+// frontend/src/components/simulator/SimulatorInsightPanel.tsx
+// Displays AI analysis and reranked picks in Simulator mode
 import { useState, useEffect, useRef } from "react";
 import { ChampionPortrait } from "../shared/ChampionPortrait";
 import type { RerankedRecommendation } from "../../types";
 
-interface InsightPanelProps {
+interface SimulatorInsightPanelProps {
   insight: string | null;
   isLoading?: boolean;
   reranked?: RerankedRecommendation[] | null;
 }
 
-export function InsightPanel({ insight, isLoading = false, reranked }: InsightPanelProps) {
+export function SimulatorInsightPanel({ insight, isLoading = false, reranked }: SimulatorInsightPanelProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const wasLoadingRef = useRef(false);
 

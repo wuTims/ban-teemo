@@ -1,4 +1,5 @@
-// frontend/src/components/draft/PhaseIndicator.tsx
+// frontend/src/components/shared/PhaseIndicator.tsx
+// Displays the current draft phase and active team (used by both Simulator and Replay modes)
 import type { DraftPhase, Team, ActionType } from "../../types";
 
 interface PhaseIndicatorProps {

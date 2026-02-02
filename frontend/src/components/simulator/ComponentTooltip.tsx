@@ -1,34 +1,17 @@
-// frontend/src/components/recommendations/ComponentTooltip.tsx
+// frontend/src/components/simulator/ComponentTooltip.tsx
+// Tooltip component for displaying scoring component explanations in Simulator mode
 import React, { useState, useRef, useEffect } from "react";
+import {
+  PICK_COMPONENT_LABELS,
+  COMPONENT_EXPLANATIONS,
+  getComponentLabel,
+} from "../../utils/scoreLabels";
 
-/**
- * Explanations for each scoring component.
- * Keys match the component names from the backend scoring system.
- */
-export const COMPONENT_EXPLANATIONS: Record<string, string> = {
-  archetype: "Fit with team's strategic identity (engage, poke, protect, etc.)",
-  meta: "Champion's current strength in pro meta (win rate, pick/ban rate)",
-  matchup_counter: "Combined lane matchup and team-wide counter advantage",
-  proficiency: "Player's comfort and experience with this champion",
-  synergy: "How well this champion works with teammates",
-  // Legacy component names for backwards compatibility
-  matchup: "Lane matchup advantage against opponent",
-  counter: "Team-wide counter potential against enemy composition",
-};
+// Re-export for backwards compatibility (if other components import from here)
+export { COMPONENT_EXPLANATIONS };
 
-/**
- * Short labels for display in compact spaces.
- */
-export const COMPONENT_LABELS: Record<string, string> = {
-  archetype: "Arch",
-  meta: "Meta",
-  matchup_counter: "Match",
-  proficiency: "Prof",
-  synergy: "Syn",
-  // Legacy
-  matchup: "Match",
-  counter: "Cntr",
-};
+// Use full labels from centralized source (no abbreviations)
+export const COMPONENT_LABELS = PICK_COMPONENT_LABELS;
 
 interface ComponentTooltipProps {
   /** The component key (e.g., "meta", "proficiency") */
@@ -71,7 +54,7 @@ export function ComponentTooltip({
   const containerRef = useRef<HTMLSpanElement>(null);
 
   const explanation = COMPONENT_EXPLANATIONS[componentKey] || `Score component: ${componentKey}`;
-  const displayLabel = label || COMPONENT_LABELS[componentKey] || componentKey;
+  const displayLabel = label || getComponentLabel(componentKey, true);
 
   // Determine tooltip position based on available space
   useEffect(() => {

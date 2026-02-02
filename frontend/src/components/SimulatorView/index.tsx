@@ -1,12 +1,14 @@
 // frontend/src/components/SimulatorView/index.tsx
 import { useMemo, useState, useCallback, useEffect } from "react";
-import { PhaseIndicator, TeamPanel, BanRow } from "../draft";
+import { PhaseIndicator, TeamPanel, ChampionPortrait } from "../shared";
+import { SimulatorBanRow, SimulatorInsightPanel } from "../simulator";
 import { ChampionPool } from "../ChampionPool";
-// RoleRecommendationPanel kept for future use but not currently rendered
-// import { RoleRecommendationPanel } from "../recommendations/RoleRecommendationPanel";
-import { InsightPanel } from "../recommendations/InsightPanel";
-import { ChampionPortrait } from "../shared/ChampionPortrait";
 import { getAllChampionNames } from "../../utils/dataDragon";
+import {
+  PICK_COMPONENT_LABELS,
+  BAN_COMPONENT_LABELS,
+  BAN_COMPONENT_ORDER,
+} from "../../utils/scoreLabels";
 import type {
   TeamContext,
   DraftState,
@@ -15,7 +17,6 @@ import type {
   SimulatorBanRecommendation,
   FearlessBlocked,
   DraftMode,
-  RoleGroupedRecommendations,
   FinalizedPick,
   LLMInsightsResponse,
 } from "../../types";
@@ -48,87 +49,57 @@ function isBanRecommendation(rec: SimulatorRecommendation): rec is SimulatorBanR
 
 type ScoreBreakdownItem = { key: string; label: string; value: number; weighted?: boolean };
 
-const PICK_COMPONENT_LABELS: Record<string, string> = {
-  tournament_priority: "Tournament Priority",
-  tournament_performance: "Tournament Performance",
-  matchup_counter: "Matchup/Counter",
-  archetype: "Archetype",
-  synergy: "Synergy",
-};
-
-const BAN_COMPONENT_LABELS: Record<string, string> = {
-  tournament_priority: "Tournament Priority",
-  presence: "Presence",
-  flex: "Flex",
-  comfort: "Comfort",
-  confidence: "Confidence",
-  archetype_counter: "Archetype Counter",
-  synergy_denial: "Synergy Denial",
-  role_denial: "Role Denial",
-  counter_our_picks: "Counter Picks",
-  counter: "Counter",
-  tier_bonus: "Tier Bonus",
-};
-
-const BAN_COMPONENT_ORDER = [
-  "tournament_priority",
-  "presence",
-  "flex",
-  "comfort",
-  "confidence",
-  "archetype_counter",
-  "synergy_denial",
-  "role_denial",
-  "counter_our_picks",
-  "counter",
-  "tier_bonus",
-];
-
-function getPickScoreBreakdown(components?: Record<string, number | undefined>): ScoreBreakdownItem[] {
-  if (!components) return [];
+function getPickScoreBreakdown(weightedComponents?: Record<string, number | undefined>): ScoreBreakdownItem[] {
+  // Use weighted components for display (same scale as ban components)
+  if (!weightedComponents) return [];
   const items: ScoreBreakdownItem[] = [];
   const hasTournament =
-    components.tournament_priority !== undefined ||
-    components.tournament_performance !== undefined;
+    weightedComponents.tournament_priority !== undefined ||
+    weightedComponents.tournament_performance !== undefined;
 
   if (hasTournament) {
-    if (components.tournament_priority !== undefined) {
+    if (weightedComponents.tournament_priority !== undefined) {
       items.push({
         key: "tournament_priority",
         label: PICK_COMPONENT_LABELS.tournament_priority,
-        value: components.tournament_priority,
+        value: weightedComponents.tournament_priority,
+        weighted: true,
       });
     }
-    if (components.tournament_performance !== undefined) {
+    if (weightedComponents.tournament_performance !== undefined) {
       items.push({
         key: "tournament_performance",
         label: PICK_COMPONENT_LABELS.tournament_performance,
-        value: components.tournament_performance,
+        value: weightedComponents.tournament_performance,
+        weighted: true,
       });
     }
   }
 
-  if (components.matchup_counter !== undefined) {
+  if (weightedComponents.matchup_counter !== undefined) {
     items.push({
       key: "matchup_counter",
       label: PICK_COMPONENT_LABELS.matchup_counter,
-      value: components.matchup_counter,
+      value: weightedComponents.matchup_counter,
+      weighted: true,
     });
   }
 
-  if (components.archetype !== undefined) {
+  if (weightedComponents.archetype !== undefined) {
     items.push({
       key: "archetype",
       label: PICK_COMPONENT_LABELS.archetype,
-      value: components.archetype,
+      value: weightedComponents.archetype,
+      weighted: true,
     });
   }
 
-  if (components.synergy !== undefined) {
+  if (weightedComponents.synergy !== undefined) {
     items.push({
       key: "synergy",
       label: PICK_COMPONENT_LABELS.synergy,
-      value: components.synergy,
+      value: weightedComponents.synergy,
+      weighted: true,
     });
   }
 
@@ -171,7 +142,6 @@ interface SimulatorViewProps {
   coachingSide: "blue" | "red";
   draftState: DraftState;
   recommendations: SimulatorRecommendation[] | null;
-  roleGroupedRecommendations: RoleGroupedRecommendations | null;
   isOurTurn: boolean;
   isEnemyThinking: boolean;
   gameNumber: number;
@@ -221,8 +191,9 @@ function RecommendationCard({
       ? `${playerName} (${recommendation.suggested_role})`
       : recommendation.suggested_role;
 
-    // Score breakdown (explicitly include tournament metrics when present)
-    breakdownItems = getPickScoreBreakdown(recommendation.components);
+    // Score breakdown - use weighted_components for display (same scale as bans)
+    // Fall back to raw components for backwards compatibility
+    breakdownItems = getPickScoreBreakdown(recommendation.weighted_components ?? recommendation.components);
   } else if (isBanRecommendation(recommendation)) {
     rawScore = recommendation.priority;
     normalizedScore = normalizeScore(rawScore, "ban");
@@ -349,7 +320,6 @@ export function SimulatorView({
   coachingSide,
   draftState,
   recommendations,
-  roleGroupedRecommendations: _roleGroupedRecommendations, // Keep prop for future use
   isOurTurn,
   isEnemyThinking,
   gameNumber,
@@ -362,9 +332,6 @@ export function SimulatorView({
   llmLoading = false,
   llmInsight,
 }: SimulatorViewProps) {
-  // Role-grouped view state (kept for future use but not rendered)
-  const [_showRoleGroupedFuture, _setShowRoleGroupedFuture] = useState(false);
-  void _roleGroupedRecommendations; void _showRoleGroupedFuture; void _setShowRoleGroupedFuture;
   // Track which recommendation cards are expanded
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
@@ -492,7 +459,7 @@ export function SimulatorView({
       </div>
 
       {/* Ban Row */}
-      <BanRow blueBans={draftState.blue_bans} redBans={draftState.red_bans} />
+      <SimulatorBanRow blueBans={draftState.blue_bans} redBans={draftState.red_bans} />
 
       {/* Recommendations */}
       {(showRecommendations || showInsights) && (
@@ -530,22 +497,10 @@ export function SimulatorView({
             </>
           )}
 
-          {/* Role-Grouped Supplemental Panel - hidden for now, keeping code for future use
-          {!isBanPhase && _showRoleGrouped && _roleGroupedRecommendations && (
-            <div className="mt-3 sm:mt-4">
-              <RoleRecommendationPanel
-                roleGrouped={_roleGroupedRecommendations}
-                ourTeam={coachingSide === "blue" ? blueTeam : redTeam}
-                onChampionClick={onChampionSelect}
-              />
-            </div>
-          )}
-          */}
-
           {/* AI Insights Panel - includes analysis and reranked picks */}
           {showInsights && (
             <div className={showRecommendations ? "mt-4" : ""}>
-              <InsightPanel
+              <SimulatorInsightPanel
                 insight={
                   llmInsight?.draft_analysis ??
                   (llmInsight?.status === "error" ? llmInsight.message ?? null : null)
