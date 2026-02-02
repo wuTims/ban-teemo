@@ -60,7 +60,8 @@ export interface PickRecommendation {
   score?: number;
   base_score?: number | null;
   synergy_multiplier?: number | null;
-  components?: Record<string, number>;
+  components?: Record<string, number>; // Raw scores for debugging
+  weighted_components?: Record<string, number>; // Weighted for display (same scale as bans)
   // Proficiency tracking
   proficiency_source?: string | null;
   proficiency_player?: string | null;
@@ -118,6 +119,8 @@ export interface DraftCompleteMessage {
   red_comp: string[];
   blue_comp_with_roles?: FinalizedPick[];
   red_comp_with_roles?: FinalizedPick[];
+  blue_draft_quality?: DraftQuality | null;
+  red_draft_quality?: DraftQuality | null;
 }
 
 // LLM-enhanced recommendation types
@@ -283,7 +286,8 @@ export interface SimulatorPickRecommendation {
   synergy_multiplier: number;
   confidence: number; // 0.65-1.0 numeric confidence
   suggested_role: string;
-  components: ScoreComponents;
+  components: ScoreComponents; // Raw scores for debugging
+  weighted_components?: ScoreComponents; // Weighted for display (same scale as bans)
   flag: RecommendationFlag;
   reasons: string[];
 }
@@ -344,12 +348,38 @@ export interface FearlessBlockedEntry {
 // Map of champion name -> blocking metadata
 export type FearlessBlocked = Record<string, FearlessBlockedEntry>;
 
+// === Draft Quality Types ===
+
+export interface DraftQualityDraft {
+  picks: string[];
+  archetype: string | null;
+  composition_score: number;
+  synergy_score: number;
+  vs_enemy_advantage: number;
+  vs_enemy_description: string;
+}
+
+export interface DraftQualityComparison {
+  score_delta: number;
+  advantage_delta: number;
+  archetype_insight: string;
+  picks_matched: number;
+  picks_tracked: number;
+}
+
+export interface DraftQuality {
+  actual_draft: DraftQualityDraft;
+  recommended_draft: DraftQualityDraft;
+  comparison: DraftQualityComparison;
+}
+
 export interface CompleteGameResponse {
   series_status: SeriesStatus;
   fearless_blocked: FearlessBlocked;
   next_game_ready: boolean;
   blue_comp_with_roles?: FinalizedPick[];
   red_comp_with_roles?: FinalizedPick[];
+  draft_quality?: DraftQuality | null;
 }
 
 export interface NextGameResponse {
