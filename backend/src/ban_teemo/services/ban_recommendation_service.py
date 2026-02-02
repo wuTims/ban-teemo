@@ -1,4 +1,5 @@
 """Ban recommendation service targeting enemy player pools."""
+import math
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
@@ -8,6 +9,7 @@ from ban_teemo.services.scorers import (
     MatchupCalculator,
     MetaScorer,
     ProficiencyScorer,
+    RolePhaseScorer,
     TournamentScorer,
 )
 from ban_teemo.services.synergy_service import SynergyService
@@ -36,6 +38,7 @@ class BanRecommendationService:
         self.archetype_service = ArchetypeService(knowledge_dir)
         self.synergy_service = SynergyService(knowledge_dir)
         self.tournament_scorer = TournamentScorer(knowledge_dir, data_file=tournament_data_file)
+        self.role_phase_scorer = RolePhaseScorer(knowledge_dir)
         self._draft_repository = draft_repository
 
     def get_ban_recommendations(
@@ -253,6 +256,15 @@ class BanRecommendationService:
             components["tier_bonus"] = round(tier_bonus, 3)
 
             priority = base_priority + tier_bonus
+
+            # Apply role-phase penalty for player-targeted bans
+            # Softer penalty (sqrt) since we don't know exactly when enemy will pick
+            target_role = player.get("role")
+            if target_role:
+                pick_mult = self.role_phase_scorer.get_multiplier(target_role, total_picks=0)
+                ban_mult = math.sqrt(pick_mult)  # Softer penalty for bans
+                priority *= ban_mult
+                components["role_phase_penalty"] = round(ban_mult, 3)
         else:
             # Phase 2: Strategic bans - synergy disruption and counter denial
             # LLM priority: break synergies > deny counters > archetype enablers > player comfort
@@ -261,6 +273,7 @@ class BanRecommendationService:
 
             prof_score = proficiency["score"]
             meta_score = self.meta_scorer.get_meta_score(champion)
+            tournament_priority = self.tournament_scorer.get_priority(champion)
 
             games = proficiency.get("games", 0)
             comfort = min(1.0, games / 10)
@@ -268,25 +281,37 @@ class BanRecommendationService:
             conf = proficiency.get("confidence", "LOW")
             conf_value = {"HIGH": 1.0, "MEDIUM": 0.5, "LOW": 0.0}.get(conf, 0)
 
-            # Phase 2 weights: meta still important, proficiency secondary
-            # meta 40%, proficiency 30%, comfort 20%, confidence 10%
-            WEIGHT_META = 0.40
-            WEIGHT_PROF = 0.30
-            WEIGHT_COMFORT = 0.20
+            # Phase 2 weights: tournament meta + strategic context
+            # tournament_priority 30%, meta 20%, proficiency 25%, comfort 15%, confidence 10%
+            WEIGHT_TOURNAMENT = 0.30
+            WEIGHT_META = 0.20
+            WEIGHT_PROF = 0.25
+            WEIGHT_COMFORT = 0.15
             WEIGHT_CONF = 0.10
 
             # Store WEIGHTED scores for display
+            components["tournament_priority"] = round(tournament_priority * WEIGHT_TOURNAMENT, 3)
             components["meta"] = round(meta_score * WEIGHT_META, 3)
             components["proficiency"] = round(prof_score * WEIGHT_PROF, 3)
             components["comfort"] = round(comfort * WEIGHT_COMFORT, 3)
             components["confidence"] = round(conf_value * WEIGHT_CONF, 3)
 
             priority = (
-                meta_score * WEIGHT_META
+                tournament_priority * WEIGHT_TOURNAMENT
+                + meta_score * WEIGHT_META
                 + prof_score * WEIGHT_PROF
                 + comfort * WEIGHT_COMFORT
                 + conf_value * WEIGHT_CONF
             )
+
+            # Apply role-phase penalty for phase 2 (jungle/mid bans less valuable late)
+            target_role = player.get("role")
+            if target_role:
+                # Phase 2 starts at pick 6, use total_picks=6 for phase lookup
+                pick_mult = self.role_phase_scorer.get_multiplier(target_role, total_picks=6)
+                ban_mult = math.sqrt(pick_mult)  # Softer penalty for bans
+                priority *= ban_mult
+                components["role_phase_penalty"] = round(ban_mult, 3)
 
         return (round(min(1.0, priority), 3), components)
 
@@ -487,6 +512,11 @@ class BanRecommendationService:
 
         Presence = pick_rate + ban_rate (how contested is this pick?)
 
+        WHY PRESENCE MATTERS: Champions with high presence are being
+        prioritized by pros across all teams. This suggests they're either
+        overpowered, versatile, or exceptionally valuable in the current meta.
+        Banning high-presence picks denies enemy access to proven strong picks.
+
         Returns:
             Float 0.0-1.0 representing presence
         """
@@ -498,8 +528,18 @@ class BanRecommendationService:
         Champions that can play multiple roles are harder to plan against
         and more valuable to ban.
 
+        WHY FLEX MATTERS: Flex picks create draft uncertainty. If Ambessa
+        can go top or mid, the enemy can't tell which lane to counter.
+        Banning flex picks removes this strategic ambiguity, making
+        enemy draft intentions more readable.
+
+        Scoring rationale:
+        - 0.8 for 3+ roles: True flex threats like Aurora, Ambessa
+        - 0.5 for 2 roles: Common dual-flex like Gragas (top/jungle)
+        - 0.2 for 1 role: Single-role specialists are predictable
+
         Returns:
-            Float 0.0-0.8 representing flex value
+            Float 0.0-0.8 representing flex value (capped to avoid over-weighting)
         """
         probs = self.flex_resolver.get_role_probabilities(champion)
         if not probs:
@@ -516,6 +556,16 @@ class BanRecommendationService:
 
     def _get_archetype_counter_score(self, champion: str, enemy_picks: list[str]) -> float:
         """Calculate how much banning this champion disrupts enemy's archetype.
+
+        WHY ARCHETYPE DISRUPTION MATTERS: Teams build toward a game plan
+        (teamfight, split-push, pick-comp). If enemy picks Malphite + Orianna,
+        they're likely building teamfight. Banning Yasuo/Samira denies wombo
+        combo completion. Disrupting archetype coherence weakens enemy's
+        win condition execution.
+
+        Scoring logic:
+        - contribution (60%): How much does this champ add to enemy's archetype?
+        - alignment_boost (40%): Would this champ significantly improve their comp coherence?
 
         Args:
             champion: Champion to potentially ban
@@ -555,6 +605,15 @@ class BanRecommendationService:
 
         Would this champion complete a strong synergy with enemy picks?
 
+        WHY SYNERGY DENIAL MATTERS: Synergies amplify team effectiveness
+        beyond individual champion strength. Yasuo + knock-up, Yone + engage,
+        or ADC + enchanter pairs can dominate games. Denying key synergy
+        completions forces enemy into suboptimal combinations.
+
+        Scaling note: Synergy gains are typically 0.0-0.2 per champion added.
+        Multiply by 3 to normalize to 0-1 scale for comparison with other
+        ban priority factors.
+
         Args:
             champion: Champion to potentially ban
             enemy_picks: Champions enemy has already picked
@@ -586,13 +645,26 @@ class BanRecommendationService:
 
         Does banning this deny a role the enemy still needs to fill?
 
+        WHY ROLE DENIAL MATTERS: Late draft picks for unfilled roles are
+        constrained. If enemy ADC hasn't picked yet, banning their ADC's
+        comfort picks forces them onto unfamiliar champions. This is
+        especially impactful in Bo5 when you've seen their pool.
+
+        Scoring rationale:
+        - 0.8: Champion is in the specific player's pool AND fills an unfilled role.
+               Maximum impact - directly targeting player weakness.
+        - 0.4: Champion fills unfilled role but not necessarily in player's pool.
+               General denial - reduces enemy's options even if not targeting player.
+        - 0.0: Champion doesn't fill any unfilled roles or all roles are already covered.
+
         Args:
             champion: Champion to potentially ban
             enemy_picks: Champions enemy has already picked
             enemy_players: Enemy player info with 'name' and 'role'
 
         Returns:
-            Float 0.0-0.8 representing role denial value
+            Float 0.0-0.8 representing role denial value (capped below 1.0 since
+            role denial alone isn't decisive without other factors)
         """
         if not enemy_players:
             return 0.0
@@ -693,6 +765,7 @@ class BanRecommendationService:
             synergy_score = self._get_synergy_denial_score(champ, enemy_picks)
             role_score = self._get_role_denial_score(champ, enemy_picks, enemy_players)
             meta_score = self.meta_scorer.get_meta_score(champ)
+            tournament_priority = self.tournament_scorer.get_priority(champ)
 
             # Check if counters our picks
             counters_us = False
@@ -729,18 +802,20 @@ class BanRecommendationService:
             else:
                 continue  # Skip if no meaningful contextual value
 
-            # Base component scores
+            # Base component scores - tournament_priority as foundation
+            # Weights: tournament 15%, contextual factors 75%, meta 10%
+            components["tournament_priority"] = round(tournament_priority * 0.15, 3)
             if counters_us:
-                components["counter_our_picks"] = round(counter_strength * 0.30, 3)
+                components["counter_our_picks"] = round(counter_strength * 0.25, 3)
                 reasons.append("Counters our picks")
             if arch_score > 0.1:
-                components["archetype_counter"] = round(arch_score * 0.25, 3)
+                components["archetype_counter"] = round(arch_score * 0.20, 3)
                 reasons.append("Fits enemy's archetype")
             if synergy_score > 0.1:
-                components["synergy_denial"] = round(synergy_score * 0.20, 3)
+                components["synergy_denial"] = round(synergy_score * 0.15, 3)
                 reasons.append("Synergizes with enemy")
             if role_score > 0.1:
-                components["role_denial"] = round(role_score * 0.15, 3)
+                components["role_denial"] = round(role_score * 0.10, 3)
                 reasons.append("Fills enemy's role")
             components["meta"] = round(meta_score * 0.10, 3)
             components["tier_bonus"] = round(tier_bonus, 3)
