@@ -608,6 +608,60 @@ async def get_evaluation(request: Request, session_id: str):
         }
 
 
+@router.get("/sessions/{session_id}/draft-quality")
+async def get_draft_quality(request: Request, session_id: str):
+    """Get draft quality analysis comparing actual vs recommended picks.
+
+    Only available when draft is complete.
+    """
+    session, lock = _get_session_with_lock(session_id)
+    with lock:
+        now = time.time()
+        if _is_session_expired(session, now):
+            raise HTTPException(status_code=404, detail="Session expired")
+        _touch_session(session, now)
+
+        draft_state = session.draft_state
+
+        if draft_state.current_phase != DraftPhase.COMPLETE:
+            raise HTTPException(
+                status_code=400,
+                detail="Draft quality analysis only available when draft is complete"
+            )
+
+        # Get actual picks for our team
+        our_picks = (
+            draft_state.blue_picks
+            if session.coaching_side == "blue"
+            else draft_state.red_picks
+        )
+        enemy_picks = (
+            draft_state.red_picks
+            if session.coaching_side == "blue"
+            else draft_state.blue_picks
+        )
+
+        # Get or create analyzer
+        if not hasattr(request.app.state, "draft_quality_analyzer"):
+            from ban_teemo.services.draft_quality_analyzer import DraftQualityAnalyzer
+            request.app.state.draft_quality_analyzer = DraftQualityAnalyzer()
+
+        analyzer = request.app.state.draft_quality_analyzer
+
+        analysis = analyzer.analyze(
+            actual_picks=our_picks,
+            recommended_picks=session.recommended_picks,
+            enemy_picks=enemy_picks,
+        )
+
+        return {
+            "session_id": session_id,
+            "game_number": session.current_game,
+            "coaching_side": session.coaching_side,
+            **analysis,
+        }
+
+
 @router.post("/sessions/{session_id}/insights")
 async def get_insights(request: Request, session_id: str, body: InsightsRequest):
     """Get LLM-enhanced draft insights for current state.
