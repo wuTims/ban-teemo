@@ -41,6 +41,7 @@ def mock_services():
     mock_enemy_strategy.champion_weights = {"Azir": 0.5, "Jinx": 0.3, "Thresh": 0.2}
     mock_enemy_service.initialize_enemy_strategy.return_value = mock_enemy_strategy
     mock_enemy_service.generate_action.return_value = ("Azir", "weighted_random")
+    mock_enemy_service.generate_smart_action.return_value = ("Jinx", "smart_recommendation")
 
     return {
         "repo": mock_repo,
@@ -599,3 +600,37 @@ class TestEagerFetchQueryParams:
             # The key is only included if there ARE picks
             # This is correct - evaluation only meaningful with picks
             assert response.status_code == 200
+
+
+class TestEnemySmartAction:
+    """Tests for enemy smart action generation."""
+
+    async def test_enemy_action_returns_source(self, client, mock_services):
+        """Test that enemy action response includes the source."""
+        with patch(
+            "ban_teemo.api.routes.simulator.EnemySimulatorService",
+            return_value=mock_services["enemy_service"],
+        ):
+            start_response = await client.post(
+                "/api/simulator/sessions",
+                json={
+                    "blue_team_id": "team_blue_123",
+                    "red_team_id": "team_red_456",
+                    "coaching_side": "blue",  # We're blue, so red (enemy) goes second
+                },
+            )
+            session_id = start_response.json()["session_id"]
+
+            # Blue (us) bans first
+            await client.post(
+                f"/api/simulator/sessions/{session_id}/actions",
+                json={"champion": "Azir"},
+            )
+
+            # Trigger enemy action
+            response = await client.post(f"/api/simulator/sessions/{session_id}/actions/enemy")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "source" in data
+        assert data["source"] in ["smart_recommendation", "reference_game", "fallback_game", "weighted_random"]
