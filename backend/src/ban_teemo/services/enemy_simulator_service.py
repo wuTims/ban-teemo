@@ -2,20 +2,52 @@
 
 import random
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from ban_teemo.models.simulator import EnemyStrategy
 from ban_teemo.models.draft import DraftAction
 from ban_teemo.repositories.draft_repository import DraftRepository
 
+if TYPE_CHECKING:
+    from ban_teemo.services.ban_recommendation_service import BanRecommendationService
+    from ban_teemo.services.pick_recommendation_engine import PickRecommendationEngine
+
 
 class EnemySimulatorService:
     """Generates enemy picks/bans from historical data."""
 
-    def __init__(self, database_path: Optional[str] = None):
+    def __init__(
+        self,
+        database_path: Optional[str] = None,
+        ban_service: Optional["BanRecommendationService"] = None,
+        pick_engine: Optional["PickRecommendationEngine"] = None,
+    ):
         if database_path is None:
             database_path = str(Path(__file__).parents[4] / "data" / "draft_data.duckdb")
         self.repo = DraftRepository(database_path)
+
+        # Lazy-load recommendation services if not provided
+        self._ban_service = ban_service
+        self._pick_engine = pick_engine
+
+    @property
+    def ban_service(self) -> "BanRecommendationService":
+        """Lazy-load ban recommendation service."""
+        if self._ban_service is None:
+            from ban_teemo.services.ban_recommendation_service import BanRecommendationService
+            self._ban_service = BanRecommendationService(
+                draft_repository=self.repo,
+                simulator_mode=True,
+            )
+        return self._ban_service
+
+    @property
+    def pick_engine(self) -> "PickRecommendationEngine":
+        """Lazy-load pick recommendation engine."""
+        if self._pick_engine is None:
+            from ban_teemo.services.pick_recommendation_engine import PickRecommendationEngine
+            self._pick_engine = PickRecommendationEngine(simulator_mode=True)
+        return self._pick_engine
 
     def initialize_enemy_strategy(self, enemy_team_id: str) -> EnemyStrategy:
         """Load reference game, fallbacks, and champion weights."""
