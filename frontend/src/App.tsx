@@ -1,9 +1,6 @@
 // frontend/src/App.tsx
 import { useState, useEffect } from "react";
-import { ActionLog } from "./components/ActionLog";
-import { DraftBoard } from "./components/DraftBoard";
-import { RecommendationPanel } from "./components/RecommendationPanel";
-import { ReplayControls } from "./components/ReplayControls";
+import { ActionLog, DraftBoard, RecommendationPanel, ReplayControls } from "./components/replay";
 import { SimulatorSetupModal } from "./components/SimulatorSetupModal";
 import { SettingsModal } from "./components/SettingsModal";
 import { SimulatorView } from "./components/SimulatorView";
@@ -194,7 +191,6 @@ export default function App() {
                   coachingSide={simulator.coachingSide!}
                   draftState={simulator.draftState}
                   recommendations={simulator.recommendations}
-                  roleGroupedRecommendations={simulator.roleGroupedRecommendations}
                   isOurTurn={simulator.isOurTurn}
                   isEnemyThinking={simulator.isEnemyThinking}
                   gameNumber={simulator.gameNumber}
@@ -219,6 +215,7 @@ export default function App() {
                         evaluation={simulator.teamEvaluation}
                         onSelectWinner={simulator.recordWinner}
                         isRecordingWinner={simulator.isRecordingWinner}
+                        draftQuality={simulator.draftQuality}
                       />
                     ) : (
                       /* Winner recorded, show continue button */
