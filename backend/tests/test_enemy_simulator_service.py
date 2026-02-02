@@ -121,3 +121,98 @@ def test_no_games_raises_error(service, mock_repository):
 
     with pytest.raises(ValueError, match="No games found"):
         service.initialize_enemy_strategy("oe:team:unknown")
+
+
+def test_generate_smart_ban_uses_recommendations_filtered_by_pool(service, mock_repository):
+    """Smart ban should use recommendation service filtered to champion pool."""
+    # Force game1 as reference
+    with patch("random.choice", return_value=mock_repository.get_team_games.return_value[0]):
+        strategy = service.initialize_enemy_strategy("oe:team:test")
+
+    # Add team context for recommendations
+    strategy.team_id = "oe:team:test"
+    strategy.team_name = "Test Team"
+    strategy.players = [{"name": "Player1", "role": "mid"}]
+
+    # Mock ban service to return recommendations
+    mock_ban_service = MagicMock()
+    mock_ban_service.get_ban_recommendations.return_value = [
+        {"champion_name": "Azir", "priority": 0.9},  # In pool (from game1)
+        {"champion_name": "NotInPool", "priority": 0.85},  # Not in pool
+        {"champion_name": "Kai'Sa", "priority": 0.8},  # In pool (from game1)
+    ]
+    service._ban_service = mock_ban_service
+
+    # Generate smart ban action
+    champion, source = service.generate_smart_action(
+        strategy=strategy,
+        action_type="ban",
+        our_picks=[],
+        enemy_picks=[],
+        banned=[],
+        unavailable=set(),
+    )
+
+    # Should pick from pool champions that are in top recommendations
+    assert champion in strategy.champion_pool
+    assert source == "smart_recommendation"
+
+
+def test_generate_smart_pick_uses_recommendations_filtered_by_pool(service, mock_repository):
+    """Smart pick should use recommendation service filtered to champion pool."""
+    with patch("random.choice", return_value=mock_repository.get_team_games.return_value[0]):
+        strategy = service.initialize_enemy_strategy("oe:team:test")
+
+    strategy.team_id = "oe:team:test"
+    strategy.team_name = "Test Team"
+    strategy.players = [{"name": "Player1", "role": "mid"}]
+
+    # Mock pick engine to return recommendations
+    mock_pick_engine = MagicMock()
+    mock_pick_engine.get_recommendations.return_value = [
+        {"champion_name": "Kai'Sa", "score": 0.9, "suggested_role": "bot"},  # In pool
+        {"champion_name": "NotInPool", "score": 0.85, "suggested_role": "mid"},
+        {"champion_name": "Varus", "score": 0.8, "suggested_role": "bot"},  # In pool (from game2)
+    ]
+    service._pick_engine = mock_pick_engine
+
+    champion, source = service.generate_smart_action(
+        strategy=strategy,
+        action_type="pick",
+        our_picks=[],
+        enemy_picks=[],
+        banned=[],
+        unavailable=set(),
+    )
+
+    assert champion in strategy.champion_pool
+    assert source == "smart_recommendation"
+
+
+def test_generate_smart_action_falls_back_when_no_pool_overlap(service, mock_repository):
+    """Should fall back to legacy behavior when no recommendations overlap with pool."""
+    with patch("random.choice", return_value=mock_repository.get_team_games.return_value[0]):
+        strategy = service.initialize_enemy_strategy("oe:team:test")
+
+    strategy.players = [{"name": "Player1", "role": "mid"}]
+
+    # Mock ban service with no pool overlap
+    mock_ban_service = MagicMock()
+    mock_ban_service.get_ban_recommendations.return_value = [
+        {"champion_name": "NotInPool1", "priority": 0.9},
+        {"champion_name": "NotInPool2", "priority": 0.85},
+    ]
+    service._ban_service = mock_ban_service
+
+    champion, source = service.generate_smart_action(
+        strategy=strategy,
+        action_type="ban",
+        our_picks=[],
+        enemy_picks=[],
+        banned=[],
+        unavailable=set(),
+    )
+
+    # Should fall back to legacy generation
+    assert champion is not None
+    assert source in ["reference_game", "fallback_game", "weighted_random"]
