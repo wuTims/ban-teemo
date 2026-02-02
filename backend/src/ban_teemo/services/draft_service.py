@@ -16,15 +16,21 @@ from ban_teemo.services.ban_recommendation_service import BanRecommendationServi
 class DraftService:
     """Core business logic for draft state and recommendations."""
 
-    def __init__(self, database_path: str, knowledge_dir: Optional[Path] = None):
+    def __init__(
+        self,
+        database_path: str,
+        knowledge_dir: Optional[Path] = None,
+        tournament_data_file: Optional[str] = None,
+    ):
         """Initialize the draft service.
 
         Args:
             database_path: Path to DuckDB database file
             knowledge_dir: Optional path to knowledge directory for recommendation engines
+            tournament_data_file: Optional path to tournament-specific meta file for historical accuracy
         """
         self.database_path = database_path
-        self.pick_engine = PickRecommendationEngine(knowledge_dir)
+        self.pick_engine = PickRecommendationEngine(knowledge_dir, tournament_data_file=tournament_data_file)
         self.ban_service = BanRecommendationService(knowledge_dir)
 
     def compute_phase(self, action_count: int) -> DraftPhase:

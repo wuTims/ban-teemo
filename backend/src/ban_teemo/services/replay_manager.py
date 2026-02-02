@@ -48,6 +48,9 @@ class ReplaySession:
     wait_for_llm: bool = False  # When True, replay waits for LLM before continuing
     llm_timeout: float = 30.0  # Max seconds to wait for LLM
 
+    # Tournament-gated meta (for historical accuracy)
+    tournament_data_file: str | None = None  # e.g., "replay_meta/756908.json"
+
     # Connection tracking
     created_at: datetime = field(default_factory=datetime.now)
     websocket: Any = None  # Active WebSocket connection
@@ -77,6 +80,7 @@ class ReplayManager:
         llm_api_key: str | None = None,
         wait_for_llm: bool = False,
         llm_timeout: float = 30.0,
+        tournament_data_file: str | None = None,
     ) -> ReplaySession:
         """Create a new replay session.
 
@@ -90,6 +94,7 @@ class ReplayManager:
             delay_seconds: Base delay between actions
             llm_enabled: Whether to enable LLM-based analysis
             llm_api_key: API key for LLM service
+            tournament_data_file: Path to tournament-specific meta file (for historical accuracy)
 
         Returns:
             The created ReplaySession
@@ -112,6 +117,7 @@ class ReplayManager:
             llm_api_key=llm_api_key,
             wait_for_llm=wait_for_llm,
             llm_timeout=llm_timeout,
+            tournament_data_file=tournament_data_file,
         )
         self.sessions[session_id] = session
         return session

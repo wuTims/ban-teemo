@@ -66,7 +66,7 @@ async def replay_websocket(
         websocket: The WebSocket connection
         session_id: ID of the replay session
         manager: ReplayManager instance
-        service: DraftService instance
+        service: DraftService instance (default service, may be overridden per-session)
     """
     session = manager.get_session(session_id)
     if not session:
@@ -75,6 +75,13 @@ async def replay_websocket(
 
     await websocket.accept()
     session.websocket = websocket
+
+    # Create session-specific service with tournament data file for historical accuracy
+    if session.tournament_data_file:
+        service = DraftService(
+            database_path=service.database_path,
+            tournament_data_file=session.tournament_data_file,
+        )
 
     # Start client message handler for pause/resume commands
     client_handler_task = asyncio.create_task(

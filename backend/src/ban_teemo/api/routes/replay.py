@@ -276,6 +276,10 @@ def start_replay(request: Request, body: StartReplayRequest):
     elif winner_team_id == red_team.id:
         winner_side = "red"
 
+    # Get tournament ID for era-appropriate meta
+    tournament_id = repo.get_tournament_id_for_game(game_id)
+    tournament_data_file = f"replay_meta/{tournament_id}.json" if tournament_id else None
+
     # Create session
     session = manager.create_session(
         game_id=game_id,
@@ -293,6 +297,7 @@ def start_replay(request: Request, body: StartReplayRequest):
         llm_api_key=body.llm_api_key,
         wait_for_llm=body.wait_for_llm,
         llm_timeout=body.llm_timeout,
+        tournament_data_file=tournament_data_file,
     )
 
     return StartReplayResponse(
