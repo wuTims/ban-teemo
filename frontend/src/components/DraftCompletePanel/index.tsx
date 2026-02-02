@@ -29,33 +29,61 @@ export function DraftCompletePanel({
   blueDraftQuality,
   redDraftQuality,
 }: DraftCompletePanelProps) {
-  const blueScore = evaluation?.our_evaluation?.composition_score ?? 0;
-  const redScore = evaluation?.enemy_evaluation?.composition_score ?? 0;
+  // For simulator: coached team is "our" side, use draftQuality
+  // For replay: use blueDraftQuality/redDraftQuality directly
+  const effectiveBlueDraftQuality = blueDraftQuality ?? draftQuality ?? null;
+  const effectiveRedDraftQuality = redDraftQuality ?? null;
+
+  // Extract scores: prefer evaluation (simulator), fallback to draftQuality (replay)
+  const blueScore = evaluation?.our_evaluation?.composition_score
+    ?? effectiveBlueDraftQuality?.actual_draft?.composition_score
+    ?? 0;
+  const redScore = evaluation?.enemy_evaluation?.composition_score
+    ?? effectiveRedDraftQuality?.actual_draft?.composition_score
+    ?? 0;
   const bluePoints = Math.round(blueScore * 100);
   const redPoints = Math.round(redScore * 100);
 
   const blueStrength = evaluation?.our_evaluation?.strengths?.[0] ?? "Balanced composition";
   const redStrength = evaluation?.enemy_evaluation?.strengths?.[0] ?? "Balanced composition";
 
-  const matchupDesc = evaluation?.matchup_description ?? "Even matchup";
+  // For matchup description, use evaluation or build from draft quality archetypes
+  const matchupDesc = evaluation?.matchup_description
+    ?? (effectiveBlueDraftQuality?.actual_draft?.archetype && effectiveRedDraftQuality?.actual_draft?.archetype
+      ? `${effectiveBlueDraftQuality.actual_draft.archetype} vs ${effectiveRedDraftQuality.actual_draft.archetype}`
+      : "Even matchup");
 
-  // For simulator: coached team is "our" side, use draftQuality
-  // For replay: use blueDraftQuality/redDraftQuality directly
-  const effectiveBlueDraftQuality = blueDraftQuality ?? draftQuality ?? null;
-  const effectiveRedDraftQuality = redDraftQuality ?? null;
-
-  // Build analysis data from evaluation
+  // Build analysis data: prefer evaluation (simulator), fallback to draftQuality (replay)
   const blueAnalysisData = {
-    synergy_score: evaluation?.our_evaluation?.synergy_score ?? 0.5,
-    composition_score: evaluation?.our_evaluation?.composition_score ?? 0.5,
-    archetype: evaluation?.our_evaluation?.archetype ?? null,
+    synergy_score: evaluation?.our_evaluation?.synergy_score
+      ?? effectiveBlueDraftQuality?.actual_draft?.synergy_score
+      ?? 0.5,
+    composition_score: evaluation?.our_evaluation?.composition_score
+      ?? effectiveBlueDraftQuality?.actual_draft?.composition_score
+      ?? 0.5,
+    archetype: evaluation?.our_evaluation?.archetype
+      ?? effectiveBlueDraftQuality?.actual_draft?.archetype
+      ?? null,
   };
 
   const redAnalysisData = {
-    synergy_score: evaluation?.enemy_evaluation?.synergy_score ?? 0.5,
-    composition_score: evaluation?.enemy_evaluation?.composition_score ?? 0.5,
-    archetype: evaluation?.enemy_evaluation?.archetype ?? null,
+    synergy_score: evaluation?.enemy_evaluation?.synergy_score
+      ?? effectiveRedDraftQuality?.actual_draft?.synergy_score
+      ?? 0.5,
+    composition_score: evaluation?.enemy_evaluation?.composition_score
+      ?? effectiveRedDraftQuality?.actual_draft?.composition_score
+      ?? 0.5,
+    archetype: evaluation?.enemy_evaluation?.archetype
+      ?? effectiveRedDraftQuality?.actual_draft?.archetype
+      ?? null,
   };
+
+  // Calculate matchup advantage: prefer evaluation, else derive from draft quality
+  const matchupAdvantage = evaluation?.matchup_advantage
+    ?? (effectiveBlueDraftQuality?.actual_draft?.vs_enemy_advantage ?? 1.0);
+
+  // Check if we have enough data to show the analysis section
+  const hasAnalysisData = evaluation || (effectiveBlueDraftQuality && effectiveRedDraftQuality);
 
   return (
     <div className="space-y-4">
@@ -139,13 +167,13 @@ export function DraftCompletePanel({
       </div>
 
       {/* NEW: Draft Analysis Section */}
-      {evaluation && (
+      {hasAnalysisData && (
         <DraftAnalysis
           blueTeam={blueTeam}
           redTeam={redTeam}
           blueData={blueAnalysisData}
           redData={redAnalysisData}
-          matchupAdvantage={evaluation.matchup_advantage}
+          matchupAdvantage={matchupAdvantage}
         />
       )}
 

@@ -36,9 +36,13 @@ export function DraftAnalysis({
   redData,
   matchupAdvantage,
 }: DraftAnalysisProps) {
-  const favoredTeam = matchupAdvantage > 0 ? "blue" : matchupAdvantage < 0 ? "red" : null;
+  // matchupAdvantage is a multiplier centered at 1.0:
+  // 1.0 = neutral, >1.0 = blue favored, <1.0 = red favored
+  // Convert to percentage: (1.1 - 1.0) * 100 = +10%
+  const advantagePercent = (matchupAdvantage - 1.0) * 100;
+  const favoredTeam = advantagePercent > 1 ? "blue" : advantagePercent < -1 ? "red" : null;
   const favoredName = favoredTeam === "blue" ? blueTeam.name : favoredTeam === "red" ? redTeam.name : null;
-  const advantageAbs = Math.abs(matchupAdvantage);
+  const advantageAbs = Math.abs(advantagePercent);
 
   return (
     <div className="bg-lol-dark rounded-lg p-4 border border-gold-dim/30">
@@ -93,7 +97,7 @@ export function DraftAnalysis({
         <span className="text-xs text-text-secondary">Matchup: </span>
         {favoredTeam ? (
           <span className={`text-xs font-semibold ${favoredTeam === "blue" ? "text-blue-team" : "text-red-team"}`}>
-            {favoredName} favored ({advantageAbs > 0 ? "+" : ""}{(matchupAdvantage * 100).toFixed(0)}%)
+            {favoredName} favored (+{advantageAbs.toFixed(0)}%)
           </span>
         ) : (
           <span className="text-xs text-text-tertiary">Even matchup</span>
