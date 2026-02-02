@@ -16,40 +16,51 @@ class DraftQualityAnalyzer:
     def analyze(
         self,
         actual_picks: list[str],
-        recommended_picks: list[str],
+        recommended_picks: list[list[str]] | list[str],
         enemy_picks: list[str],
     ) -> dict:
         """Compare actual draft to recommended draft.
 
         Args:
             actual_picks: Champions actually picked by the team
-            recommended_picks: Top recommendations at each pick step
+            recommended_picks: Top 5 recommendations at each pick step (list of lists)
+                             or legacy format (list of single picks for backwards compat)
             enemy_picks: Enemy team's picks
 
         Returns:
             Dict with actual_draft, recommended_draft, and comparison
         """
+        # Handle legacy format (list of strings) vs new format (list of lists)
+        if recommended_picks and isinstance(recommended_picks[0], str):
+            # Legacy format: convert to new format
+            top_1_picks = recommended_picks
+            top_n_picks = [[p] for p in recommended_picks]
+        else:
+            # New format: extract top 1 for ideal draft evaluation
+            top_n_picks = recommended_picks
+            top_1_picks = [picks[0] if picks else "" for picks in recommended_picks]
+
         # Evaluate actual team
         actual_eval = self.team_eval.evaluate_vs_enemy(actual_picks, enemy_picks)
         actual_arch = self.archetype_service.calculate_team_archetype(actual_picks)
 
-        # Evaluate recommended team
-        rec_eval = self.team_eval.evaluate_vs_enemy(recommended_picks, enemy_picks)
-        rec_arch = self.archetype_service.calculate_team_archetype(recommended_picks)
+        # Evaluate recommended team (using top 1 picks as the "ideal")
+        rec_eval = self.team_eval.evaluate_vs_enemy(top_1_picks, enemy_picks)
+        rec_arch = self.archetype_service.calculate_team_archetype(top_1_picks)
 
         # Get enemy archetype for insight
         enemy_arch = self.archetype_service.calculate_team_archetype(enemy_picks)
 
-        # Build archetype insight
+        # Build archetype insight (purely descriptive)
         archetype_insight = self._build_archetype_insight(
             actual_arch["primary"],
-            rec_arch["primary"],
             enemy_arch["primary"],
         )
 
-        # Calculate picks that matched
+        # Calculate picks that matched (actual pick in top 5 recommendations)
         picks_matched = sum(
-            1 for a, r in zip(actual_picks, recommended_picks) if a == r
+            1 for actual, top_n in zip(actual_picks, top_n_picks)
+            if actual in top_n
         )
 
         return {
@@ -88,34 +99,25 @@ class DraftQualityAnalyzer:
     def _build_archetype_insight(
         self,
         actual_arch: Optional[str],
-        rec_arch: Optional[str],
         enemy_arch: Optional[str],
     ) -> str:
-        """Generate insight about archetype differences."""
-        if not rec_arch or not enemy_arch:
+        """Generate descriptive insight about archetype matchup."""
+        if not actual_arch or not enemy_arch:
             return "Insufficient data for archetype analysis"
 
-        if not actual_arch:
-            return f"Recommended {rec_arch} archetype vs enemy's {enemy_arch} style"
+        # Get effectiveness of actual archetype vs enemy
+        effectiveness = self.archetype_service.get_archetype_effectiveness(
+            actual_arch, enemy_arch
+        )
 
-        if actual_arch == rec_arch:
-            return f"Both drafts have {actual_arch} identity"
+        # Same archetype matchup
+        if actual_arch == enemy_arch:
+            return f"Mirror {actual_arch} matchup"
 
-        # Get effectiveness of each archetype vs enemy
-        actual_eff = 1.0
-        rec_eff = 1.0
-        if actual_arch:
-            actual_eff = self.archetype_service.get_archetype_effectiveness(
-                actual_arch, enemy_arch
-            )
-        if rec_arch:
-            rec_eff = self.archetype_service.get_archetype_effectiveness(
-                rec_arch, enemy_arch
-            )
-
-        if rec_eff > actual_eff:
-            return f"Recommended {rec_arch} archetype better vs enemy's {enemy_arch} style"
-        elif actual_eff > rec_eff:
-            return f"Your {actual_arch} archetype actually better vs enemy's {enemy_arch} style"
+        # Describe the matchup without prescriptive advice
+        if effectiveness > 1.1:
+            return f"{actual_arch.capitalize()} favored vs {enemy_arch}"
+        elif effectiveness < 0.9:
+            return f"{enemy_arch.capitalize()} favored vs {actual_arch}"
         else:
-            return f"Both {actual_arch} and {rec_arch} archetypes neutral vs enemy"
+            return f"{actual_arch.capitalize()} vs {enemy_arch} (neutral)"
