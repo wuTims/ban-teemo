@@ -191,6 +191,15 @@ async def _run_replay_loop(
             initial_state,
             for_team=initial_state.next_team,
         )
+        # Track top pick recommendation for draft quality analysis (per-team)
+        if pending_recommendations and pending_recommendations.picks:
+            if initial_state.next_action == "pick":
+                top_pick = pending_recommendations.picks[0].champion_name
+                rec_team = pending_recommendations.for_team
+                if rec_team == "blue" and len(session.blue_recommended_picks) < 5:
+                    session.blue_recommended_picks.append(top_pick)
+                elif rec_team == "red" and len(session.red_recommended_picks) < 5:
+                    session.red_recommended_picks.append(top_pick)
 
     while session.current_index < len(session.all_actions):
         if session.status == ReplayStatus.PAUSED:
@@ -218,6 +227,15 @@ async def _run_replay_loop(
                 current_state,
                 for_team=current_state.next_team,
             )
+            # Track top pick recommendation for draft quality analysis (per-team)
+            if pending_recommendations and pending_recommendations.picks:
+                if current_state.next_action == "pick":
+                    top_pick = pending_recommendations.picks[0].champion_name
+                    rec_team = pending_recommendations.for_team
+                    if rec_team == "blue" and len(session.blue_recommended_picks) < 5:
+                        session.blue_recommended_picks.append(top_pick)
+                    elif rec_team == "red" and len(session.red_recommended_picks) < 5:
+                        session.red_recommended_picks.append(top_pick)
 
         # Log draft state
         scoring_logger.log_draft_state(
@@ -381,6 +399,24 @@ async def _run_replay_loop(
     blue_with_roles = flex_resolver.finalize_role_assignments(final_state.blue_picks)
     red_with_roles = flex_resolver.finalize_role_assignments(final_state.red_picks)
 
+    # Analyze draft quality for both teams
+    from ban_teemo.services.draft_quality_analyzer import DraftQualityAnalyzer
+    analyzer = DraftQualityAnalyzer()
+
+    # Analyze from blue's perspective
+    blue_quality = analyzer.analyze(
+        actual_picks=final_state.blue_picks,
+        recommended_picks=session.blue_recommended_picks,
+        enemy_picks=final_state.red_picks,
+    )
+
+    # Analyze from red's perspective
+    red_quality = analyzer.analyze(
+        actual_picks=final_state.red_picks,
+        recommended_picks=session.red_recommended_picks,
+        enemy_picks=final_state.blue_picks,
+    )
+
     await websocket.send_json({
         "type": "draft_complete",
         "draft_state": _serialize_draft_state(final_state),
@@ -388,6 +424,10 @@ async def _run_replay_loop(
         "red_comp": final_state.red_picks,
         "blue_comp_with_roles": blue_with_roles,
         "red_comp_with_roles": red_with_roles,
+        "draft_quality": {
+            "blue": blue_quality,
+            "red": red_quality,
+        },
     })
 
 
