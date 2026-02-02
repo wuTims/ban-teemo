@@ -37,7 +37,6 @@ class EnemySimulatorService:
             from ban_teemo.services.ban_recommendation_service import BanRecommendationService
             self._ban_service = BanRecommendationService(
                 draft_repository=self.repo,
-                simulator_mode=True,
             )
         return self._ban_service
 
@@ -46,7 +45,7 @@ class EnemySimulatorService:
         """Lazy-load pick recommendation engine."""
         if self._pick_engine is None:
             from ban_teemo.services.pick_recommendation_engine import PickRecommendationEngine
-            self._pick_engine = PickRecommendationEngine(simulator_mode=True)
+            self._pick_engine = PickRecommendationEngine()
         return self._pick_engine
 
     def initialize_enemy_strategy(self, enemy_team_id: str) -> EnemyStrategy:

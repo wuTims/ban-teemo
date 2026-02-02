@@ -108,10 +108,9 @@ def _get_or_create_services(request: Request) -> tuple[
     if not hasattr(request.app.state, "enemy_simulator_service"):
         database_path = str(repo._db_path)
         request.app.state.enemy_simulator_service = EnemySimulatorService(database_path)
-        request.app.state.pick_engine = PickRecommendationEngine(simulator_mode=True)
+        request.app.state.pick_engine = PickRecommendationEngine()
         request.app.state.ban_service = BanRecommendationService(
             draft_repository=repo,
-            simulator_mode=True,
         )
         request.app.state.team_eval_service = TeamEvaluationService()
 

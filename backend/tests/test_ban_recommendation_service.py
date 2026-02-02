@@ -289,13 +289,13 @@ def test_phase1_ban_priority_uses_tiered_system():
     assert components_t1["tier_bonus"] >= 0.05, "T1 should have significant bonus"
 
 
-def test_tier1_bans_include_meta_weight():
-    """Tier 1 bans should have high weighted meta component (35% weight)."""
+def test_tier1_bans_include_tournament_priority():
+    """Tier 1 bans should have high weighted tournament_priority component (40% weight)."""
     service = BanRecommendationService()
 
     # T1 scenario: High proficiency + high presence + in pool
     priority_t1, components_t1 = service._calculate_ban_priority(
-        champion="Azir",  # High presence, high meta champion
+        champion="Azir",  # High tournament priority champion
         player={"name": "TestPlayer", "role": "mid"},
         proficiency={"score": 0.85, "games": 12, "confidence": "HIGH"},
         is_phase_1=True,
@@ -306,14 +306,15 @@ def test_tier1_bans_include_meta_weight():
         f"Should be T1_SIGNATURE_POWER, got {components_t1['tier']}"
     )
 
-    # All phase 1 bans should include weighted meta component
+    # All phase 1 bans should include weighted tournament_priority and meta components
+    assert "tournament_priority" in components_t1, "Should include weighted tournament_priority component"
     assert "meta" in components_t1, "Should include weighted meta component"
-    # Meta is weighted at 35%, so for a high-meta champ like Azir (~0.65), expect ~0.23
-    assert components_t1["meta"] > 0.15, f"Meta should be significant for Azir: {components_t1['meta']}"
+    # Tournament priority is weighted at 40%, so for a high-priority champ like Azir, expect significant value
+    assert components_t1["tournament_priority"] > 0.15, f"Tournament priority should be significant for Azir: {components_t1['tournament_priority']}"
 
-    # Verify meta is the highest weighted component (meta-first approach)
-    assert components_t1["meta"] >= components_t1.get("proficiency", 0), (
-        f"Meta should be weighted higher than proficiency in Phase 1"
+    # Verify tournament_priority is the highest weighted component (tournament-first approach)
+    assert components_t1["tournament_priority"] >= components_t1.get("proficiency", 0), (
+        f"Tournament priority should be weighted higher than proficiency in Phase 1"
     )
 
 

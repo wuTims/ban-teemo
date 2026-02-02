@@ -43,6 +43,7 @@ def mock_services():
     mock_enemy_strategy.champion_weights = {"Azir": 0.5, "Jinx": 0.3, "Thresh": 0.2}
     mock_enemy_service.initialize_enemy_strategy.return_value = mock_enemy_strategy
     mock_enemy_service.generate_action.return_value = ("Azir", "weighted_random")
+    mock_enemy_service.generate_smart_action.return_value = ("Azir", "smart_recommendation")
 
     return {
         "repo": mock_repo,
