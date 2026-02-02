@@ -119,8 +119,11 @@ export interface DraftCompleteMessage {
   red_comp: string[];
   blue_comp_with_roles?: FinalizedPick[];
   red_comp_with_roles?: FinalizedPick[];
-  blue_draft_quality?: DraftQuality | null;
-  red_draft_quality?: DraftQuality | null;
+  // Backend sends draft_quality as nested object with blue/red keys
+  draft_quality?: {
+    blue?: DraftQuality | null;
+    red?: DraftQuality | null;
+  } | null;
 }
 
 // LLM-enhanced recommendation types

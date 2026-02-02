@@ -6,9 +6,12 @@ import { DraftReport } from "./DraftReport";
 interface DraftCompletePanelProps {
   blueTeam: TeamContext;
   redTeam: TeamContext;
-  evaluation: TeamEvaluation | null;
-  onSelectWinner: (winner: "blue" | "red") => void;
-  isRecordingWinner: boolean;
+  evaluation?: TeamEvaluation | null;
+  // Simulator mode: onSelectWinner handler
+  onSelectWinner?: (winner: "blue" | "red") => void;
+  isRecordingWinner?: boolean;
+  // Replay mode: known winner
+  winnerSide?: "blue" | "red" | null;
   // Draft quality - simulator passes single, replay passes both
   draftQuality?: DraftQuality | null;
   blueDraftQuality?: DraftQuality | null;
@@ -20,7 +23,8 @@ export function DraftCompletePanel({
   redTeam,
   evaluation,
   onSelectWinner,
-  isRecordingWinner,
+  isRecordingWinner = false,
+  winnerSide,
   draftQuality,
   blueDraftQuality,
   redDraftQuality,
@@ -96,25 +100,42 @@ export function DraftCompletePanel({
           </div>
         </div>
 
-        <div className="text-center">
-          <p className="text-sm text-text-secondary mb-3">Who won this game?</p>
-          <div className="flex justify-center gap-4">
-            <button
-              onClick={() => onSelectWinner("blue")}
-              disabled={isRecordingWinner}
-              className="px-6 py-2 bg-blue-team/80 text-white rounded font-semibold hover:bg-blue-team transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isRecordingWinner ? "Recording..." : `${blueTeam.name} Won`}
-            </button>
-            <button
-              onClick={() => onSelectWinner("red")}
-              disabled={isRecordingWinner}
-              className="px-6 py-2 bg-red-team/80 text-white rounded font-semibold hover:bg-red-team transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isRecordingWinner ? "Recording..." : `${redTeam.name} Won`}
-            </button>
+        {/* Simulator mode: Select winner buttons */}
+        {onSelectWinner && (
+          <div className="text-center">
+            <p className="text-sm text-text-secondary mb-3">Who won this game?</p>
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={() => onSelectWinner("blue")}
+                disabled={isRecordingWinner}
+                className="px-6 py-2 bg-blue-team/80 text-white rounded font-semibold hover:bg-blue-team transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isRecordingWinner ? "Recording..." : `${blueTeam.name} Won`}
+              </button>
+              <button
+                onClick={() => onSelectWinner("red")}
+                disabled={isRecordingWinner}
+                className="px-6 py-2 bg-red-team/80 text-white rounded font-semibold hover:bg-red-team transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isRecordingWinner ? "Recording..." : `${redTeam.name} Won`}
+              </button>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Replay mode: Show known winner */}
+        {!onSelectWinner && winnerSide && (
+          <div className="text-center">
+            <p className="text-sm text-text-secondary mb-2">Game Winner</p>
+            <div className={`inline-block px-4 py-2 rounded font-semibold ${
+              winnerSide === "blue"
+                ? "bg-blue-team/20 text-blue-team border border-blue-team/50"
+                : "bg-red-team/20 text-red-team border border-red-team/50"
+            }`}>
+              {winnerSide === "blue" ? blueTeam.name : redTeam.name}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* NEW: Draft Analysis Section */}

@@ -164,6 +164,17 @@ export default function App() {
               isWaitingForLLM={replay.isWaitingForLLM}
               waitingForActionCount={replay.waitingForActionCount}
             />
+
+            {/* Draft Complete Panel - shown when replay is complete */}
+            {replay.status === "complete" && replay.blueTeam && replay.redTeam && (
+              <DraftCompletePanel
+                blueTeam={replay.blueTeam}
+                redTeam={replay.redTeam}
+                winnerSide={replay.winnerSide}
+                blueDraftQuality={replay.blueDraftQuality}
+                redDraftQuality={replay.redDraftQuality}
+              />
+            )}
           </>
         ) : (
           <>

@@ -10,6 +10,7 @@ import type {
   ReplayActionLogEntry,
   LLMInsight,
   FinalizedPick,
+  DraftQuality,
 } from "../types";
 
 type SessionStatus = "idle" | "connecting" | "playing" | "paused" | "complete" | "error";
@@ -39,6 +40,9 @@ interface ReplaySessionState {
   // Finalized role assignments at draft end
   blueCompWithRoles: FinalizedPick[] | null;
   redCompWithRoles: FinalizedPick[] | null;
+  // Draft quality analysis at draft end
+  blueDraftQuality: DraftQuality | null;
+  redDraftQuality: DraftQuality | null;
 }
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
@@ -69,6 +73,8 @@ export function useReplaySession() {
     error: null,
     blueCompWithRoles: null,
     redCompWithRoles: null,
+    blueDraftQuality: null,
+    redDraftQuality: null,
   });
 
   const wsRef = useRef<WebSocket | null>(null);
@@ -116,6 +122,8 @@ export function useReplaySession() {
           error: null,
           blueCompWithRoles: null,
           redCompWithRoles: null,
+          blueDraftQuality: null,
+          redDraftQuality: null,
         };
       }
 
@@ -144,6 +152,8 @@ export function useReplaySession() {
         error: null,
         blueCompWithRoles: null,
         redCompWithRoles: null,
+        blueDraftQuality: null,
+        redDraftQuality: null,
       };
     });
 
@@ -257,6 +267,8 @@ export function useReplaySession() {
               draftState: msg.draft_state,
               blueCompWithRoles: msg.blue_comp_with_roles ?? null,
               redCompWithRoles: msg.red_comp_with_roles ?? null,
+              blueDraftQuality: msg.draft_quality?.blue ?? null,
+              redDraftQuality: msg.draft_quality?.red ?? null,
               actionHistory: [
                 ...prev.actionHistory,
                 {
@@ -399,6 +411,8 @@ export function useReplaySession() {
       error: null,
       blueCompWithRoles: null,
       redCompWithRoles: null,
+      blueDraftQuality: null,
+      redDraftQuality: null,
     });
   }, []);
 
