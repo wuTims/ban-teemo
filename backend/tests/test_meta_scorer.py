@@ -11,7 +11,8 @@ def scorer():
 
 def test_get_meta_score_high_tier(scorer):
     """High-tier champion should have high meta score."""
-    score = scorer.get_meta_score("Azir")
+    # Use "default" method to get raw meta_score (hybrid averages with presence)
+    score = scorer.get_meta_score("Azir", method="default")
     assert 0.7 <= score <= 1.0
 
 

@@ -189,11 +189,16 @@ class TestResponseParsing:
 
         result = reranker._parse_pick_response(llm_response, sample_candidates, limit=5)
 
-        assert len(result.reranked) == 2
+        # LLM returned 2 champions, implementation fills in remaining from candidates up to limit
+        # We have 3 candidates total, so expect 3 reranked (2 from LLM + 1 filled in)
+        assert len(result.reranked) == 3
         assert result.reranked[0].champion == "Rumble"
         assert result.reranked[0].new_rank == 1
         assert result.reranked[0].confidence == 0.85
         assert result.reranked[1].champion == "Poppy"
+        # Third candidate (Aurora) is filled in automatically
+        assert result.reranked[2].champion == "Aurora"
+        assert result.reranked[2].confidence == 0.5  # Default confidence for filled-in
         assert len(result.additional_suggestions) == 1
         assert result.additional_suggestions[0].champion == "Malphite"
         assert result.draft_analysis == "Focus on engage"
@@ -223,8 +228,13 @@ class TestResponseParsing:
 
         result = reranker._parse_pick_response(llm_response, sample_candidates, limit=5)
 
-        assert len(result.reranked) == 1
+        # LLM returned 1 champion, implementation fills in remaining from candidates up to limit
+        # We have 3 candidates total, so expect 3 reranked (1 from LLM + 2 filled in)
+        assert len(result.reranked) == 3
         assert result.reranked[0].champion == "Poppy"
+        # Remaining candidates filled in with algorithm reasoning
+        assert result.reranked[1].champion == "Rumble"
+        assert result.reranked[2].champion == "Aurora"
 
     def test_parse_invalid_response_returns_fallback(self, sample_candidates):
         """Should return fallback result on parse error."""

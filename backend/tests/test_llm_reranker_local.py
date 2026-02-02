@@ -17,7 +17,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parents[1] / "backend" / "src"))
 
 from ban_teemo.services.llm_reranker import LLMReranker, RerankerResult
-from ban_teemo.services.web_search_client import MockWebSearchClient
 
 
 # Sample data from the replay log
@@ -225,6 +224,10 @@ class MockLLMReranker(LLMReranker):
         return SIMULATED_LLM_RESPONSE
 
 
+import pytest
+
+
+@pytest.mark.asyncio
 async def test_pick_reranking():
     """Test pick reranking with simulated LLM response."""
     print("\n" + "=" * 60)
@@ -232,11 +235,9 @@ async def test_pick_reranking():
     print("=" * 60)
 
     # Create mock reranker (no API key needed)
-    web_search = MockWebSearchClient()
     reranker = MockLLMReranker(
         api_key="mock-key",
         model="deepseek",
-        web_search_client=web_search,
     )
 
     try:
@@ -288,17 +289,16 @@ async def test_pick_reranking():
         await reranker.close()
 
 
+@pytest.mark.asyncio
 async def test_prompt_generation():
     """Test that prompts are generated correctly for different scenarios."""
     print("\n" + "=" * 60)
     print("TEST: Prompt Generation")
     print("=" * 60)
 
-    web_search = MockWebSearchClient()
     reranker = LLMReranker(
         api_key="mock-key",
         model="deepseek",
-        web_search_client=web_search,
     )
 
     # Test pick prompt
