@@ -49,7 +49,7 @@ class PickRecommendationEngine:
     TRANSFER_EXPANSION_LIMIT = 2
 
     def __init__(self, knowledge_dir: Optional[Path] = None, tournament_data_file: Optional[str] = None):
-        self.meta_scorer = MetaScorer(knowledge_dir)  # Keep for get_top_meta_champions, blind_pick_safety
+        self.meta_scorer = MetaScorer(knowledge_dir)  # Keep for blind_pick_safety, get_presence
         self.flex_resolver = FlexResolver(knowledge_dir)
         self.proficiency_scorer = ProficiencyScorer(knowledge_dir)
         self.matchup_calculator = MatchupCalculator(knowledge_dir)
@@ -182,17 +182,10 @@ class PickRecommendationEngine:
                 if champ not in unavailable:
                     base_candidates.add(champ)
 
-        # Collect meta picks for unfilled roles
-        for role in unfilled_roles:
-            meta_picks = self.meta_scorer.get_top_meta_champions(role=role, limit=10)
-            for champ in meta_picks:
-                if champ not in unavailable:
-                    base_candidates.add(champ)
-
-        # Collect global power picks (regardless of role)
-        # Ensures power picks aren't missed due to sparse player data
-        global_power = self.meta_scorer.get_top_meta_champions(role=None, limit=20)
-        for champ in global_power:
+        # Collect tournament priority picks (role-agnostic - how often pros contest)
+        # Use tournament data instead of tier-based meta for consistent scoring
+        tournament_picks = self.tournament_scorer.get_top_priority_champions(limit=25)
+        for champ in tournament_picks:
             if champ not in unavailable:
                 base_candidates.add(champ)
 
@@ -226,7 +219,7 @@ class PickRecommendationEngine:
         unavailable: set[str],
         role_cache: dict[str, dict[str, float]],
     ) -> list[str]:
-        """Get candidate champions from team pools, meta picks, and global power picks.
+        """Get candidate champions from team pools and tournament priority picks.
 
         Uses pre-computed role_cache for O(1) lookups.
         Only returns champions that can play at least one unfilled role.
@@ -243,25 +236,16 @@ class PickRecommendationEngine:
                     if probs:  # Has at least one viable unfilled role
                         candidates.add(champ)
 
-        # 2. Meta picks for each unfilled role
-        for role in unfilled_roles:
-            meta_picks = self.meta_scorer.get_top_meta_champions(role=role, limit=10)
-            for champ in meta_picks:
-                if champ not in unavailable and champ not in candidates:
-                    probs = role_cache.get(champ, {})
-                    if probs:
-                        candidates.add(champ)
-
-        # 3. Global power picks (high presence regardless of role/pool)
-        # Ensures power picks aren't missed due to sparse player data
-        global_power = self.meta_scorer.get_top_meta_champions(role=None, limit=20)
-        for champ in global_power:
+        # 2. Tournament priority picks (role-agnostic - how often pros contest)
+        # Use tournament data instead of tier-based meta for consistent scoring
+        tournament_picks = self.tournament_scorer.get_top_priority_champions(limit=25)
+        for champ in tournament_picks:
             if champ not in unavailable and champ not in candidates:
                 probs = role_cache.get(champ, {})
                 if probs:
                     candidates.add(champ)
 
-        # 4. One-hop transfer targets for candidate expansion
+        # 3. One-hop transfer targets for candidate expansion
         base_candidates = set(candidates)
         for champ in base_candidates:
             for transfer in self.skill_transfer_service.get_similar_champions(
@@ -723,18 +707,14 @@ class PickRecommendationEngine:
 
         Thresholds:
         - LOW_CONFIDENCE: confidence < 0.7 (possible range is 0.65-1.0)
-        - SURPRISE_PICK: low meta/tournament_priority but high proficiency
+        - SURPRISE_PICK: low tournament priority but high proficiency
         """
         if result["confidence"] < 0.7:
             return "LOW_CONFIDENCE"
 
-        # Check for surprise pick: low meta strength but high player comfort
-        # In simulator mode, use tournament_priority instead of meta
-        meta_score = result["components"].get("tournament_priority")
-        if meta_score is None:
-            meta_score = result["components"].get("meta", 0)
-
-        if meta_score < 0.4 and result["components"].get("proficiency", 0) >= 0.7:
+        # Check for surprise pick: low tournament priority but high player comfort
+        priority = result["components"].get("tournament_priority", 0)
+        if priority < 0.2 and result["components"].get("proficiency", 0) >= 0.7:
             return "SURPRISE_PICK"
         return None
 
@@ -765,24 +745,28 @@ class PickRecommendationEngine:
         reasons = []
         components = result["components"]
 
-        # Meta tier - use actual tier from data
-        meta = components.get("meta", 0)
-        if meta >= 0.65:
-            tier = self.meta_scorer.get_meta_tier(champion)
-            reasons.append(f"{tier or 'High'}-tier meta pick")
-        elif meta >= 0.5:
-            tier = self.meta_scorer.get_meta_tier(champion)
-            if tier:
-                reasons.append(f"{tier}-tier meta pick")
+        # Tournament priority - high contestation in pro play
+        priority = components.get("tournament_priority", 0)
+        if priority >= 0.6:
+            reasons.append("Highly contested in pro play")
+        elif priority >= 0.35:
+            reasons.append("Regularly contested pick")
 
-        # Proficiency - always mention if high since it's a key differentiator
+        # Tournament performance - role-specific winrate
+        performance = components.get("tournament_performance", 0.5)
+        if performance >= 0.6:
+            reasons.append("Strong tournament winrate")
+        elif performance >= 0.55:
+            reasons.append("Positive tournament winrate")
+
+        # Proficiency
         prof = components.get("proficiency", 0)
         if prof >= 0.85:
             reasons.append("Elite team proficiency")
         elif prof >= 0.7:
             reasons.append("Strong team proficiency")
 
-        # Matchup/Counter - combined lane and team matchup advantage
+        # Matchup/Counter
         matchup_counter = components.get("matchup_counter", 0.5)
         if matchup_counter >= 0.6:
             reasons.append("Strong matchups vs enemy")
@@ -790,14 +774,13 @@ class PickRecommendationEngine:
             reasons.append("Favorable matchups")
 
         # Synergy
-        synergy = components.get("synergy", 0.5)
         synergy_mult = result.get("synergy_multiplier", 1.0)
         if synergy_mult >= 1.08:
             reasons.append("Strong team synergy")
-        elif synergy >= 0.55:
+        elif components.get("synergy", 0.5) >= 0.55:
             reasons.append("Good team synergy")
 
-        # Archetype - team composition coherence
+        # Archetype
         archetype = components.get("archetype", 0.5)
         if archetype >= 0.7:
             reasons.append("Strengthens team identity")
