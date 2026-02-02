@@ -20,7 +20,7 @@
 # Build Arguments
 # -----------------------------------------------------------------------------
 # Default to GitHub release - override with empty string for local builds
-ARG DATA_URL="https://github.com/wuTims/ban-teemo/releases/download/v0.1.0/ban-teemo-data.tar.gz"
+ARG DATA_URL="https://github.com/wuTims/ban-teemo/releases/download/v0.4.0/ban-teemo-data.tar.gz"
 
 # -----------------------------------------------------------------------------
 # Stage 1: Build environment with uv
