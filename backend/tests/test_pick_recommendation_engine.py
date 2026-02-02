@@ -226,12 +226,17 @@ def _write_engine_knowledge(
     meta_stats=None,
     transfers=None,
     flex_picks=None,  # Deprecated, ignored - role data now comes from role_history only
+    tournament_meta=None,
 ):
     """Write test knowledge files.
 
     Role data (probabilities, viable roles) should be in role_history.
     The flex_picks parameter is deprecated and ignored - FlexResolver now uses
     champion_role_history.json exclusively.
+
+    The tournament_meta parameter can be used to provide tournament meta data.
+    If meta_stats is provided but tournament_meta is not, tournament_meta will be
+    auto-generated from meta_stats for backward compatibility.
     """
     knowledge_dir = tmp_path / "knowledge"
     knowledge_dir.mkdir()
@@ -245,11 +250,52 @@ def _write_engine_knowledge(
         (knowledge_dir / "meta_stats.json").write_text(
             json.dumps({"champions": meta_stats})
         )
+        # Auto-generate tournament_meta from meta_stats for backward compatibility
+        if tournament_meta is None:
+            tournament_meta = _meta_stats_to_tournament_meta(meta_stats, role_history)
+    if tournament_meta is not None:
+        (knowledge_dir / "tournament_meta.json").write_text(
+            json.dumps(tournament_meta)
+        )
     if transfers is not None:
         (knowledge_dir / "skill_transfers.json").write_text(
             json.dumps({"transfers": transfers})
         )
     return knowledge_dir
+
+
+def _meta_stats_to_tournament_meta(meta_stats: dict, role_history: dict) -> dict:
+    """Convert legacy meta_stats format to tournament_meta format."""
+    champions = {}
+    for name, data in meta_stats.items():
+        meta_score = data.get("meta_score", 0.5)
+        # Convert meta_score to priority (higher meta = higher priority)
+        priority = meta_score
+
+        # Build role data from role_history if available
+        roles = {}
+        if name in role_history:
+            viable_roles = role_history[name].get("current_viable_roles", [])
+            for role in viable_roles:
+                role_lower = role.lower()
+                roles[role_lower] = {
+                    "adjusted_performance": 0.5,  # Neutral performance
+                    "picks": 10,
+                }
+
+        champions[name] = {
+            "priority": priority,
+            "roles": roles,
+        }
+
+    return {
+        "metadata": {"source": "test_converted"},
+        "champions": champions,
+        "defaults": {
+            "missing_champion_priority": 0.05,
+            "missing_champion_performance": 0.35,
+        },
+    }
 
 
 def test_role_fit_prefers_assigned_player_strength(tmp_path):
