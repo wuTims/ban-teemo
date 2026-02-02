@@ -106,6 +106,28 @@ def load_draft_actions(data_dir: Path) -> list[dict]:
     return actions
 
 
+def load_player_game_stats(data_dir: Path) -> dict:
+    """Load player game stats and create lookup for role/win info.
+
+    Returns dict keyed by (game_id, team_id, champion_name) with role and team_won.
+    """
+    lookup = {}
+    stats_path = data_dir / "player_game_stats.csv"
+    if not stats_path.exists():
+        print(f"  Warning: {stats_path} not found, will use 'all' role fallback")
+        return lookup
+
+    with open(stats_path, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            key = (row["game_id"], row["team_id"], row["champion_name"])
+            lookup[key] = {
+                "role": normalize_role(row["role"]) if row.get("role") else "unknown",
+                "team_won": row.get("team_won", "").lower() == "true",
+            }
+    return lookup
+
+
 def get_tournament_start_date(tournament_id: str, series_list: list[dict]) -> datetime | None:
     """Get earliest match date for a tournament."""
     dates = [s["match_date"] for s in series_list if s["tournament_id"] == tournament_id]
@@ -118,8 +140,12 @@ def compute_meta_for_window(
     series_list: list[dict],
     games: dict,
     draft_actions: list[dict],
+    player_stats_lookup: dict,
 ) -> dict:
-    """Compute champion meta stats for games in the time window."""
+    """Compute champion meta stats for games in the time window.
+
+    Uses player_stats_lookup to get role-specific stats when available.
+    """
     # Find series in window
     series_in_window = {
         s["id"] for s in series_list
@@ -135,11 +161,12 @@ def compute_meta_for_window(
     if not games_in_window:
         return {}
 
-    # Aggregate pick/ban stats
+    # Aggregate pick/ban stats with role breakdown
+    # Structure: champion -> {bans, total_picks, total_wins, roles: {role -> {picks, wins}}}
     champion_stats = defaultdict(lambda: {
-        "picks": 0,
         "bans": 0,
-        "wins": 0,
+        "total_picks": 0,
+        "total_wins": 0,
         "roles": defaultdict(lambda: {"picks": 0, "wins": 0}),
     })
 
@@ -153,38 +180,58 @@ def compute_meta_for_window(
         if action_type == "ban":
             champion_stats[champ]["bans"] += 1
         elif action_type == "pick":
-            champion_stats[champ]["picks"] += 1
-            # Check if this pick's team won
-            game = games.get(action["game_id"])
-            if game and game["winner_team_id"] == action["team_id"]:
-                champion_stats[champ]["wins"] += 1
+            champion_stats[champ]["total_picks"] += 1
 
-    # Calculate priority and performance
+            # Look up role from player_game_stats
+            lookup_key = (action["game_id"], action["team_id"], champ)
+            player_info = player_stats_lookup.get(lookup_key)
+
+            if player_info:
+                role = player_info["role"]
+                won = player_info["team_won"]
+            else:
+                # Fallback if no player stats (shouldn't happen often)
+                role = "unknown"
+                game = games.get(action["game_id"])
+                won = game and game["winner_team_id"] == action["team_id"]
+
+            champion_stats[champ]["roles"][role]["picks"] += 1
+            if won:
+                champion_stats[champ]["total_wins"] += 1
+                champion_stats[champ]["roles"][role]["wins"] += 1
+
+    # Calculate priority and role-specific performance
     total_games = len(games_in_window)
     champions = {}
 
     for champ, stats in champion_stats.items():
-        picks = stats["picks"]
+        total_picks = stats["total_picks"]
         bans = stats["bans"]
-        wins = stats["wins"]
 
         # Priority: (picks + bans) / (2 * total_games) - max is 1.0 if picked/banned every game
-        priority = (picks + bans) / (2 * total_games) if total_games > 0 else 0
+        priority = (total_picks + bans) / (2 * total_games) if total_games > 0 else 0
 
-        # Performance: winrate with sample adjustment
-        winrate = wins / picks if picks > 0 else 0.5
-        adjusted_perf = calculate_adjusted_performance(winrate, picks)
+        # Build role-specific stats
+        roles_data = {}
+        for role, role_stats in stats["roles"].items():
+            picks = role_stats["picks"]
+            wins = role_stats["wins"]
 
-        champions[champ] = {
-            "priority": round(priority, 3),
-            "roles": {
-                "all": {  # Simplified: not tracking per-role in draft_actions without player data
+            if picks > 0:
+                winrate = wins / picks
+                adjusted_perf = calculate_adjusted_performance(winrate, picks)
+                roles_data[role] = {
                     "winrate": round(winrate, 3),
                     "picks": picks,
                     "adjusted_performance": round(adjusted_perf, 3),
                 }
-            },
-        }
+
+        # Only include champions with actual role data
+        if roles_data:
+            champions[champ] = {
+                "priority": round(priority, 3),
+                "roles": roles_data,
+            }
 
     return champions
 
@@ -197,8 +244,10 @@ def build_replay_metas(data_dir: Path, output_dir: Path):
     series_list = load_series_with_dates(data_dir)
     games = load_games(data_dir)
     draft_actions = load_draft_actions(data_dir)
+    player_stats_lookup = load_player_game_stats(data_dir)
 
     print(f"Loaded {len(tournaments)} tournaments, {len(series_list)} series, {len(games)} games")
+    print(f"Loaded {len(player_stats_lookup)} player game stats entries for role lookup")
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -212,7 +261,7 @@ def build_replay_metas(data_dir: Path, output_dir: Path):
         window_start = start_date - timedelta(weeks=WINDOW_WEEKS)
 
         champions = compute_meta_for_window(
-            window_start, window_end, series_list, games, draft_actions
+            window_start, window_end, series_list, games, draft_actions, player_stats_lookup
         )
 
         if not champions:
