@@ -24,16 +24,12 @@ class TeamEvaluationService:
                 "weaknesses": []
             }
 
-        # Get archetype analysis
         archetype = self.archetype_service.calculate_team_archetype(picks)
-
-        # Get synergy analysis
         synergy = self.synergy_service.calculate_team_synergy(picks)
 
-        # Calculate composition score (synergy + archetype alignment)
+        # Composition score: average of synergy and archetype alignment
         composition_score = (synergy["total_score"] + archetype.get("alignment", 0.5)) / 2
 
-        # Determine strengths and weaknesses
         strengths = []
         weaknesses = []
 
@@ -47,7 +43,6 @@ class TeamEvaluationService:
         elif synergy["total_score"] <= 0.4:
             weaknesses.append("Poor champion synergies")
 
-        # Archetype-specific strengths/weaknesses
         primary = archetype.get("primary")
         if primary == "engage":
             strengths.append("Strong initiation")
@@ -78,8 +73,6 @@ class TeamEvaluationService:
         """Evaluate our draft vs enemy draft."""
         our_eval = self.evaluate_team_draft(our_picks)
         enemy_eval = self.evaluate_team_draft(enemy_picks)
-
-        # Get archetype matchup
         comp_advantage = self.archetype_service.calculate_comp_advantage(our_picks, enemy_picks)
 
         return {

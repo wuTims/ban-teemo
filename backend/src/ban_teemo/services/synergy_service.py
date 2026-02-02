@@ -20,7 +20,6 @@ class SynergyService:
 
     def _load_data(self):
         """Load curated and statistical synergy data."""
-        # Curated synergies
         curated_path = self.knowledge_dir / "synergies.json"
         if curated_path.exists():
             with open(curated_path) as f:
@@ -41,7 +40,6 @@ class SynergyService:
                         key = tuple(sorted(champs[:2]))
                         self._curated_synergies[key] = strength
 
-        # Statistical synergies
         stats_path = self.knowledge_dir / "champion_synergies.json"
         if stats_path.exists():
             with open(stats_path) as f:
@@ -52,13 +50,12 @@ class SynergyService:
         """Get synergy score between two champions (0.0-1.0)."""
         key = tuple(sorted([champ_a, champ_b]))
 
-        # Curated first
+        # Prefer curated ratings (expert-verified), fall back to statistical data
         if key in self._curated_synergies:
             rating = self._curated_synergies[key]
             multiplier = self.RATING_MULTIPLIERS.get(rating.upper(), 0.4)
             return round(self.BASE_CURATED_SCORE * multiplier, 3)
 
-        # Statistical fallback
         if champ_a in self._stat_synergies:
             if champ_b in self._stat_synergies[champ_a]:
                 return self._stat_synergies[champ_a][champ_b].get("synergy_score", 0.5)

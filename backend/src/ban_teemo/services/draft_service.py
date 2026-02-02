@@ -31,7 +31,7 @@ class DraftService:
         """
         self.database_path = database_path
         self.pick_engine = PickRecommendationEngine(knowledge_dir, tournament_data_file=tournament_data_file)
-        self.ban_service = BanRecommendationService(knowledge_dir)
+        self.ban_service = BanRecommendationService(knowledge_dir, tournament_data_file=tournament_data_file)
 
     def compute_phase(self, action_count: int) -> DraftPhase:
         """Compute draft phase from action count.
@@ -162,6 +162,7 @@ class DraftService:
                     base_score=rec.get("base_score"),
                     synergy_multiplier=rec.get("synergy_multiplier"),
                     components=rec.get("components", {}),
+                    weighted_components=rec.get("weighted_components", {}),
                     proficiency_source=rec.get("proficiency_source"),
                     proficiency_player=rec.get("proficiency_player"),
                 )

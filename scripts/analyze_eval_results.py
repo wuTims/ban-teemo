@@ -156,8 +156,8 @@ def analyze_miss_patterns(data: dict) -> dict:
     return miss_analysis
 
 
-def analyze_component_gaps(data: dict) -> dict:
-    """Analyze scoring component patterns for hits vs misses."""
+def analyze_component_gaps(data: dict, action_type: str = "pick") -> dict:
+    """Analyze scoring component patterns for hits vs misses by action type."""
     component_stats = {
         "hits": defaultdict(list),
         "misses_top_rec": defaultdict(list),  # Components of our #1 when we miss
@@ -165,7 +165,7 @@ def analyze_component_gaps(data: dict) -> dict:
 
     for game in data["games"]:
         for action in game["actions"]:
-            if action["action_type"] != "pick":
+            if action["action_type"] != action_type:
                 continue
 
             if not action["top_recommended"]:
@@ -177,11 +177,13 @@ def analyze_component_gaps(data: dict) -> dict:
             if action["was_in_recommendations"] and action["recommendation_rank"] == 1:
                 # We got it right as #1
                 for comp, val in components.items():
-                    component_stats["hits"][comp].append(val)
+                    if isinstance(val, (int, float)):
+                        component_stats["hits"][comp].append(val)
             elif not action["was_in_recommendations"]:
                 # We missed entirely
                 for comp, val in components.items():
-                    component_stats["misses_top_rec"][comp].append(val)
+                    if isinstance(val, (int, float)):
+                        component_stats["misses_top_rec"][comp].append(val)
 
     # Calculate averages
     result = {"hits_avg": {}, "misses_top_rec_avg": {}, "delta": {}}
@@ -326,18 +328,28 @@ def print_analysis(data: dict, analysis: dict):
         print(f"  First pick misses: {len(first_picks)} total")
         print(f"  Most missed first picks: {', '.join(f'{c}({n})' for c, n in fp_counts[:5])}")
 
-    # Component analysis
-    print(f"\n{Colors.BOLD}COMPONENT ANALYSIS (picks only){Colors.RESET}")
-    print("-" * 50)
-    print("  When we hit #1 vs when we miss entirely (our #1 rec's components):")
-    comps = analysis["component_gaps"]
-    for comp in ["meta", "proficiency", "matchup", "counter", "archetype"]:
-        if comp in comps["hits_avg"]:
-            hit = comps["hits_avg"][comp]
-            miss = comps["misses_top_rec_avg"][comp]
-            delta = comps["delta"][comp]
+    def print_component_gaps(title: str, comps: dict, max_items: int = 8):
+        print(f"\n{Colors.BOLD}{title}{Colors.RESET}")
+        print("-" * 50)
+        print("  When we hit #1 vs when we miss entirely (our #1 rec's components):")
+        if not comps.get("delta"):
+            print("  (no component data)")
+            return
+
+        items = []
+        for comp, delta in comps["delta"].items():
+            hit = comps["hits_avg"].get(comp, 0)
+            miss = comps["misses_top_rec_avg"].get(comp, 0)
+            items.append((comp, hit, miss, delta))
+
+        items.sort(key=lambda x: abs(x[3]), reverse=True)
+        for comp, hit, miss, delta in items[:max_items]:
             indicator = Colors.GREEN if delta > 0.02 else (Colors.RED if delta < -0.02 else "")
-            print(f"  {comp:<12}: hit={hit:.3f}  miss={miss:.3f}  delta={indicator}{delta:+.3f}{Colors.RESET}")
+            print(f"  {comp:<18}: hit={hit:.3f}  miss={miss:.3f}  delta={indicator}{delta:+.3f}{Colors.RESET}")
+
+    # Component analysis (picks + bans)
+    print_component_gaps("COMPONENT ANALYSIS (picks)", analysis.get("component_gaps", {}))
+    print_component_gaps("COMPONENT ANALYSIS (bans)", analysis.get("ban_component_gaps", {}))
 
     # Score distribution
     print(f"\n{Colors.BOLD}SCORE DISTRIBUTION{Colors.RESET}")
@@ -377,12 +389,13 @@ def print_analysis(data: dict, analysis: dict):
     if worst_phase:
         print(f"  - Worst phase: {worst_phase} ({worst_pct:.1f}% accuracy)")
 
-    # Identify component issues
-    if comps["delta"]:
+    # Identify component issues (picks)
+    comps = analysis.get("component_gaps", {})
+    if comps.get("delta"):
         worst_comp = min(comps["delta"].items(), key=lambda x: x[1])
         best_comp = max(comps["delta"].items(), key=lambda x: x[1])
-        print(f"  - Weakest component signal: {worst_comp[0]} (delta={worst_comp[1]:+.3f})")
-        print(f"  - Strongest component signal: {best_comp[0]} (delta={best_comp[1]:+.3f})")
+        print(f"  - Weakest pick component signal: {worst_comp[0]} (delta={worst_comp[1]:+.3f})")
+        print(f"  - Strongest pick component signal: {best_comp[0]} (delta={best_comp[1]:+.3f})")
 
     # First pick issue
     if first_picks:
@@ -407,7 +420,8 @@ def main():
         "by_phase": analyze_by_phase(data),
         "by_sequence": analyze_by_sequence(data),
         "miss_patterns": analyze_miss_patterns(data),
-        "component_gaps": analyze_component_gaps(data),
+        "component_gaps": analyze_component_gaps(data, action_type="pick"),
+        "ban_component_gaps": analyze_component_gaps(data, action_type="ban"),
         "proficiency_source": analyze_proficiency_source(data),
         "score_distribution": analyze_score_distribution(data),
     }

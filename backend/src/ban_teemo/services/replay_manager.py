@@ -52,8 +52,9 @@ class ReplaySession:
     tournament_data_file: str | None = None  # e.g., "replay_meta/756908.json"
 
     # Track recommendations separately for each team (for draft quality analysis)
-    blue_recommended_picks: list[str] = field(default_factory=list)
-    red_recommended_picks: list[str] = field(default_factory=list)
+    # Each entry is top 5 recommendations for that pick slot
+    blue_recommended_picks: list[list[str]] = field(default_factory=list)
+    red_recommended_picks: list[list[str]] = field(default_factory=list)
 
     # Connection tracking
     created_at: datetime = field(default_factory=datetime.now)

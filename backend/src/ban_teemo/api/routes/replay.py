@@ -1,6 +1,7 @@
 """REST endpoints for replay functionality."""
 
 from datetime import datetime
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query, Request
@@ -276,9 +277,20 @@ def start_replay(request: Request, body: StartReplayRequest):
     elif winner_team_id == red_team.id:
         winner_side = "red"
 
-    # Get tournament ID for era-appropriate meta
-    tournament_id = repo.get_tournament_id_for_game(game_id)
-    tournament_data_file = f"replay_meta/{tournament_id}.json" if tournament_id else None
+    # Get era-appropriate meta file for this series
+    # Uses data from games played BEFORE this series date to avoid "future" data
+    # Path: replay.py -> routes -> api -> ban_teemo -> src -> backend -> project_root
+    knowledge_dir = Path(__file__).parents[5] / "knowledge"
+    series_meta_path = knowledge_dir / f"replay_meta/series_{body.series_id}.json"
+
+    if not series_meta_path.exists():
+        raise HTTPException(
+            404,
+            f"Meta file not found for series {body.series_id}. "
+            "Run build_replay_metas.py to generate per-series meta files.",
+        )
+
+    tournament_data_file = f"replay_meta/series_{body.series_id}.json"
 
     # Create session
     session = manager.create_session(

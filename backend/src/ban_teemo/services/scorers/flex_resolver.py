@@ -99,11 +99,31 @@ class FlexResolver:
         Returns probabilities using canonical role names (top, jungle, mid, bot, support).
         Uses champion_role_history.json as the single source of truth.
 
-        Priority:
-        1. current_viable_roles + current_distribution (recent meta)
-        2. all_time_distribution (historical)
-        3. canonical_role / pro_play_primary_role (fallback)
-        4. DEFAULT_ROLE_ORDER (unknown champions)
+        FALLBACK STRATEGY:
+        Each level addresses a different data availability scenario, from best data
+        (recent meta) to worst (unknown champion). Earlier levels are more accurate
+        because they reflect current professional play patterns.
+
+        Level 1: current_viable_roles + current_distribution
+            - WHY: Recent split data reflects current meta. Pantheon might be
+              viable mid now but wasn't historically. Current data catches this.
+            - WHEN: Champion has current split data with sufficient sample size.
+
+        Level 2: all_time_distribution
+            - WHY: Historical data provides reasonable estimates when current
+              split data is missing (e.g., champion wasn't picked this split).
+            - WHEN: Champion has historical data but no current split data.
+            - NOTE: Uses MIN_ROLE_PROBABILITY threshold to filter noise roles.
+
+        Level 3: canonical_role / pro_play_primary_role
+            - WHY: Some champions are one-tricks (Yuumi support, Karthus jungle).
+              If we only know their primary role, assign 100% probability there.
+            - WHEN: Champion has role data but no distribution data available.
+
+        Level 4: DEFAULT_ROLE_ORDER (unknown champions)
+            - WHY: New champions or those never seen in pro play need a fallback.
+              Default order prioritizes solo lanes where new picks are most common.
+            - WHEN: Champion has no data at all in our knowledge base.
         """
         # Normalize filled_roles to canonical lowercase
         filled = set()
@@ -115,7 +135,10 @@ class FlexResolver:
 
         champ_data = self._role_history_data.get(champion_name)
         if isinstance(champ_data, dict):
-            # Check for current viability data (preferred)
+            # ═══════════════════════════════════════════════════════════════════
+            # LEVEL 1: Current viable roles + current distribution (BEST DATA)
+            # Use recent split data - most accurate for current meta
+            # ═══════════════════════════════════════════════════════════════════
             current_roles, has_current = extract_current_role_viability(
                 champ_data, threshold=self.CURRENT_ROLE_THRESHOLD
             )
@@ -137,18 +160,22 @@ class FlexResolver:
                     return probs
 
                 # If current_distribution is missing/empty, use uniform over viable roles
+                # (rare edge case - we have viable roles but no percentage breakdown)
                 available_roles = {role for role in current_roles if role not in filled}
                 if available_roles:
                     prob = 1.0 / len(available_roles)
                     return {role: prob for role in available_roles}
                 return {}
 
-            # No current data: fall back to all-time distribution
+            # ═══════════════════════════════════════════════════════════════════
+            # LEVEL 2: All-time distribution (HISTORICAL DATA)
+            # Use when no current split data - less accurate but still informed
+            # ═══════════════════════════════════════════════════════════════════
             all_time_dist = champ_data.get("all_time_distribution") or {}
             probs = self._distribution_to_probs(
                 all_time_dist,
                 filled,
-                threshold=self.MIN_ROLE_PROBABILITY,  # Filter noise in historical data
+                threshold=self.MIN_ROLE_PROBABILITY,  # Filter noise (e.g., 2% support Viego)
             )
             if probs:
                 return probs
@@ -158,15 +185,21 @@ class FlexResolver:
             if all_time_dist:
                 return {}
 
-        # Fallback: use primary role if available
+        # ═══════════════════════════════════════════════════════════════════════
+        # LEVEL 3: Primary role only (MINIMAL DATA)
+        # Champion has a known primary role but no distribution data
+        # ═══════════════════════════════════════════════════════════════════════
         if champion_name in self._primary_roles:
             primary_role = self._primary_roles[champion_name]
             if primary_role not in filled:
                 return {primary_role: 1.0}
-            # Primary role is filled - champion can't play other roles
+            # Primary role is filled - champion can't play other roles reliably
             return {}
 
-        # Ultimate fallback: deterministic assignment for unknown champions
+        # ═══════════════════════════════════════════════════════════════════════
+        # LEVEL 4: Default role order (NO DATA - unknown champion)
+        # New or never-picked champion - assign to first available role
+        # ═══════════════════════════════════════════════════════════════════════
         for role in self.DEFAULT_ROLE_ORDER:
             if role not in filled:
                 return {role: 1.0}

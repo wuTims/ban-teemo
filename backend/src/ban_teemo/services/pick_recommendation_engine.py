@@ -10,6 +10,7 @@ from ban_teemo.services.scorers import (
     MatchupCalculator,
     SkillTransferService,
     TournamentScorer,
+    RolePhaseScorer,
 )
 from ban_teemo.services.synergy_service import SynergyService
 from ban_teemo.utils.role_normalizer import CANONICAL_ROLES, normalize_role
@@ -57,6 +58,7 @@ class PickRecommendationEngine:
         self.archetype_service = ArchetypeService(knowledge_dir)
         self.skill_transfer_service = SkillTransferService(knowledge_dir)
         self.tournament_scorer = TournamentScorer(knowledge_dir, data_file=tournament_data_file)
+        self.role_phase_scorer = RolePhaseScorer(knowledge_dir)
 
     def get_recommendations(
         self,
@@ -121,9 +123,11 @@ class PickRecommendationEngine:
                 "score": result["total_score"],
                 "base_score": result["base_score"],
                 "synergy_multiplier": result["synergy_multiplier"],
+                "role_phase_multiplier": result["role_phase_multiplier"],
                 "confidence": result["confidence"],
                 "suggested_role": result["suggested_role"],
-                "components": result["components"],
+                "components": result["components"],  # Raw for debugging
+                "weighted_components": result["weighted_components"],  # Weighted for display
                 "effective_weights": result.get("effective_weights"),
                 "proficiency_source": result.get("proficiency_source"),
                 "proficiency_player": result.get("proficiency_player"),
@@ -348,6 +352,8 @@ class PickRecommendationEngine:
         synergy_multiplier = 1.0 + (synergy_score - 0.5) * self.SYNERGY_MULTIPLIER_RANGE
 
         # Archetype - how well does this champion fit the emerging team composition?
+        # In phase 1 (0-1 picks), this is raw champion strength + versatility (no team to fit yet)
+        # The component is re-labeled to "champion_strength" in phase 1 output for clarity
         archetype_score = self._calculate_archetype_score(champion, our_picks, enemy_picks)
         components["archetype"] = archetype_score
 
@@ -402,16 +408,41 @@ class PickRecommendationEngine:
                 base_score = base_score + presence_bonus
                 components["presence_bonus"] = presence_bonus
 
-        total_score = base_score * synergy_multiplier
+        # Apply role-phase prior multiplier (penalty for roles picked at atypical phases)
+        # e.g., support in early P1 gets ~0.40x, jungle in P2 gets ~0.63x
+        role_phase_mult = self.role_phase_scorer.get_multiplier(suggested_role, pick_count)
+        components["role_phase"] = role_phase_mult
+
+        total_score = base_score * synergy_multiplier * role_phase_mult
         confidence = (1.0 + prof_conf_val) / 2
+
+        # Compute weighted components for display (raw * weight)
+        # These use the same scale as ban components for consistent UI coloring
+        # Only include components that have actual weights (exclude synergy, blind_safety, role_flex)
+        weighted_components = {}
+        for key, raw_value in components.items():
+            weight = effective_weights.get(key)
+            if weight is not None:  # Only include if in effective_weights
+                weighted_components[key] = round(raw_value * weight, 3)
+
+        # Re-label "archetype" as "champion_strength" in phase 1 (0-1 picks)
+        # In early draft there's no team to fit, so the score represents raw champion strength
+        if pick_count <= 1 and "archetype" in components:
+            components["champion_strength"] = components.pop("archetype")
+            if "archetype" in weighted_components:
+                weighted_components["champion_strength"] = weighted_components.pop("archetype")
+            if "archetype" in effective_weights:
+                effective_weights["champion_strength"] = effective_weights.pop("archetype")
 
         return {
             "total_score": round(total_score, 3),
             "base_score": round(base_score, 3),
             "synergy_multiplier": round(synergy_multiplier, 3),
+            "role_phase_multiplier": round(role_phase_mult, 3),
             "confidence": round(confidence, 3),
             "suggested_role": suggested_role,
-            "components": {k: round(v, 3) for k, v in components.items()},
+            "components": {k: round(v, 3) for k, v in components.items()},  # Raw for debugging
+            "weighted_components": weighted_components,  # Weighted for display
             "effective_weights": {k: round(v, 3) for k, v in effective_weights.items()},
             "proficiency_source": prof_source,
             "proficiency_player": prof_player,
@@ -598,19 +629,38 @@ class PickRecommendationEngine:
             # archetype stays at 0.15
             weights["proficiency"] -= 0.05            # 0.15 -> 0.10
 
-        # Handle NO_DATA matchup - redistribute to tournament components
+        # ═══════════════════════════════════════════════════════════════════════
+        # DATA CONFIDENCE REDISTRIBUTION
+        # When we lack data for a component, reduce its weight to prevent
+        # neutral 0.5 defaults from dominating scores. Redistribute weight
+        # to components where we DO have signal.
+        # ═══════════════════════════════════════════════════════════════════════
+
+        # NO_DATA matchup: No enemy picks yet, so matchup score is meaningless
+        # Keep 50% weight (will use 0.5 neutral) but redirect other 50% to priority
+        # WHY tournament_priority? It's the safest fallback - indicates what pros
+        # are contesting, which correlates with champion strength even without matchup context
         if matchup_conf == "NO_DATA":
             redistribute = weights["matchup_counter"] * 0.5
             weights["matchup_counter"] *= 0.5
-            # Redistribute to tournament_priority (not archetype to avoid specialist bias)
             weights["tournament_priority"] += redistribute
+
+        # PARTIAL matchup: Some enemy picks visible but incomplete data
+        # Keep 75% weight, redistribute 25% split between priority (60%) and performance (40%)
+        # WHY this split? Priority helps for contested picks, performance for proven winners
         elif matchup_conf == "PARTIAL":
             redistribute = weights["matchup_counter"] * 0.25
             weights["matchup_counter"] *= 0.75
             weights["tournament_priority"] += redistribute * 0.6
             weights["tournament_performance"] += redistribute * 0.4
 
-        # Handle NO_DATA proficiency
+        # NO_DATA proficiency: Unknown player or player has no data for this champion
+        # Aggressively reduce to 20% (0.5 baseline has minimal signal)
+        # Redistribute 80% across tournament components:
+        # - 40% to priority: if pros contest it, it's probably strong
+        # - 30% to performance: proven tournament results matter
+        # - 30% to matchup: counter-pick value is objective regardless of player
+        # WHY not archetype? Redistributing to archetype would bias toward specialists
         if prof_conf == "NO_DATA":
             redistribute = weights["proficiency"] * 0.8
             weights["proficiency"] *= 0.2

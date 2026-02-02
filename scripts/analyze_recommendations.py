@@ -629,22 +629,43 @@ def main():
 
     # Initialize
     project_root = Path(__file__).parent.parent
-    # Default data path - can be overridden
-    data_path = project_root / "outputs" / "full_2024_2025_v2" / "csv"
     knowledge_dir = project_root / "knowledge"
 
-    # Check for alternative data locations
-    alt_paths = [
-        project_root / "data",
-        project_root / "outputs" / "full_2024_2025_v2" / "csv",
+    # Find the DuckDB database file
+    db_path = None
+    possible_paths = [
+        project_root / "data" / "draft_data.duckdb",
+        project_root / "outputs" / "full_2024_2025_v2" / "csv" / "draft_data.duckdb",
     ]
-    for p in alt_paths:
-        if (p / "draft_data.duckdb").exists():
-            data_path = p
+    for p in possible_paths:
+        if p.exists():
+            db_path = p
             break
 
-    repo = DraftRepository(str(data_path), knowledge_dir=knowledge_dir)
-    service = DraftService(str(data_path), knowledge_dir=knowledge_dir)
+    if db_path is None:
+        print(f"Error: Could not find draft_data.duckdb in any of:")
+        for p in possible_paths:
+            print(f"  - {p}")
+        return
+
+    repo = DraftRepository(str(db_path), knowledge_dir=knowledge_dir)
+
+    def build_service_for_series(series_id: str) -> DraftService:
+        """Build DraftService with per-series meta file.
+
+        Uses data from games played BEFORE the series date to avoid future data.
+        """
+        series_meta_path = knowledge_dir / f"replay_meta/series_{series_id}.json"
+        if not series_meta_path.exists():
+            raise FileNotFoundError(
+                f"Meta file not found: {series_meta_path}. "
+                "Run build_replay_metas.py to generate per-series meta files."
+            )
+        return DraftService(
+            str(db_path),
+            knowledge_dir=knowledge_dir,
+            tournament_data_file=f"replay_meta/series_{series_id}.json",
+        )
 
     if args.list_series:
         series_list = repo.get_series_list(limit=20)
@@ -673,6 +694,7 @@ def main():
             initial_state, actions = load_game_data(repo, args.series, game_num)
             show_verbose = args.verbose and not args.quiet
             show_misses = args.misses_only and not args.quiet
+            service = build_service_for_series(args.series)
             analysis = analyze_game(service, initial_state, actions,
                                    verbose=show_verbose, misses_only=show_misses)
             analyses.append(analysis)
@@ -696,6 +718,7 @@ def main():
                     # Only print action details if not quiet mode
                     show_verbose = args.verbose and not args.quiet
                     show_misses = args.misses_only and not args.quiet
+                    service = build_service_for_series(series_id)
                     analysis = analyze_game(service, initial_state, actions,
                                            verbose=show_verbose, misses_only=show_misses)
                     analyses.append(analysis)

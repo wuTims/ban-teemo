@@ -17,7 +17,8 @@ class PickRecommendation:
     score: float = 0.0  # Final combined score
     base_score: float | None = None  # Pre-synergy score
     synergy_multiplier: float | None = None  # Synergy factor applied
-    components: dict[str, float] = field(default_factory=dict)  # Individual score components
+    components: dict[str, float] = field(default_factory=dict)  # Raw scores for debugging
+    weighted_components: dict[str, float] = field(default_factory=dict)  # Weighted for display
     # Proficiency tracking
     proficiency_source: str | None = None  # "direct", "comfort_only", "none"
     proficiency_player: str | None = None  # Player name for this role

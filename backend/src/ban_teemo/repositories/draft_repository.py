@@ -62,7 +62,23 @@ class DraftRepository:
             if path.exists():
                 with open(path) as f:
                     data = json.load(f)
-                    self._player_roles = data.get("players", {})
+                    raw_players = data.get("players", {})
+                    normalized_players: dict[str, dict] = {}
+                    for raw_key, player_data in raw_players.items():
+                        if not isinstance(raw_key, str):
+                            continue
+                        normalized_key = raw_key.strip().lower()
+                        if not normalized_key:
+                            continue
+                        if normalized_key in normalized_players:
+                            existing = normalized_players[normalized_key]
+                            existing_conf = existing.get("inference_confidence", 0)
+                            incoming_conf = player_data.get("inference_confidence", 0)
+                            if incoming_conf > existing_conf:
+                                normalized_players[normalized_key] = player_data
+                        else:
+                            normalized_players[normalized_key] = player_data
+                    self._player_roles = normalized_players
                     print(f"DraftRepository: Loaded {len(self._player_roles)} player roles from {path}")
                     return
 

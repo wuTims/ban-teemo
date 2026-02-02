@@ -191,15 +191,15 @@ async def _run_replay_loop(
             initial_state,
             for_team=initial_state.next_team,
         )
-        # Track top pick recommendation for draft quality analysis (per-team)
+        # Track top 5 pick recommendations for draft quality analysis (per-team)
         if pending_recommendations and pending_recommendations.picks:
             if initial_state.next_action == "pick":
-                top_pick = pending_recommendations.picks[0].champion_name
+                top_5_picks = [p.champion_name for p in pending_recommendations.picks[:5]]
                 rec_team = pending_recommendations.for_team
                 if rec_team == "blue" and len(session.blue_recommended_picks) < 5:
-                    session.blue_recommended_picks.append(top_pick)
+                    session.blue_recommended_picks.append(top_5_picks)
                 elif rec_team == "red" and len(session.red_recommended_picks) < 5:
-                    session.red_recommended_picks.append(top_pick)
+                    session.red_recommended_picks.append(top_5_picks)
 
     while session.current_index < len(session.all_actions):
         if session.status == ReplayStatus.PAUSED:
@@ -227,15 +227,15 @@ async def _run_replay_loop(
                 current_state,
                 for_team=current_state.next_team,
             )
-            # Track top pick recommendation for draft quality analysis (per-team)
+            # Track top 5 pick recommendations for draft quality analysis (per-team)
             if pending_recommendations and pending_recommendations.picks:
                 if current_state.next_action == "pick":
-                    top_pick = pending_recommendations.picks[0].champion_name
+                    top_5_picks = [p.champion_name for p in pending_recommendations.picks[:5]]
                     rec_team = pending_recommendations.for_team
                     if rec_team == "blue" and len(session.blue_recommended_picks) < 5:
-                        session.blue_recommended_picks.append(top_pick)
+                        session.blue_recommended_picks.append(top_5_picks)
                     elif rec_team == "red" and len(session.red_recommended_picks) < 5:
-                        session.red_recommended_picks.append(top_pick)
+                        session.red_recommended_picks.append(top_5_picks)
 
         # Log draft state
         scoring_logger.log_draft_state(

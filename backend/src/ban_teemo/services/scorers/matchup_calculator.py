@@ -34,12 +34,32 @@ class MatchupCalculator:
                 self._counters = data.get("counters", {})
 
     def get_lane_matchup(self, our_champion: str, enemy_champion: str, role: str) -> dict:
-        """Get lane-specific matchup score."""
+        """Get lane-specific matchup score.
+
+        Uses a two-step lookup strategy to maximize data coverage:
+
+        1. DIRECT LOOKUP: our_champion vs enemy_champion
+           Returns the stored win_rate directly (our perspective).
+
+        2. REVERSE LOOKUP: enemy_champion vs our_champion, then INVERT
+           If direct lookup fails, check if we have enemy's perspective.
+           Inversion (1.0 - win_rate) is valid because matchup win rates
+           are complementary: if A beats B 60%, then B beats A 40%.
+
+        WHY INVERSION WORKS:
+        Win rate in a 1v1 matchup is zero-sum. If Darius has 55% win rate
+        vs Garen (from Darius's perspective), then Garen has 45% win rate
+        vs Darius. The inversion assumes matchup data captures this
+        symmetry, which holds for same-role lane matchups.
+
+        LIMITATION: Team-wide effects (jungle pressure, roams) can break
+        symmetry, but for lane phase estimation, inversion is accurate.
+        """
         # Normalize role and translate to data format
         normalized_role = normalize_role(role) or role.lower()
         data_role = self.ROLE_TO_DATA.get(normalized_role, role.upper())
 
-        # Direct lookup
+        # Direct lookup: our_champion vs enemy_champion
         if our_champion in self._counters:
             vs_lane = self._counters[our_champion].get("vs_lane", {})
             role_data = vs_lane.get(data_role, {})
@@ -52,7 +72,8 @@ class MatchupCalculator:
                     "data_source": "direct_lookup"
                 }
 
-        # Reverse lookup (invert)
+        # Reverse lookup: enemy_champion vs our_champion, then invert
+        # Inversion: if enemy has 60% vs us, we have 40% vs them
         if enemy_champion in self._counters:
             vs_lane = self._counters[enemy_champion].get("vs_lane", {})
             role_data = vs_lane.get(data_role, {})
@@ -68,8 +89,18 @@ class MatchupCalculator:
         return {"score": 0.5, "confidence": "NO_DATA", "games": 0, "data_source": "none"}
 
     def get_team_matchup(self, our_champion: str, enemy_champion: str) -> dict:
-        """Get team-level matchup."""
-        # Direct lookup
+        """Get team-level matchup (champion vs champion regardless of lane).
+
+        Same lookup strategy as get_lane_matchup (direct then reverse with
+        inversion). Team matchups capture how champions perform against each
+        other across all game phases, not just lane.
+
+        INVERSION VALIDITY: Same principle as lane matchups - if Azir has
+        55% win rate in games with enemy Zed, then Zed has 45% in games
+        with enemy Azir. Team-level effects are captured in the original
+        data, so inversion remains valid.
+        """
+        # Direct lookup: our_champion vs enemy_champion
         if our_champion in self._counters:
             vs_team = self._counters[our_champion].get("vs_team", {})
             if enemy_champion in vs_team:
@@ -80,7 +111,7 @@ class MatchupCalculator:
                     "data_source": "direct_lookup"
                 }
 
-        # Reverse lookup
+        # Reverse lookup: enemy_champion vs our_champion, then invert
         if enemy_champion in self._counters:
             vs_team = self._counters[enemy_champion].get("vs_team", {})
             if our_champion in vs_team:
