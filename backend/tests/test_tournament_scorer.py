@@ -406,3 +406,25 @@ def test_custom_data_file_path(tmp_path):
 
     assert scorer.get_priority("Azir") == 0.75
     assert scorer.get_performance("Azir", "mid") == 0.55
+
+
+def test_missing_data_file_falls_back_to_default(tmp_path):
+    """Missing custom file falls back to tournament_meta.json."""
+    knowledge_dir = tmp_path / "knowledge"
+    knowledge_dir.mkdir(exist_ok=True)
+
+    # Write default tournament_meta.json only
+    default_data = {
+        "metadata": {"source": "default"},
+        "champions": {
+            "Jayce": {"priority": 0.86, "roles": {"jungle": {"adjusted_performance": 0.47, "picks": 19}}}
+        },
+        "defaults": {"missing_champion_priority": 0.05, "missing_champion_performance": 0.35},
+    }
+    (knowledge_dir / "tournament_meta.json").write_text(json.dumps(default_data))
+
+    # Request non-existent file
+    scorer = TournamentScorer(knowledge_dir=knowledge_dir, data_file="replay_meta/nonexistent.json")
+
+    # Should fall back to default
+    assert scorer.get_priority("Jayce") == 0.86

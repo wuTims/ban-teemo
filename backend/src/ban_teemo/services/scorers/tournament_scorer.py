@@ -27,8 +27,15 @@ class TournamentScorer:
         self._load_data()
 
     def _load_data(self):
-        """Load tournament meta data."""
+        """Load tournament meta data with fallback to default."""
         tournament_path = self.knowledge_dir / self._data_file
+
+        # Try custom file first, fall back to default
+        if not tournament_path.exists() and self._data_file != "tournament_meta.json":
+            fallback_path = self.knowledge_dir / "tournament_meta.json"
+            if fallback_path.exists():
+                tournament_path = fallback_path
+
         if tournament_path.exists():
             with open(tournament_path) as f:
                 data = json.load(f)
