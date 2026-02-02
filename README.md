@@ -2,22 +2,17 @@
 
 An AI-powered League of Legends draft assistant that replays professional matches and provides real-time pick/ban recommendations backed by pro match data and layered analytics.
 
-## Demo Concept
+## Overview
 
-Since live matches can't be guaranteed during judging, Ban Teemo uses a **historical replay system** that:
-
-1. Pre-loads 1,400+ professional series from LCK, LEC, LCS, and LPL
-2. Replays draft actions with configurable delays (simulating live experience)
-3. Generates AI recommendations in real-time as actions appear
-4. UI behaves identically to true live mode
-
-**Why this works:** Judges see the same experience users would during a real match - with zero risk of technical issues from live data feeds.
+Ban Teemo analyzes 68,000+ draft actions from professional League of Legends matches to provide data-driven pick and ban recommendations. The system combines tournament meta analysis, player proficiency data, champion synergies, and matchup statistics into a multi-factor scoring engine.
 
 ## Key Features
 
-- **Draft Visualization** - Real-time ban/pick tracking with champion portraits from Riot Data Dragon
-- **Layered Analytics** - Recommendations based on meta strength, player proficiency, synergies, and counters
-- **Replay Mode** - Step through historical drafts at adjustable speeds
+- **Draft Replay** - Step through 1,488 professional series from LCK, LEC, LCS, and LPL with configurable playback speeds
+- **Draft Simulator** - Practice drafting against AI-controlled pro teams with historical pick patterns
+- **Pick Recommendations** - Tournament-weighted scoring with synergy multipliers and phase-aware adjustments
+- **Ban Recommendations** - Tiered priority system targeting meta power picks, player comfort champions, and strategic counters
+- **Team Evaluation** - Archetype analysis (engage, split, teamfight, protect, pick) with composition scoring
 - **LLM Insights** - Natural language explanations of draft strategy (requires [Nebius API key](https://docs.tokenfactory.nebius.com/quickstart#get-api-key))
 
 ## Architecture
@@ -91,10 +86,12 @@ make setup-data
 ```
 
 That's it! The `setup-data` command:
-1. Downloads CSV data from GitHub releases (~50MB) → `outputs/full_2024_2025_v2/csv/`
-2. Builds DuckDB for fast queries → `data/draft_data.duckdb`
+1. Downloads data from GitHub releases (~30MB) → CSVs, DuckDB, replay metadata
+2. Extracts to `outputs/` and `data/` directories
 
 Knowledge files (`knowledge/*.json`) are pre-committed to the repo, so no regeneration is needed.
+
+**Current data release:** `v1.0.0` (68,529 draft actions, 1,565 replay meta files)
 
 **Manual setup** (if you prefer not to use Make):
 ```bash
@@ -132,34 +129,41 @@ ban-teemo/
 │   ├── src/ban_teemo/
 │   │   ├── api/               # REST + WebSocket endpoints
 │   │   ├── services/          # Draft logic, recommendations
+│   │   │   └── scorers/       # Core scoring components
 │   │   └── models/            # Pydantic schemas
-│   ├── scripts/               # build_duckdb.py
+│   ├── scripts/               # build_duckdb.py, build_replay_metas.py
 │   └── tests/
 │
 ├── frontend/                   # React + Vite frontend
 │   └── src/
-│       ├── components/        # Draft UI components
-│       ├── hooks/             # useReplaySession, useWebSocket
-│       └── utils/             # Data Dragon helpers
+│       ├── components/
+│       │   ├── replay/        # Replay mode (DraftBoard, ActionLog, etc.)
+│       │   ├── simulator/     # Simulator mode (ChampionPool, etc.)
+│       │   └── shared/        # Shared (ChampionPortrait, TeamPanel)
+│       ├── hooks/             # useReplaySession, useSimulator
+│       └── utils/             # Data Dragon helpers, role utils
 │
 ├── knowledge/                  # Analytics JSON (pre-committed)
 │   ├── meta_stats.json        # Meta strength scores
-│   ├── player_proficiency.json # Player-champion stats
+│   ├── player_proficiency.json # Player-champion stats (1.9MB)
 │   ├── matchup_stats.json     # Lane matchup win rates
-│   └── ...
+│   ├── tournament_meta.json   # Tournament pick/ban data
+│   ├── role_pick_phase.json   # Role pick frequency by phase
+│   └── replay_meta/           # Per-series metadata (1,565 files)
 │
 ├── scripts/                    # Data pipeline scripts
 │   ├── build_computed_datasets.py  # CSV → knowledge/*.json
 │   ├── build_tournament_meta.py    # Tournament data
-│   └── download-data.sh            # Fetch CSVs from releases
+│   └── download-data.sh            # Fetch data from releases
 │
 ├── outputs/                    # Downloaded CSV data (gitignored)
 │   └── full_2024_2025_v2/csv/
 │
 ├── data/                       # Runtime data
-│   └── draft_data.duckdb       # DuckDB database (built from CSVs)
+│   └── draft_data.duckdb       # DuckDB database
 │
 └── docs/                       # Architecture docs & specs
+    └── mvp-design-decisions.md # Design rationale
 ```
 
 ## Data Pipeline
@@ -168,7 +172,7 @@ ban-teemo/
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│  GitHub Release (data-v1.0.0.tar.gz)                                    │
+│  GitHub Release (ban-teemo-data.tar.gz)                                 │
 │  Downloaded via: make download-data                                     │
 └────────────────────────────────┬────────────────────────────────────────┘
                                  │
@@ -202,8 +206,8 @@ Match data was fetched using the GRID LoL Data Skill (see `.claude/skills/grid-l
 
 | Metric | Count |
 |--------|-------|
-| Series | 1,482 |
-| Games | 3,436 |
+| Series | 1,488 |
+| Games | 3,446 |
 | Draft Actions | 68,529 |
 | Players | 445 |
 | Teams | 57 |
@@ -226,11 +230,14 @@ The `knowledge/` directory contains analytics for fast API lookups:
 | `champion_role_history.json` | Generated | Role distributions per patch |
 | `skill_transfers.json` | Generated | Similar champions from co-play |
 | `role_baselines.json` | Generated | Statistical baselines for normalization |
+| `role_pick_phase.json` | Generated | Role pick frequency by draft phase |
+| `patch_info.json` | Generated | Patch metadata and dates |
 | `knowledge_base.json` | Manual | Champion metadata and abilities |
 | `synergies.json` | Manual | Curated synergy ratings (S/A/B/C) |
-| `archetype_counters.json` | Manual | Team archetype analysis |
+| `archetype_counters.json` | Manual | Team archetype RPS counters |
 | `player_roles.json` | Manual | Authoritative player role mappings |
-| `tournament_meta.json` | Manual | Recent tournament pick/ban data |
+| `tournament_meta.json` | Manual | Tournament pick/ban priority data |
+| `replay_meta/` | Generated | Per-series metadata (1,565 files) |
 
 **Generated files** are created by `scripts/build_computed_datasets.py` from CSV data.
 **Manual files** are curated and maintained separately.
@@ -252,14 +259,32 @@ DATABASE_PATH=data/draft_data.duckdb
 
 ## API Endpoints
 
+### Replay Mode
 | Endpoint | Description |
 |----------|-------------|
 | `GET /api/series` | List available series with filters |
 | `GET /api/series/{id}` | Series detail with games |
 | `GET /api/draft/{series_id}/{game}` | Draft actions for a game |
-| `WS /api/replay/{series_id}/{game}` | Stream draft replay |
+| `WS /api/replay/{series_id}/{game}` | Stream draft replay with recommendations |
+
+### Simulator Mode
+| Endpoint | Description |
+|----------|-------------|
+| `POST /api/simulator/setup` | Initialize simulator session |
+| `POST /api/simulator/pick` | Submit user pick |
+| `POST /api/simulator/ban` | Submit user ban |
+| `POST /api/simulator/enemy-action` | Get AI enemy action |
+| `GET /api/simulator/state` | Get current draft state |
+
+### Recommendations
+| Endpoint | Description |
+|----------|-------------|
 | `POST /api/recommend/pick` | Get pick recommendations |
 | `POST /api/recommend/ban` | Get ban recommendations |
+
+### Documentation
+| Endpoint | Description |
+|----------|-------------|
 | `GET /docs` | OpenAPI documentation |
 
 ## Available Commands
@@ -285,25 +310,47 @@ make build            # Build for production
 make clean            # Remove build artifacts
 ```
 
-## Layered Analytics System
+## Scoring System
 
-Recommendations combine multiple analysis layers:
+### Pick Recommendations
 
-| Layer | Weight | Description |
-|-------|--------|-------------|
-| Meta Strength | 15% | Champion presence + win rate |
-| Player Proficiency | 30% | Player's performance on champion |
-| Matchup | 20% | Counter value vs enemy picks |
-| Synergy | 20% | Pair value with ally picks |
-| Counter | 15% | Threat value against enemy team |
+Base scoring components with phase-aware weight adjustments:
 
-See [recommendation-service-overview.md](docs/recommendation-service-overview.md) for the complete scoring algorithm.
+| Component | Weight | Description |
+|-----------|--------|-------------|
+| Tournament Priority | 25% | How often pros contest this champion |
+| Tournament Performance | 20% | Role-specific adjusted win rate |
+| Matchup/Counter | 25% | Combined lane + team matchup advantage |
+| Archetype | 15% | Team composition fit |
+| Proficiency | 15% | Player comfort level |
+
+**Synergy** is applied as a multiplier (0.75x to 1.25x) rather than an additive component. This prevents weak picks from being "rescued" by good synergy.
+
+### Ban Recommendations
+
+Tiered priority system:
+
+| Phase 1 Tier | Target |
+|--------------|--------|
+| T1 Signature Power | High meta + high proficiency |
+| T2 Meta Power | High tournament priority |
+| T3 Comfort Pick | Player-specific targeting |
+
+| Phase 2 Tier | Target |
+|--------------|--------|
+| T1 Counter & Pool | Counters our picks + in enemy pool |
+| T2 Archetype & Pool | Completes enemy comp + in pool |
+| T3 Counter Only | Counters our picks |
+
+See [mvp-design-decisions.md](docs/mvp-design-decisions.md) for the complete scoring algorithm and design rationale.
 
 ## Documentation
 
+- [MVP Design Decisions](docs/mvp-design-decisions.md) - Complete design rationale, experiments, and final architecture
 - [Hackathon Spec v2](docs/lol_draft_assistant_hackathon_spec_v2.md) - Product vision and feature specs
 - [Architecture Review](docs/architecture-v2-review.md) - Data quality analysis and DuckDB queries
 - [Draft Simulation Design](docs/plans/2026-01-23-draft-simulation-service-design.md) - Replay service design
+- [Unified Recommendation System](docs/plans/2026-01-26-unified-recommendation-system.md) - Multi-factor scoring architecture
 
 ## License
 
