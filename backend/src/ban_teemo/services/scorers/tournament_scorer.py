@@ -13,25 +13,28 @@ class TournamentScorer:
     - tournament_priority: Role-agnostic contestation (how often pros pick/ban)
     - tournament_performance: Role-specific winrate with sample-size adjustment
 
-    These replace the 'meta' component in simulator mode for more current data.
+    Can load data from custom files for historical replay support.
     """
 
-    def __init__(self, knowledge_dir: Optional[Path] = None):
+    def __init__(self, knowledge_dir: Optional[Path] = None, data_file: Optional[str] = None):
         if knowledge_dir is None:
             knowledge_dir = Path(__file__).parents[5] / "knowledge"
         self.knowledge_dir = knowledge_dir
+        self._data_file = data_file or "tournament_meta.json"
         self._tournament_data: dict = {}
         self._defaults: dict = {}
+        self._metadata: dict = {}
         self._load_data()
 
     def _load_data(self):
         """Load tournament meta data."""
-        tournament_path = self.knowledge_dir / "tournament_meta.json"
+        tournament_path = self.knowledge_dir / self._data_file
         if tournament_path.exists():
             with open(tournament_path) as f:
                 data = json.load(f)
                 self._tournament_data = data.get("champions", {})
                 self._defaults = data.get("defaults", {})
+                self._metadata = data.get("metadata", {})
 
     def get_priority(self, champion_name: str) -> float:
         """Get role-agnostic priority score (0.0-1.0).

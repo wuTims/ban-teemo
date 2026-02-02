@@ -372,3 +372,37 @@ def test_real_data_missing_champion_penalty(real_scorer):
 
     assert priority == 0.05
     assert performance == 0.35
+
+
+# ======================================================================
+# Custom Data File Tests
+# ======================================================================
+
+
+def test_custom_data_file_path(tmp_path):
+    """TournamentScorer can load data from a custom file path."""
+    knowledge_dir = tmp_path / "knowledge"
+    knowledge_dir.mkdir(exist_ok=True)
+    replay_meta_dir = knowledge_dir / "replay_meta"
+    replay_meta_dir.mkdir(exist_ok=True)
+
+    # Write custom meta file
+    custom_data = {
+        "metadata": {
+            "tournament_id": "756908",
+            "tournament_name": "LCK - Spring 2024 (Playoffs)",
+            "window_start": "2024-02-01",
+            "window_end": "2024-03-30",
+            "games_analyzed": 150,
+        },
+        "champions": {
+            "Azir": {"priority": 0.75, "roles": {"mid": {"adjusted_performance": 0.55, "picks": 20}}}
+        },
+        "defaults": {"missing_champion_priority": 0.05, "missing_champion_performance": 0.35},
+    }
+    (replay_meta_dir / "756908.json").write_text(json.dumps(custom_data))
+
+    scorer = TournamentScorer(knowledge_dir=knowledge_dir, data_file="replay_meta/756908.json")
+
+    assert scorer.get_priority("Azir") == 0.75
+    assert scorer.get_performance("Azir", "mid") == 0.55
