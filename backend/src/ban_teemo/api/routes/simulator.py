@@ -304,10 +304,24 @@ async def trigger_enemy_action(
             draft_state.blue_picks + draft_state.red_picks
         ) | session.fearless_blocked_set
 
-        # Generate enemy action
-        champion, source = enemy_service.generate_action(
-            session.enemy_strategy,
-            sequence=len(draft_state.actions) + 1,
+        # Determine picks from enemy's perspective
+        enemy_side = session.enemy_side
+        if enemy_side == "blue":
+            enemy_picks = list(draft_state.blue_picks)  # Enemy's picks
+            our_picks = list(draft_state.red_picks)      # User's picks (enemy to them)
+        else:
+            enemy_picks = list(draft_state.red_picks)
+            our_picks = list(draft_state.blue_picks)
+
+        banned = list(draft_state.blue_bans + draft_state.red_bans)
+
+        # Generate smart enemy action using recommendation services
+        champion, source = enemy_service.generate_smart_action(
+            strategy=session.enemy_strategy,
+            action_type=draft_state.next_action,
+            our_picks=enemy_picks,  # Enemy's own picks
+            enemy_picks=our_picks,   # User's picks (enemy to them)
+            banned=banned,
             unavailable=unavailable,
         )
 
