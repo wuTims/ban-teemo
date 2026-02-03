@@ -303,10 +303,18 @@ export interface SynergyPair {
   score: number;
 }
 
+export interface ChampionMeta {
+  champion: string;
+  priority: number;
+  tier: string;
+}
+
 export interface TeamDraftEvaluation {
   archetype: string | null;
   synergy_score: number;
   composition_score: number;
+  meta_strength: number;
+  champion_meta: ChampionMeta[];
   strengths: string[];
   weaknesses: string[];
   synergy_pairs: SynergyPair[];
@@ -358,6 +366,8 @@ export interface DraftQualityDraft {
   archetype: string | null;
   composition_score: number;
   synergy_score: number;
+  meta_strength: number;
+  champion_meta: ChampionMeta[];
   vs_enemy_advantage: number;
   vs_enemy_description: string;
 }

@@ -18,17 +18,13 @@ export function SimulatorInsightPanel({ insight, isLoading = false, reranked }: 
   const hasReranked = reranked && reranked.length > 0;
   const hasContent = hasInsight || hasReranked;
 
-  // Auto-expand when loading starts, auto-collapse when loading finishes
+  // Auto-expand when loading starts, stay expanded when content arrives
   useEffect(() => {
     if (isLoading && !wasLoadingRef.current) {
-      // Loading just started - expand to show loading indicator
       setIsExpanded(true);
-    } else if (!isLoading && wasLoadingRef.current && hasContent) {
-      // Loading just finished with content - collapse to avoid jumpiness
-      setIsExpanded(false);
     }
     wasLoadingRef.current = isLoading;
-  }, [isLoading, hasContent]);
+  }, [isLoading]);
 
   // If no content and not loading, don't render
   if (!hasContent && !isLoading) {

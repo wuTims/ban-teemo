@@ -49,6 +49,9 @@ interface SimulatorState {
 
   // Draft quality analysis
   draftQuality: DraftQuality | null;
+
+  // Prevents double-click on "Next Game"
+  isTransitioningGame: boolean;
 }
 
 const initialState: SimulatorState = {
@@ -74,6 +77,7 @@ const initialState: SimulatorState = {
   llmInsight: null,
   llmApiKey: null,
   draftQuality: null,
+  isTransitioningGame: false,
 };
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
@@ -437,7 +441,9 @@ export function useSimulatorSession() {
   const nextGame = useCallback(async () => {
     const currentSessionId = state.sessionId;
     const currentCoachingSide = state.coachingSide;
-    if (!currentSessionId) return;
+    if (!currentSessionId || state.isTransitioningGame) return;
+
+    setState((s) => ({ ...s, isTransitioningGame: true }));
 
     try {
       const res = await fetch(`${API_BASE}/api/simulator/sessions/${currentSessionId}/games/next`, {
@@ -462,6 +468,7 @@ export function useSimulatorSession() {
         blueCompWithRoles: null,
         redCompWithRoles: null,
         draftQuality: null,
+        isTransitioningGame: false,
       }));
 
       if (isOurTurn) {
@@ -477,9 +484,9 @@ export function useSimulatorSession() {
         }, 500);
       }
     } catch (err) {
-      setState((s) => ({ ...s, error: String(err) }));
+      setState((s) => ({ ...s, error: String(err), isTransitioningGame: false }));
     }
-  }, [state.sessionId, state.coachingSide, triggerEnemyAction, fetchRecommendations, fetchLlmInsights]);
+  }, [state.sessionId, state.coachingSide, state.isTransitioningGame, triggerEnemyAction, fetchRecommendations, fetchLlmInsights]);
 
   const endSession = useCallback(async () => {
     cancelPendingOperations();

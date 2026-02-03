@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { MetricBar } from "../shared";
-import type { TeamContext } from "../../types";
+import type { TeamContext, ChampionMeta } from "../../types";
 import { getTeamAbbreviation } from "../../data/teamAbbreviations";
 
 interface DraftAnalysisProps {
@@ -9,11 +10,15 @@ interface DraftAnalysisProps {
     synergy_score: number;
     composition_score: number;
     archetype: string | null;
+    meta_strength: number;
+    champion_meta: ChampionMeta[];
   };
   redData: {
     synergy_score: number;
     composition_score: number;
     archetype: string | null;
+    meta_strength: number;
+    champion_meta: ChampionMeta[];
   };
   matchupAdvantage: number;
 }
@@ -28,6 +33,12 @@ function getCompositionExplanation(score: number, archetype: string | null): str
   if (score >= 0.6) return `Strong ${archetype ?? "team"} identity`;
   if (score >= 0.4) return "Balanced composition";
   return "Lacks clear identity";
+}
+
+function getMetaExplanation(score: number): string {
+  if (score >= 0.6) return "Elite meta picks";
+  if (score >= 0.35) return "Solid meta picks";
+  return "Off-meta picks";
 }
 
 function getMatchupDescription(
@@ -57,6 +68,33 @@ function getMatchupDescription(
   return { text: "Even matchup", favoredTeam: null };
 }
 
+const tierColors: Record<string, string> = {
+  S: "bg-amber-500/20 text-amber-400 border-amber-500/40",
+  A: "bg-purple-500/20 text-purple-400 border-purple-500/40",
+  B: "bg-blue-500/20 text-blue-400 border-blue-500/40",
+  C: "bg-gray-500/20 text-gray-400 border-gray-500/40",
+  D: "bg-gray-700/20 text-gray-500 border-gray-600/40",
+};
+
+function ChampionTierList({ champions }: { champions: ChampionMeta[] }) {
+  if (champions.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap gap-1 mt-1">
+      {champions.map((c) => (
+        <span
+          key={c.champion}
+          className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border ${tierColors[c.tier] ?? tierColors.D}`}
+          title={`Priority: ${(c.priority * 100).toFixed(0)}%`}
+        >
+          <span className="font-bold">{c.tier}</span>
+          <span className="opacity-80">{c.champion}</span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export function DraftAnalysis({
   blueTeam,
   redTeam,
@@ -65,6 +103,8 @@ export function DraftAnalysis({
   matchupAdvantage,
 }: DraftAnalysisProps) {
   const matchup = getMatchupDescription(matchupAdvantage, blueData.archetype, redData.archetype);
+  const [showBlueMeta, setShowBlueMeta] = useState(false);
+  const [showRedMeta, setShowRedMeta] = useState(false);
 
   return (
     <div className="bg-lol-dark rounded-lg p-3 xs:p-4 border border-gold-dim/30">
@@ -77,6 +117,20 @@ export function DraftAnalysis({
         <div className="space-y-2 xs:space-y-3">
           <div className="text-xs font-semibold text-blue-team uppercase text-center mb-2" title={blueTeam.name}>
             {getTeamAbbreviation(blueTeam.name)}
+          </div>
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowBlueMeta(!showBlueMeta)}
+              className="w-full text-left cursor-pointer"
+            >
+              <MetricBar
+                label="Meta Strength"
+                value={blueData.meta_strength}
+                explanation={getMetaExplanation(blueData.meta_strength)}
+              />
+            </button>
+            {showBlueMeta && <ChampionTierList champions={blueData.champion_meta} />}
           </div>
           <MetricBar
             label="Synergy"
@@ -97,6 +151,20 @@ export function DraftAnalysis({
         <div className="space-y-2 xs:space-y-3">
           <div className="text-xs font-semibold text-red-team uppercase text-center mb-2" title={redTeam.name}>
             {getTeamAbbreviation(redTeam.name)}
+          </div>
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowRedMeta(!showRedMeta)}
+              className="w-full text-left cursor-pointer"
+            >
+              <MetricBar
+                label="Meta Strength"
+                value={redData.meta_strength}
+                explanation={getMetaExplanation(redData.meta_strength)}
+              />
+            </button>
+            {showRedMeta && <ChampionTierList champions={redData.champion_meta} />}
           </div>
           <MetricBar
             label="Synergy"

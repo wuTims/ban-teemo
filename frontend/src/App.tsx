@@ -14,10 +14,26 @@ export default function App() {
   const [mode, setMode] = useState<AppMode>("replay");
   const [showSetup, setShowSetup] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(() => {
+    try {
+      return localStorage.getItem("ban_teemo_ai_banner_dismissed") === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const dismissBanner = () => {
+    setBannerDismissed(true);
+    try {
+      localStorage.setItem("ban_teemo_ai_banner_dismissed", "true");
+    } catch {}
+  };
 
   const replay = useReplaySession();
   const simulator = useSimulatorSession();
   const settings = useSettings();
+
+  const showAiBanner = !settings.hasApiKey && !bannerDismissed;
 
   useEffect(() => {
     if (!settings.llmEnabled) return;
@@ -116,6 +132,37 @@ export default function App() {
           </button>
         </div>
       </header>
+
+      {/* AI Insights Banner */}
+      {showAiBanner && (
+        <div className="bg-magic/10 border-b border-magic/30 px-3 sm:px-6 py-2.5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-magic shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            <p className="text-sm text-text-secondary">
+              <span className="text-magic font-medium">AI-powered draft insights</span>
+              {" "}are available. Add your Nebius API key in{" "}
+              <button
+                onClick={() => setShowSettings(true)}
+                className="text-magic hover:underline font-medium"
+              >
+                Settings
+              </button>
+              {" "}to enable.
+            </p>
+          </div>
+          <button
+            onClick={dismissBanner}
+            className="p-1 text-text-tertiary hover:text-text-secondary transition-colors shrink-0"
+            title="Dismiss"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="p-2 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 lg:space-y-6">
@@ -243,9 +290,16 @@ export default function App() {
                         </div>
                         <button
                           onClick={() => simulator.nextGame()}
-                          className="px-6 py-3 bg-magic text-lol-darkest rounded-lg font-semibold hover:bg-magic-bright transition-colors"
+                          disabled={simulator.isTransitioningGame}
+                          className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
+                            simulator.isTransitioningGame
+                              ? "bg-lol-light text-text-tertiary cursor-not-allowed"
+                              : "bg-magic text-lol-darkest hover:bg-magic-bright"
+                          }`}
                         >
-                          Continue to Game {simulator.gameNumber + 1}
+                          {simulator.isTransitioningGame
+                            ? "Loading..."
+                            : `Continue to Game ${simulator.gameNumber + 1}`}
                         </button>
                       </div>
                     )}
@@ -290,6 +344,9 @@ export default function App() {
         onStart={handleStartSimulator}
         onClose={() => setShowSetup(false)}
         onSetLlmApiKey={simulator.setLlmApiKey}
+        onSaveGlobalApiKey={handleSaveSettings}
+        hasGlobalApiKey={settings.hasApiKey && settings.llmEnabled}
+        onOpenSettings={() => setShowSettings(true)}
       />
 
       {/* Settings Modal */}

@@ -7,11 +7,14 @@ interface SimulatorSetupModalProps {
   onStart: (config: SimulatorConfig) => void;
   onClose: () => void;
   onSetLlmApiKey?: (key: string | null) => void;
+  onSaveGlobalApiKey?: (apiKey: string, llmEnabled: boolean) => void;
+  hasGlobalApiKey?: boolean;
+  onOpenSettings?: () => void;
 }
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
-export function SimulatorSetupModal({ isOpen, onStart, onClose, onSetLlmApiKey }: SimulatorSetupModalProps) {
+export function SimulatorSetupModal({ isOpen, onStart, onClose, onSetLlmApiKey, onSaveGlobalApiKey, hasGlobalApiKey, onOpenSettings }: SimulatorSetupModalProps) {
   const [teams, setTeams] = useState<TeamListItem[]>([]);
   const [blueTeamId, setBlueTeamId] = useState("");
   const [redTeamId, setRedTeamId] = useState("");
@@ -41,6 +44,9 @@ export function SimulatorSetupModal({ isOpen, onStart, onClose, onSetLlmApiKey }
     try {
       if (onSetLlmApiKey) {
         onSetLlmApiKey(llmApiKey.trim() || null);
+      }
+      if (onSaveGlobalApiKey && llmApiKey.trim()) {
+        onSaveGlobalApiKey(llmApiKey.trim(), true);
       }
       await onStart({
         blueTeamId,
@@ -175,20 +181,45 @@ export function SimulatorSetupModal({ isOpen, onStart, onClose, onSetLlmApiKey }
         </div>
 
         {/* AI Insights API Key */}
-        <div className="mb-8 space-y-2">
-          <label className="block text-sm text-text-secondary">
-            AI Insights API Key (optional)
-          </label>
-          <input
-            type="password"
-            placeholder="Nebius API key for AI insights"
-            value={llmApiKey}
-            onChange={(e) => setLlmApiKey(e.target.value)}
-            className="w-full px-3 py-2 bg-lol-light border border-magic/30 rounded text-text-primary placeholder-text-tertiary focus:outline-none focus:border-magic"
-          />
-          <p className="text-xs text-text-tertiary">
-            Leave empty to skip AI-powered draft analysis
-          </p>
+        <div className="mb-8">
+          {hasGlobalApiKey ? (
+            <div className="flex items-center gap-2 py-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-magic shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="text-sm text-magic font-medium">AI Insights enabled</span>
+              <button
+                type="button"
+                onClick={() => { onOpenSettings?.(); onClose(); }}
+                className="text-xs text-text-tertiary ml-1 hover:text-magic underline cursor-pointer"
+              >via Settings</button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <label className="block text-sm text-text-secondary">
+                AI Insights API Key
+                <span className="text-text-tertiary ml-1">(optional)</span>
+              </label>
+              <input
+                type="password"
+                placeholder="Enter your API key..."
+                value={llmApiKey}
+                onChange={(e) => setLlmApiKey(e.target.value)}
+                className="w-full px-3 py-2 bg-lol-light border border-magic/30 rounded text-text-primary placeholder-text-tertiary focus:outline-none focus:border-magic"
+              />
+              <p className="text-xs text-text-tertiary">
+                Enables AI-powered strategic analysis during your draft. Get a free key from{" "}
+                <a
+                  href="https://studio.nebius.ai/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-magic hover:underline"
+                >
+                  Nebius AI Studio
+                </a>
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Actions */}

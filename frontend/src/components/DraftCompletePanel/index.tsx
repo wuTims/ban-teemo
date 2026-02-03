@@ -35,18 +35,32 @@ export function DraftCompletePanel({
   const effectiveBlueDraftQuality = blueDraftQuality ?? draftQuality ?? null;
   const effectiveRedDraftQuality = redDraftQuality ?? null;
 
-  // Extract scores: prefer evaluation (simulator), fallback to draftQuality (replay)
-  const blueScore = evaluation?.our_evaluation?.composition_score
-    ?? effectiveBlueDraftQuality?.actual_draft?.composition_score
-    ?? 0;
-  const redScore = evaluation?.enemy_evaluation?.composition_score
-    ?? effectiveRedDraftQuality?.actual_draft?.composition_score
-    ?? 0;
-  const bluePoints = Math.round(blueScore * 100);
-  const redPoints = Math.round(redScore * 100);
+  // Blended draft score: average of meta, synergy, and composition
+  const blendScore = (meta: number, synergy: number, comp: number) =>
+    Math.round(((meta + synergy + comp) / 3) * 100);
 
-  const blueStrength = evaluation?.our_evaluation?.strengths?.[0] ?? "Balanced composition";
-  const redStrength = evaluation?.enemy_evaluation?.strengths?.[0] ?? "Balanced composition";
+  const blueMeta = evaluation?.our_evaluation?.meta_strength
+    ?? effectiveBlueDraftQuality?.actual_draft?.meta_strength ?? 0;
+  const blueSynergy = evaluation?.our_evaluation?.synergy_score
+    ?? effectiveBlueDraftQuality?.actual_draft?.synergy_score ?? 0;
+  const blueComp = evaluation?.our_evaluation?.composition_score
+    ?? effectiveBlueDraftQuality?.actual_draft?.composition_score ?? 0;
+  const bluePoints = blendScore(blueMeta, blueSynergy, blueComp);
+
+  const redMeta = evaluation?.enemy_evaluation?.meta_strength
+    ?? effectiveRedDraftQuality?.actual_draft?.meta_strength ?? 0;
+  const redSynergy = evaluation?.enemy_evaluation?.synergy_score
+    ?? effectiveRedDraftQuality?.actual_draft?.synergy_score ?? 0;
+  const redComp = evaluation?.enemy_evaluation?.composition_score
+    ?? effectiveRedDraftQuality?.actual_draft?.composition_score ?? 0;
+  const redPoints = blendScore(redMeta, redSynergy, redComp);
+
+  const getDraftLabel = (score: number) => {
+    if (score >= 60) return "Strong draft";
+    if (score >= 45) return "Solid draft";
+    if (score >= 30) return "Average draft";
+    return "Weak draft";
+  };
 
   // For matchup description, use evaluation or build from draft quality archetypes
   const matchupDesc = evaluation?.matchup_description
@@ -65,6 +79,12 @@ export function DraftCompletePanel({
     archetype: evaluation?.our_evaluation?.archetype
       ?? effectiveBlueDraftQuality?.actual_draft?.archetype
       ?? null,
+    meta_strength: evaluation?.our_evaluation?.meta_strength
+      ?? effectiveBlueDraftQuality?.actual_draft?.meta_strength
+      ?? 0,
+    champion_meta: evaluation?.our_evaluation?.champion_meta
+      ?? effectiveBlueDraftQuality?.actual_draft?.champion_meta
+      ?? [],
   };
 
   const redAnalysisData = {
@@ -77,6 +97,12 @@ export function DraftCompletePanel({
     archetype: evaluation?.enemy_evaluation?.archetype
       ?? effectiveRedDraftQuality?.actual_draft?.archetype
       ?? null,
+    meta_strength: evaluation?.enemy_evaluation?.meta_strength
+      ?? effectiveRedDraftQuality?.actual_draft?.meta_strength
+      ?? 0,
+    champion_meta: evaluation?.enemy_evaluation?.champion_meta
+      ?? effectiveRedDraftQuality?.actual_draft?.champion_meta
+      ?? [],
   };
 
   // Calculate matchup advantage: prefer evaluation, else derive from draft quality
@@ -103,12 +129,12 @@ export function DraftCompletePanel({
             <div className="text-blue-team font-semibold text-sm uppercase mb-2" title={blueTeam.name}>
               {getTeamAbbreviation(blueTeam.name)}
             </div>
-            <div className="text-2xl xs:text-3xl font-bold text-blue-team mb-2">
+            <div className="text-2xl xs:text-3xl font-bold text-blue-team mb-1">
               {bluePoints}
-              <span className="text-sm font-normal text-text-tertiary ml-1">pts</span>
             </div>
-            <div className="text-xs text-text-secondary leading-relaxed" title={blueStrength}>
-              {blueStrength}
+            <div className="text-[10px] uppercase tracking-wider text-text-tertiary mb-1">Draft Score</div>
+            <div className="text-xs text-text-secondary leading-relaxed">
+              {getDraftLabel(bluePoints)}
             </div>
           </div>
 
@@ -120,12 +146,12 @@ export function DraftCompletePanel({
             <div className="text-red-team font-semibold text-sm uppercase mb-2" title={redTeam.name}>
               {getTeamAbbreviation(redTeam.name)}
             </div>
-            <div className="text-2xl xs:text-3xl font-bold text-red-team mb-2">
+            <div className="text-2xl xs:text-3xl font-bold text-red-team mb-1">
               {redPoints}
-              <span className="text-sm font-normal text-text-tertiary ml-1">pts</span>
             </div>
-            <div className="text-xs text-text-secondary leading-relaxed" title={redStrength}>
-              {redStrength}
+            <div className="text-[10px] uppercase tracking-wider text-text-tertiary mb-1">Draft Score</div>
+            <div className="text-xs text-text-secondary leading-relaxed">
+              {getDraftLabel(redPoints)}
             </div>
           </div>
         </div>
