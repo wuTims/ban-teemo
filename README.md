@@ -1,10 +1,10 @@
-# Ban Teemo - LoL Draft Assistant
+# Ban-Teemo - LoL Draft Assistant
 
 An AI-powered League of Legends draft assistant that replays professional matches and provides real-time pick/ban recommendations backed by pro match data and layered analytics.
 
 ## Overview
 
-Ban Teemo analyzes 68,000+ draft actions from professional League of Legends matches to provide data-driven pick and ban recommendations. The system combines tournament meta analysis, player proficiency data, champion synergies, and matchup statistics into a multi-factor scoring engine.
+Ban-Teemo analyzes 68,000+ draft actions from professional League of Legends matches to provide data-driven pick and ban recommendations. The system combines tournament meta analysis, player proficiency data, champion synergies, and matchup statistics into a multi-factor scoring engine.
 
 ## Key Features
 
