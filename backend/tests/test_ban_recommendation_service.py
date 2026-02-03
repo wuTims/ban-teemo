@@ -217,15 +217,15 @@ def test_get_presence_score_high_presence(service):
 
 
 def test_get_presence_score_low_presence(service):
-    """Low presence champions should have low presence score."""
-    score = service._get_presence_score("Qiyana")  # ~7% presence
-    assert score < 0.15, f"Low presence Qiyana should score < 0.15: {score}"
+    """Low tournament priority champions should have low presence score."""
+    score = service._get_presence_score("Qiyana")  # Low tournament priority
+    assert score < 0.25, f"Low priority Qiyana should score < 0.25: {score}"
 
 
 def test_get_presence_score_unknown(service):
-    """Unknown champions return 0."""
+    """Unknown champions return default missing_champion_priority (0.05)."""
     score = service._get_presence_score("NonexistentChamp")
-    assert score == 0.0
+    assert score == 0.05
 
 
 def test_get_flex_value_multi_role():
@@ -306,10 +306,9 @@ def test_tier1_bans_include_tournament_priority():
         f"Should be T1_SIGNATURE_POWER, got {components_t1['tier']}"
     )
 
-    # All phase 1 bans should include weighted tournament_priority and meta components
+    # All phase 1 bans should include weighted tournament_priority component
     assert "tournament_priority" in components_t1, "Should include weighted tournament_priority component"
-    assert "meta" in components_t1, "Should include weighted meta component"
-    # Tournament priority is weighted at 40%, so for a high-priority champ like Azir, expect significant value
+    # Tournament priority is weighted at 60%, so for a high-priority champ like Azir, expect significant value
     assert components_t1["tournament_priority"] > 0.15, f"Tournament priority should be significant for Azir: {components_t1['tournament_priority']}"
 
     # Verify tournament_priority is the highest weighted component (tournament-first approach)

@@ -994,10 +994,10 @@ def test_get_effective_weights_matchup_partial_data():
     assert 0.99 <= total <= 1.01, f"Weights should sum to 1.0, got {total}"
 
 
-# Blind pick safety tests (Task 7)
+# First pick scoring tests
 
-def test_first_pick_applies_blind_safety_factor():
-    """First pick scoring should apply blind safety factor."""
+def test_first_pick_uses_tournament_priority():
+    """First pick scoring should rely on tournament priority and role flex."""
     engine = PickRecommendationEngine()
 
     team_players = [
@@ -1017,17 +1017,13 @@ def test_first_pick_applies_blind_safety_factor():
         limit=10,
     )
 
-    # Counter-dependent champions should not be top recommended for first pick
-    # (Neeko is counter_pick_dependent)
-    top_5_names = [r["champion_name"] for r in recommendations[:5]]
+    assert len(recommendations) > 0, "Should generate first pick recommendations"
 
-    # This is a soft check - Neeko can still appear but shouldn't dominate
-    # The test validates the factor is being applied by checking scores
-    for rec in recommendations:
-        if rec["champion_name"] == "Neeko":
-            # Check that blind_safety_applied flag exists or score reflects it
-            assert "blind_safety_applied" in rec or rec["score"] < 0.75
-            break
+    # First pick recommendations should have tournament_priority in components
+    top_rec = recommendations[0]
+    assert "tournament_priority" in top_rec["components"], (
+        "First pick should include tournament_priority component"
+    )
 
 
 # Role flex scoring tests (Task 16)
