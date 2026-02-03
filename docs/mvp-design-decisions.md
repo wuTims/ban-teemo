@@ -34,7 +34,7 @@ This document captures the reasoning process, experiments, and final design deci
 - Tarball compression reduces download size
 
 **Final State:**
-- Release: `v0.4.0` (latest)
+- Release: `v1.0.0` (latest)
 - Contents: CSVs, DuckDB database, replay metadata
 - Download: `./scripts/download-data.sh` or `make setup-data`
 
