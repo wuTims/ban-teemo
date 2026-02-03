@@ -1,9 +1,24 @@
 """Team draft evaluation with strengths and weaknesses analysis."""
 from pathlib import Path
+from statistics import mean
 from typing import Optional
 
 from ban_teemo.services.archetype_service import ArchetypeService
+from ban_teemo.services.scorers.tournament_scorer import TournamentScorer
 from ban_teemo.services.synergy_service import SynergyService
+
+
+def _priority_to_tier(priority: float) -> str:
+    """Map tournament priority to display tier."""
+    if priority >= 0.70:
+        return "S"
+    if priority >= 0.45:
+        return "A"
+    if priority >= 0.25:
+        return "B"
+    if priority >= 0.10:
+        return "C"
+    return "D"
 
 
 class TeamEvaluationService:
@@ -12,6 +27,7 @@ class TeamEvaluationService:
     def __init__(self, knowledge_dir: Optional[Path] = None):
         self.archetype_service = ArchetypeService(knowledge_dir)
         self.synergy_service = SynergyService(knowledge_dir)
+        self.tournament_scorer = TournamentScorer(knowledge_dir)
 
     def evaluate_team_draft(self, picks: list[str]) -> dict:
         """Evaluate a team's draft composition."""
@@ -20,6 +36,8 @@ class TeamEvaluationService:
                 "archetype": None,
                 "synergy_score": 0.5,
                 "composition_score": 0.5,
+                "meta_strength": 0.0,
+                "champion_meta": [],
                 "strengths": [],
                 "weaknesses": []
             }
@@ -60,10 +78,23 @@ class TeamEvaluationService:
             strengths.append("Strong catch potential")
             weaknesses.append("Weak to grouped teams")
 
+        # Meta strength: average tournament priority across picks
+        champion_meta = []
+        for champ in picks:
+            priority = self.tournament_scorer.get_priority(champ)
+            champion_meta.append({
+                "champion": champ,
+                "priority": round(priority, 3),
+                "tier": _priority_to_tier(priority),
+            })
+        meta_strength = round(mean(p["priority"] for p in champion_meta), 3)
+
         return {
             "archetype": archetype["primary"],
             "synergy_score": synergy["total_score"],
             "composition_score": round(composition_score, 3),
+            "meta_strength": meta_strength,
+            "champion_meta": champion_meta,
             "strengths": strengths[:3],
             "weaknesses": weaknesses[:3],
             "synergy_pairs": synergy.get("synergy_pairs", [])

@@ -34,7 +34,7 @@ class BanRecommendationService:
         self.meta_scorer = MetaScorer(knowledge_dir)  # Keep for meta tier display
         self.proficiency_scorer = ProficiencyScorer(knowledge_dir)
         self.matchup_calculator = MatchupCalculator(knowledge_dir)
-        self.flex_resolver = FlexResolver(knowledge_dir)
+        self.flex_resolver = FlexResolver(knowledge_dir, tournament_data_file=tournament_data_file)
         self.archetype_service = ArchetypeService(knowledge_dir)
         self.synergy_service = SynergyService(knowledge_dir)
         self.tournament_scorer = TournamentScorer(knowledge_dir, data_file=tournament_data_file)
@@ -807,7 +807,6 @@ class BanRecommendationService:
             components["tournament_priority"] = round(tournament_priority * 0.15, 3)
             if counters_us:
                 components["counter_our_picks"] = round(counter_strength * 0.25, 3)
-                reasons.append("Counters our picks")
             if arch_score > 0.1:
                 components["archetype_counter"] = round(arch_score * 0.20, 3)
                 reasons.append("Fits enemy's archetype")

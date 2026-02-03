@@ -395,7 +395,7 @@ async def _run_replay_loop(
     )
 
     # Finalize role assignments for both teams
-    flex_resolver = FlexResolver()
+    flex_resolver = FlexResolver(tournament_data_file=session.tournament_data_file)
     blue_with_roles = flex_resolver.finalize_role_assignments(final_state.blue_picks)
     red_with_roles = flex_resolver.finalize_role_assignments(final_state.red_picks)
 

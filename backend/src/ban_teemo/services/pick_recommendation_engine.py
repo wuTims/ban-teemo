@@ -51,7 +51,7 @@ class PickRecommendationEngine:
 
     def __init__(self, knowledge_dir: Optional[Path] = None, tournament_data_file: Optional[str] = None):
         self.meta_scorer = MetaScorer(knowledge_dir)  # Keep for blind_pick_safety, get_presence
-        self.flex_resolver = FlexResolver(knowledge_dir)
+        self.flex_resolver = FlexResolver(knowledge_dir, tournament_data_file=tournament_data_file)
         self.proficiency_scorer = ProficiencyScorer(knowledge_dir)
         self.matchup_calculator = MatchupCalculator(knowledge_dir)
         self.synergy_service = SynergyService(knowledge_dir)
