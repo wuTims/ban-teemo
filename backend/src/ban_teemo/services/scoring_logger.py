@@ -369,7 +369,7 @@ class ScoringLogger:
         # Analyze component distributions for picks
         # Note: matchup_counter is the combined matchup+counter component (refactored)
         component_stats: dict[str, dict] = {}
-        for comp in ["meta", "proficiency", "matchup_counter", "synergy", "archetype"]:
+        for comp in ["tournament_priority", "tournament_performance", "proficiency", "matchup_counter", "synergy", "archetype"]:
             component_stats[comp] = {"values": [], "at_05_count": 0}
 
         for event in pick_events:

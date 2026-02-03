@@ -399,9 +399,9 @@ async def _run_replay_loop(
     blue_with_roles = flex_resolver.finalize_role_assignments(final_state.blue_picks)
     red_with_roles = flex_resolver.finalize_role_assignments(final_state.red_picks)
 
-    # Analyze draft quality for both teams
+    # Analyze draft quality for both teams (use era-appropriate tournament data)
     from ban_teemo.services.draft_quality_analyzer import DraftQualityAnalyzer
-    analyzer = DraftQualityAnalyzer()
+    analyzer = DraftQualityAnalyzer(tournament_data_file=session.tournament_data_file)
 
     # Analyze from blue's perspective
     blue_quality = analyzer.analyze(

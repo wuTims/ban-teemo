@@ -9,8 +9,8 @@ from ban_teemo.services.archetype_service import ArchetypeService
 class DraftQualityAnalyzer:
     """Analyzes draft quality by comparing actual picks to recommendations."""
 
-    def __init__(self, knowledge_dir: Optional[Path] = None):
-        self.team_eval = TeamEvaluationService(knowledge_dir)
+    def __init__(self, knowledge_dir: Optional[Path] = None, tournament_data_file: Optional[str] = None):
+        self.team_eval = TeamEvaluationService(knowledge_dir, tournament_data_file=tournament_data_file)
         self.archetype_service = ArchetypeService(knowledge_dir)
 
     def analyze(

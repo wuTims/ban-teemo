@@ -7,7 +7,6 @@ from ban_teemo.services.archetype_service import ArchetypeService
 from ban_teemo.services.scorers import (
     FlexResolver,
     MatchupCalculator,
-    MetaScorer,
     ProficiencyScorer,
     RolePhaseScorer,
     TournamentScorer,
@@ -31,7 +30,6 @@ class BanRecommendationService:
         if knowledge_dir is None:
             knowledge_dir = Path(__file__).parents[4] / "knowledge"
 
-        self.meta_scorer = MetaScorer(knowledge_dir)  # Keep for meta tier display
         self.proficiency_scorer = ProficiencyScorer(knowledge_dir)
         self.matchup_calculator = MatchupCalculator(knowledge_dir)
         self.flex_resolver = FlexResolver(knowledge_dir, tournament_data_file=tournament_data_file)
@@ -141,23 +139,24 @@ class BanRecommendationService:
                 else:
                     ban_candidates.append(ctx_ban)
 
-        # Add high meta picks
-        for champ in self.meta_scorer.get_top_meta_champions(limit=15):
+        # Add high tournament priority picks
+        for champ in self.tournament_scorer.get_top_priority_champions(limit=15):
             if champ in unavailable:
                 continue
             if any(c["champion_name"] == champ for c in ban_candidates):
                 continue
 
-            meta_score = self.meta_scorer.get_meta_score(champ)
-            if meta_score >= 0.5:
-                priority = meta_score * 0.8  # Slightly lower than targeted bans
+            t_priority = self.tournament_scorer.get_priority(champ)
+            if t_priority >= 0.25:
+                priority = t_priority * 0.8  # Slightly lower than targeted bans
+                tier = TournamentScorer.priority_to_tier(t_priority)
                 ban_candidates.append({
                     "champion_name": champ,
                     "priority": round(priority, 3),
                     "target_player": None,
                     "target_role": None,
-                    "reasons": [f"{self.meta_scorer.get_meta_tier(champ) or 'High'}-tier meta pick"],
-                    "components": {"meta": round(meta_score, 3)},  # Raw 0-1 score
+                    "reasons": [f"{tier}-tier meta pick"],
+                    "components": {"tournament_priority": round(t_priority, 3)},
                 })
 
         # Sort by priority
@@ -171,23 +170,21 @@ class BanRecommendationService:
         proficiency: dict,
         is_phase_1: bool = True,
     ) -> tuple[float, dict[str, float]]:
-        """Calculate ban priority score using meta-first tiered priority.
+        """Calculate ban priority score using tournament-first tiered priority.
 
         PHASE 1 - Meta power and flex threats prioritized:
-            Tier 1 (Highest): Signature power pick (high meta + high proficiency)
-            Tier 2 (High):    Meta power (high presence global threat)
+            Tier 1 (Highest): Signature power pick (high tournament priority + high proficiency)
+            Tier 2 (High):    Meta power (high tournament priority global threat)
             Tier 3 (Medium):  Comfort pick (player-specific targeting)
             Tier 4 (Lower):   General ban
 
-        Normal mode Phase 1 weights: meta(35%), presence(25%), flex(25%), proficiency(15%)
-        Simulator mode Phase 1 weights: tournament_priority(30%), meta(15%),
-                                        presence(20%), flex(20%), proficiency(15%)
+        Phase 1 weights: tournament_priority(60%), flex(25%), proficiency(15%)
 
         PHASE 2 - Strategic disruption focus:
             Synergy/counter scoring handled by _get_contextual_phase2_bans.
             This function handles player-targeted portion.
 
-        Phase 2 weights: meta(40%), proficiency(30%), comfort(20%), confidence(10%)
+        Phase 2 weights: tournament_priority(50%), proficiency(25%), comfort(15%), confidence(10%)
         """
         components: dict[str, float] = {}
 
@@ -196,35 +193,26 @@ class BanRecommendationService:
             # LLM priority order: meta power > flex threats > player targeting > blind picks
 
             # Calculate base components
-            meta_score = self.meta_scorer.get_meta_score(champion)
-            presence = self._get_presence_score(champion)
+            tournament_priority = self.tournament_scorer.get_priority(champion)
             flex = self._get_flex_value(champion)
             prof_score = proficiency["score"]
             conf = proficiency.get("confidence", "LOW")
 
             # Determine tier conditions
             is_high_proficiency = prof_score >= 0.7 and conf in {"HIGH", "MEDIUM"}
-            is_high_presence = presence >= 0.25
             is_in_pool = proficiency.get("games", 0) >= 2
 
-            # Unified tournament scoring: tournament_priority dominates
-            # NOTE: presence is EXCLUDED - it's redundant with tournament_priority
-            # tournament_priority 40%, meta 20%, flex 25%, proficiency 15%
-            tournament_priority = self.tournament_scorer.get_priority(champion)
-
-            WEIGHT_TOURNAMENT = 0.40
-            WEIGHT_META = 0.20
+            # tournament_priority 60%, flex 25%, proficiency 15%
+            WEIGHT_TOURNAMENT = 0.60
             WEIGHT_FLEX = 0.25
             WEIGHT_PROF = 0.15
 
             components["tournament_priority"] = round(tournament_priority * WEIGHT_TOURNAMENT, 3)
-            components["meta"] = round(meta_score * WEIGHT_META, 3)
             components["flex"] = round(flex * WEIGHT_FLEX, 3)
             components["proficiency"] = round(prof_score * WEIGHT_PROF, 3)
 
             base_priority = (
                 tournament_priority * WEIGHT_TOURNAMENT
-                + meta_score * WEIGHT_META
                 + flex * WEIGHT_FLEX
                 + prof_score * WEIGHT_PROF
             )
@@ -234,7 +222,7 @@ class BanRecommendationService:
 
             # Apply tier bonuses (reduced since base weights already prioritize meta)
             tier_bonus = 0.0
-            tier_high_meta = is_high_presence or is_high_tournament
+            tier_high_meta = is_high_tournament
 
             if is_high_proficiency and tier_high_meta and is_in_pool:
                 # TIER 1: High meta + high proficiency (signature power pick)
@@ -272,7 +260,6 @@ class BanRecommendationService:
             # This function handles player-targeted portion
 
             prof_score = proficiency["score"]
-            meta_score = self.meta_scorer.get_meta_score(champion)
             tournament_priority = self.tournament_scorer.get_priority(champion)
 
             games = proficiency.get("games", 0)
@@ -282,23 +269,20 @@ class BanRecommendationService:
             conf_value = {"HIGH": 1.0, "MEDIUM": 0.5, "LOW": 0.0}.get(conf, 0)
 
             # Phase 2 weights: tournament meta + strategic context
-            # tournament_priority 30%, meta 20%, proficiency 25%, comfort 15%, confidence 10%
-            WEIGHT_TOURNAMENT = 0.30
-            WEIGHT_META = 0.20
+            # tournament_priority 50%, proficiency 25%, comfort 15%, confidence 10%
+            WEIGHT_TOURNAMENT = 0.50
             WEIGHT_PROF = 0.25
             WEIGHT_COMFORT = 0.15
             WEIGHT_CONF = 0.10
 
             # Store WEIGHTED scores for display
             components["tournament_priority"] = round(tournament_priority * WEIGHT_TOURNAMENT, 3)
-            components["meta"] = round(meta_score * WEIGHT_META, 3)
             components["proficiency"] = round(prof_score * WEIGHT_PROF, 3)
             components["comfort"] = round(comfort * WEIGHT_COMFORT, 3)
             components["confidence"] = round(conf_value * WEIGHT_CONF, 3)
 
             priority = (
                 tournament_priority * WEIGHT_TOURNAMENT
-                + meta_score * WEIGHT_META
                 + prof_score * WEIGHT_PROF
                 + comfort * WEIGHT_COMFORT
                 + conf_value * WEIGHT_CONF
@@ -331,7 +315,7 @@ class BanRecommendationService:
         elif games >= 2:
             reasons.append(f"In {player['name']}'s pool")
 
-        tier = self.meta_scorer.get_meta_tier(champion)
+        tier = TournamentScorer.priority_to_tier(self.tournament_scorer.get_priority(champion))
         if tier in ["S", "A"]:
             reasons.append(f"{tier}-tier meta champion")
 
@@ -351,35 +335,30 @@ class BanRecommendationService:
         """
         candidates = []
 
-        # Collect candidate champions from both meta and tournament priority
-        candidate_champs = set(self.meta_scorer.get_top_meta_champions(limit=15))
-        candidate_champs.update(self.tournament_scorer.get_top_priority_champions(limit=15))
+        # Collect candidate champions from tournament priority
+        candidate_champs = set(self.tournament_scorer.get_top_priority_champions(limit=20))
 
         for champ in candidate_champs:
             if champ in unavailable:
                 continue
 
-            meta_score = self.meta_scorer.get_meta_score(champ)
             flex_value = self._get_flex_value(champ)
-
-            # Use tournament_priority as primary signal
             tournament_priority = self.tournament_scorer.get_priority(champ)
 
             # Only include if high enough tournament priority (>= 30%)
             if tournament_priority < 0.30:
                 continue
 
-            # Calculate priority: tournament(50%) + meta(25%) + flex(25%)
+            # Calculate priority: tournament(75%) + flex(25%)
             priority = (
-                tournament_priority * 0.50
-                + meta_score * 0.25
+                tournament_priority * 0.75
                 + flex_value * 0.25
             )
 
             reasons = []
             if tournament_priority >= 0.50:
                 reasons.append(f"High tournament priority ({tournament_priority:.0%})")
-            tier = self.meta_scorer.get_meta_tier(champ)
+            tier = TournamentScorer.priority_to_tier(tournament_priority)
             if tier in ["S", "A"]:
                 reasons.append(f"{tier}-tier power pick")
             if flex_value >= 0.5:
@@ -392,8 +371,7 @@ class BanRecommendationService:
                 "target_role": None,
                 "reasons": reasons if reasons else ["Global power ban"],
                 "components": {
-                    "tournament_priority": round(tournament_priority * 0.50, 3),
-                    "meta": round(meta_score * 0.25, 3),
+                    "tournament_priority": round(tournament_priority * 0.75, 3),
                     "flex": round(flex_value * 0.25, 3),
                     "tier": "T2_META_POWER",
                 },
@@ -413,8 +391,8 @@ class BanRecommendationService:
         """
         counter_candidates: dict[str, dict] = {}
 
-        # Get top meta champions as potential counters
-        meta_champs = self.meta_scorer.get_top_meta_champions(limit=30)
+        # Get top tournament priority champions as potential counters
+        meta_champs = self.tournament_scorer.get_top_priority_champions(limit=30)
 
         for our_champ in our_picks:
             for potential_counter in meta_champs:
@@ -453,13 +431,13 @@ class BanRecommendationService:
         # Calculate final priority for counter bans
         result = []
         for champ, data in counter_candidates.items():
-            # Average counter score * meta score
+            # Average counter score * tournament priority
             avg_counter = sum(c["score"] for c in data["counters"]) / len(data["counters"])
-            meta_score = self.meta_scorer.get_meta_score(champ)
+            t_priority = self.tournament_scorer.get_priority(champ)
 
             counter_component = avg_counter * 0.6
-            meta_component = meta_score * 0.4
-            priority = counter_component + meta_component
+            priority_component = t_priority * 0.4
+            priority = counter_component + priority_component
             countered_champs = [c["vs"] for c in data["counters"]]
 
             result.append({
@@ -470,7 +448,7 @@ class BanRecommendationService:
                 "reasons": [f"Counters {', '.join(countered_champs)}"],
                 "components": {
                     "counter": round(counter_component, 3),
-                    "meta": round(meta_component, 3),
+                    "tournament_priority": round(priority_component, 3),
                 },
             })
 
@@ -508,19 +486,16 @@ class BanRecommendationService:
         return players
 
     def _get_presence_score(self, champion: str) -> float:
-        """Get champion's presence rate as a score.
+        """Get champion's contestation rate as a score.
 
-        Presence = pick_rate + ban_rate (how contested is this pick?)
-
-        WHY PRESENCE MATTERS: Champions with high presence are being
-        prioritized by pros across all teams. This suggests they're either
-        overpowered, versatile, or exceptionally valuable in the current meta.
-        Banning high-presence picks denies enemy access to proven strong picks.
+        Uses tournament priority (pick+ban rate from pro play) as the
+        presence signal. This ensures era-appropriate data is used for
+        both replays and simulator mode.
 
         Returns:
-            Float 0.0-1.0 representing presence
+            Float 0.0-1.0 representing tournament presence
         """
-        return self.meta_scorer.get_presence(champion)
+        return self.tournament_scorer.get_priority(champion)
 
     def _get_flex_value(self, champion: str) -> float:
         """Get champion's flex pick value based on role versatility.
@@ -731,8 +706,8 @@ class BanRecommendationService:
         """
         candidates: dict[str, dict] = {}
 
-        # Get meta champions as potential ban targets
-        meta_champs = set(self.meta_scorer.get_top_meta_champions(limit=30))
+        # Get tournament priority champions as potential ban targets
+        meta_champs = set(self.tournament_scorer.get_top_priority_champions(limit=30))
 
         # Also include enemy player pool champions for unfilled roles
         filled_roles = set()
@@ -764,7 +739,6 @@ class BanRecommendationService:
             arch_score = self._get_archetype_counter_score(champ, enemy_picks)
             synergy_score = self._get_synergy_denial_score(champ, enemy_picks)
             role_score = self._get_role_denial_score(champ, enemy_picks, enemy_players)
-            meta_score = self.meta_scorer.get_meta_score(champ)
             tournament_priority = self.tournament_scorer.get_priority(champ)
 
             # Check if counters our picks
@@ -803,8 +777,8 @@ class BanRecommendationService:
                 continue  # Skip if no meaningful contextual value
 
             # Base component scores - tournament_priority as foundation
-            # Weights: tournament 15%, contextual factors 75%, meta 10%
-            components["tournament_priority"] = round(tournament_priority * 0.15, 3)
+            # Weights: tournament 25%, contextual factors 75%
+            components["tournament_priority"] = round(tournament_priority * 0.25, 3)
             if counters_us:
                 components["counter_our_picks"] = round(counter_strength * 0.25, 3)
             if arch_score > 0.1:
@@ -816,7 +790,6 @@ class BanRecommendationService:
             if role_score > 0.1:
                 components["role_denial"] = round(role_score * 0.10, 3)
                 reasons.append("Fills enemy's role")
-            components["meta"] = round(meta_score * 0.10, 3)
             components["tier_bonus"] = round(tier_bonus, 3)
 
             # Calculate priority

@@ -4,7 +4,6 @@ from typing import Optional
 
 from ban_teemo.services.archetype_service import ArchetypeService
 from ban_teemo.services.scorers import (
-    MetaScorer,
     FlexResolver,
     ProficiencyScorer,
     MatchupCalculator,
@@ -50,7 +49,6 @@ class PickRecommendationEngine:
     TRANSFER_EXPANSION_LIMIT = 2
 
     def __init__(self, knowledge_dir: Optional[Path] = None, tournament_data_file: Optional[str] = None):
-        self.meta_scorer = MetaScorer(knowledge_dir)  # Keep for blind_pick_safety, get_presence
         self.flex_resolver = FlexResolver(knowledge_dir, tournament_data_file=tournament_data_file)
         self.proficiency_scorer = ProficiencyScorer(knowledge_dir)
         self.matchup_calculator = MatchupCalculator(knowledge_dir)
@@ -384,14 +382,6 @@ class PickRecommendationEngine:
         )
         # Synergy multiplier is applied separately: total_score = base_score * synergy_multiplier
 
-        # Apply blind pick safety factor for early picks without enemy context
-        blind_safety_applied = False
-        if pick_count <= 1 and not has_enemy_picks:
-            blind_safety = self.meta_scorer.get_blind_pick_safety(champion)
-            base_score = base_score * blind_safety
-            blind_safety_applied = True
-            components["blind_safety"] = blind_safety
-
         # Apply role flex bonus for early picks (hides role assignment)
         # Increased from 5% to 15% - flex picks are consistently undervalued
         if pick_count <= 1:
@@ -400,10 +390,10 @@ class PickRecommendationEngine:
             base_score = base_score + role_flex_bonus
             components["role_flex"] = role_flex
 
-            # Add presence bonus for highly contested champions (>40% presence)
+            # Add presence bonus for highly contested champions (>40% tournament priority)
             # These are clearly valued by pros regardless of other factors
-            presence = self.meta_scorer.get_presence(champion)
-            if presence > 0.4:
+            priority = self.tournament_scorer.get_priority(champion)
+            if priority > 0.4:
                 presence_bonus = 0.05
                 base_score = base_score + presence_bonus
                 components["presence_bonus"] = presence_bonus
@@ -446,7 +436,6 @@ class PickRecommendationEngine:
             "effective_weights": {k: round(v, 3) for k, v in effective_weights.items()},
             "proficiency_source": prof_source,
             "proficiency_player": prof_player,
-            "blind_safety_applied": blind_safety_applied,
         }
 
     def _calculate_archetype_score(
