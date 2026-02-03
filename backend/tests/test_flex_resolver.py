@@ -132,11 +132,18 @@ def test_minimum_probability_threshold_allows_legit_flex(resolver):
 def _write_role_history(tmp_path, role_history):
     """Helper to create test knowledge files with champion_role_history.json only."""
     knowledge_dir = tmp_path / "knowledge"
-    knowledge_dir.mkdir()
+    knowledge_dir.mkdir(exist_ok=True)
     (knowledge_dir / "champion_role_history.json").write_text(
         json.dumps({"champions": role_history})
     )
     return knowledge_dir
+
+
+def _write_tournament_meta(knowledge_dir, tournament_data, filename="tournament_meta.json"):
+    """Helper to create a tournament meta JSON file in the knowledge dir."""
+    (knowledge_dir / filename).write_text(
+        json.dumps({"metadata": {}, "champions": tournament_data})
+    )
 
 
 def test_current_viable_roles_override_all_time(tmp_path):
@@ -397,3 +404,201 @@ class TestFinalizeRoleAssignments:
         # Each champion assigned exactly once
         champs = [r["champion"] for r in result]
         assert sorted(champs) == sorted(champions)
+
+
+class TestTournamentMetaRescue:
+    """Tests for tournament meta as Level 0 rescue fallback."""
+
+    def test_tournament_meta_rescues_unknown_champion(self, tmp_path):
+        """Champion missing from role_history but present in tournament_meta gets role from tournament data."""
+        knowledge_dir = _write_role_history(tmp_path, {})
+        _write_tournament_meta(knowledge_dir, {
+            "Zaahen": {
+                "priority": 0.11,
+                "roles": {
+                    "top": {"winrate": 0.48, "picks": 27},
+                    "support": {"winrate": 0.0, "picks": 1},
+                },
+            },
+        })
+        resolver = FlexResolver(knowledge_dir)
+
+        probs = resolver.get_role_probabilities("Zaahen")
+        # 27 top + 1 sup → top is 96.4%, sup is 3.6% → sup filtered by MIN_ROLE_PROBABILITY
+        assert "top" in probs
+        assert "support" not in probs
+        assert probs["top"] == pytest.approx(1.0, abs=0.01)
+
+    def test_role_history_takes_precedence_over_tournament(self, tmp_path):
+        """Champions in BOTH sources should use role_history (richer data)."""
+        knowledge_dir = _write_role_history(tmp_path, {
+            "Rumble": {
+                "canonical_role": "TOP",
+                "all_time_distribution": {"TOP": 0.9, "MID": 0.1},
+            },
+        })
+        _write_tournament_meta(knowledge_dir, {
+            "Rumble": {
+                "priority": 0.7,
+                "roles": {
+                    "top": {"picks": 64},
+                    "jungle": {"picks": 5},
+                },
+            },
+        })
+        resolver = FlexResolver(knowledge_dir)
+
+        probs = resolver.get_role_probabilities("Rumble")
+        # Should use role_history's all_time_distribution, not tournament_meta
+        assert "top" in probs
+        # jungle should NOT appear (it's not in role_history data)
+        assert "jungle" not in probs
+
+    def test_tournament_meta_role_normalization(self, tmp_path):
+        """Tournament meta with 'adc' key should normalize to 'bot'."""
+        knowledge_dir = _write_role_history(tmp_path, {})
+        _write_tournament_meta(knowledge_dir, {
+            "NewADC": {
+                "priority": 0.5,
+                "roles": {
+                    "adc": {"picks": 50},
+                    "mid": {"picks": 5},
+                },
+            },
+        })
+        resolver = FlexResolver(knowledge_dir)
+
+        probs = resolver.get_role_probabilities("NewADC")
+        assert "bot" in probs
+        assert "adc" not in probs
+
+    def test_custom_tournament_data_file(self, tmp_path):
+        """Replay mode uses custom tournament_data_file path."""
+        knowledge_dir = _write_role_history(tmp_path, {})
+        replay_dir = knowledge_dir / "replay_meta"
+        replay_dir.mkdir()
+        _write_tournament_meta(knowledge_dir, {
+            "OldChamp": {
+                "priority": 0.3,
+                "roles": {
+                    "jungle": {"picks": 40},
+                },
+            },
+        }, filename="replay_meta/series_123.json")
+        resolver = FlexResolver(knowledge_dir, tournament_data_file="replay_meta/series_123.json")
+
+        probs = resolver.get_role_probabilities("OldChamp")
+        assert probs == {"jungle": pytest.approx(1.0, abs=0.01)}
+
+    def test_is_flex_pick_with_tournament_meta(self, tmp_path):
+        """is_flex_pick should work for tournament-meta-only champions."""
+        knowledge_dir = _write_role_history(tmp_path, {})
+        _write_tournament_meta(knowledge_dir, {
+            "FlexNewChamp": {
+                "priority": 0.5,
+                "roles": {
+                    "top": {"picks": 30},
+                    "mid": {"picks": 25},
+                },
+            },
+            "SingleNewChamp": {
+                "priority": 0.3,
+                "roles": {
+                    "jungle": {"picks": 50},
+                    "support": {"picks": 1},  # Filtered by MIN_ROLE_PROBABILITY
+                },
+            },
+        })
+        resolver = FlexResolver(knowledge_dir)
+
+        assert resolver.is_flex_pick("FlexNewChamp") is True
+        assert resolver.is_flex_pick("SingleNewChamp") is False
+
+    def test_tournament_rescue_with_filled_roles(self, tmp_path):
+        """Tournament-rescued champion should respect filled_roles."""
+        knowledge_dir = _write_role_history(tmp_path, {})
+        _write_tournament_meta(knowledge_dir, {
+            "TopJungler": {
+                "priority": 0.4,
+                "roles": {
+                    "top": {"picks": 30},
+                    "jungle": {"picks": 20},
+                },
+            },
+        })
+        resolver = FlexResolver(knowledge_dir)
+
+        probs = resolver.get_role_probabilities("TopJungler", filled_roles={"top"})
+        assert "top" not in probs
+        assert "jungle" in probs
+        assert probs["jungle"] == pytest.approx(1.0, abs=0.01)
+
+
+class TestTieBreaking:
+    """Tests for tie-breaking by champion flexibility."""
+
+    def test_inflexible_champion_wins_tie(self, tmp_path):
+        """Inflexible champion (1 viable role) should win over flex champion in tie."""
+        role_history = {
+            "Ashe": {
+                "all_time_distribution": {"ADC": 0.6, "SUP": 0.4},
+            },
+            "KaiSa": {
+                "all_time_distribution": {"ADC": 1.0},
+            },
+        }
+        knowledge_dir = _write_role_history(tmp_path, role_history)
+        resolver = FlexResolver(knowledge_dir)
+
+        # Both have bot as their highest role - Kai'Sa should win bot
+        # because she has fewer alternatives (bot only vs bot+support)
+        ashe_probs = resolver.get_role_probabilities("Ashe")
+        kaisa_probs = resolver.get_role_probabilities("KaiSa")
+        assert "bot" in ashe_probs
+        assert "bot" in kaisa_probs
+
+    def test_full_assignment_with_tiebreak(self, tmp_path):
+        """Full 5-champion assignment with tie-breaking scenario."""
+        role_history = {
+            "Dr. Mundo": {
+                "current_viable_roles": ["top", "jungle"],
+                "current_distribution": {"TOP": 0.4, "JUNGLE": 0.6},
+            },
+            "Yone": {
+                "current_viable_roles": ["mid"],
+                "current_distribution": {"MID": 1.0},
+            },
+            "Ashe": {
+                "all_time_distribution": {"ADC": 0.6, "SUP": 0.4},
+            },
+            "Kai'Sa": {
+                "all_time_distribution": {"ADC": 1.0},
+            },
+        }
+        knowledge_dir = _write_role_history(tmp_path, role_history)
+        _write_tournament_meta(knowledge_dir, {
+            "Zaahen": {
+                "priority": 0.11,
+                "roles": {
+                    "top": {"picks": 27},
+                    "support": {"picks": 1},
+                },
+            },
+        })
+        resolver = FlexResolver(knowledge_dir)
+
+        champions = ["Dr. Mundo", "Zaahen", "Yone", "Ashe", "Kai'Sa"]
+        result = resolver.finalize_role_assignments(champions)
+        assignments = {r["role"]: r["champion"] for r in result}
+
+        # Expected:
+        # Zaahen → top (tournament meta, primary role)
+        # Dr. Mundo → jungle (top taken by Zaahen, jungle is next best)
+        # Yone → mid (only role)
+        # Kai'Sa → bot (bot-only, wins tie over Ashe who has bot+support)
+        # Ashe → support (remaining role)
+        assert assignments["top"] == "Zaahen"
+        assert assignments["jungle"] == "Dr. Mundo"
+        assert assignments["mid"] == "Yone"
+        assert assignments["bot"] == "Kai'Sa"
+        assert assignments["support"] == "Ashe"

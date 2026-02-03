@@ -65,13 +65,15 @@ class FlexResolver:
 
     CURRENT_ROLE_THRESHOLD = CURRENT_ROLE_THRESHOLD
 
-    def __init__(self, knowledge_dir: Optional[Path] = None):
+    def __init__(self, knowledge_dir: Optional[Path] = None, tournament_data_file: Optional[str] = None):
         if knowledge_dir is None:
             knowledge_dir = Path(__file__).parents[5] / "knowledge"
         self.knowledge_dir = knowledge_dir
         self._role_history_data: dict = {}
         self._primary_roles: dict[str, str] = {}  # Cached primary role lookups
+        self._tournament_role_data: dict[str, dict[str, float]] = {}  # champion -> role probs
         self._load_data()
+        self._load_tournament_data(tournament_data_file)
 
     def _load_data(self):
         """Load champion role history data (single source of truth)."""
@@ -90,6 +92,69 @@ class FlexResolver:
                             canonical = self.DATA_TO_CANONICAL.get(role, role)
                             if canonical in self.VALID_ROLES:
                                 self._primary_roles[champ] = canonical
+
+    def _load_tournament_data(self, tournament_data_file: Optional[str] = None):
+        """Load tournament/replay meta and extract role distributions.
+
+        Only stores data for champions NOT already in champion_role_history,
+        since role_history is the richer, more authoritative source.
+        """
+        if tournament_data_file is None:
+            tournament_data_file = "tournament_meta.json"
+        meta_path = self.knowledge_dir / tournament_data_file
+        if not meta_path.exists():
+            return
+
+        with open(meta_path) as f:
+            data = json.load(f)
+
+        champions = data.get("champions", {})
+        for champ_name, champ_data in champions.items():
+            if champ_name in self._role_history_data:
+                continue  # role_history takes precedence
+            roles = champ_data.get("roles", {})
+            if not roles:
+                continue
+            distribution = self._tournament_meta_to_distribution(roles)
+            if distribution:
+                self._tournament_role_data[champ_name] = distribution
+
+    def _tournament_meta_to_distribution(self, roles: dict) -> dict[str, float]:
+        """Convert tournament meta role pick counts to a probability distribution.
+
+        Args:
+            roles: Dict like {"top": {"picks": 27, ...}, "support": {"picks": 1, ...}}
+
+        Returns:
+            Normalized probability dict with MIN_ROLE_PROBABILITY filter applied,
+            e.g. {"top": 0.964, "support": 0.036} -> {"top": 1.0} after filtering.
+        """
+        pick_counts: dict[str, int] = {}
+        for role_key, role_data in roles.items():
+            normalized = util_normalize_role(role_key)
+            if not normalized:
+                continue
+            picks = role_data.get("picks", 0)
+            if picks > 0:
+                pick_counts[normalized] = pick_counts.get(normalized, 0) + picks
+
+        if not pick_counts:
+            return {}
+
+        total = sum(pick_counts.values())
+        raw_probs = {role: count / total for role, count in pick_counts.items()}
+
+        # Filter by MIN_ROLE_PROBABILITY
+        filtered = {
+            role: prob for role, prob in raw_probs.items()
+            if prob >= self.MIN_ROLE_PROBABILITY
+        }
+
+        # Re-normalize
+        total_filtered = sum(filtered.values())
+        if total_filtered > 0:
+            return {role: prob / total_filtered for role, prob in filtered.items()}
+        return {}
 
     def get_role_probabilities(
         self, champion_name: str, filled_roles: Optional[set[str]] = None
@@ -197,6 +262,22 @@ class FlexResolver:
             return {}
 
         # ═══════════════════════════════════════════════════════════════════════
+        # LEVEL 0 RESCUE: Tournament/replay meta (MISSING FROM ROLE HISTORY)
+        # Champion exists in tournament data but not in champion_role_history.
+        # Derive probabilities from tournament pick counts.
+        # ═══════════════════════════════════════════════════════════════════════
+        if champion_name in self._tournament_role_data:
+            tournament_probs = self._tournament_role_data[champion_name]
+            available = {
+                role: prob for role, prob in tournament_probs.items()
+                if role not in filled
+            }
+            total = sum(available.values())
+            if total > 0:
+                return {role: prob / total for role, prob in available.items()}
+            return {}
+
+        # ═══════════════════════════════════════════════════════════════════════
         # LEVEL 4: Default role order (NO DATA - unknown champion)
         # New or never-picked champion - assign to first available role
         # ═══════════════════════════════════════════════════════════════════════
@@ -209,10 +290,14 @@ class FlexResolver:
         """Check if champion is a flex pick.
 
         A champion is flex if they have 2+ current viable roles.
-        Derived from current_viable_roles in champion_role_history.json.
+        Derived from current_viable_roles in champion_role_history.json,
+        with tournament meta fallback for missing champions.
         """
         champ_data = self._role_history_data.get(champion_name)
         if not isinstance(champ_data, dict):
+            # Not in role history — check tournament meta
+            if champion_name in self._tournament_role_data:
+                return len(self._tournament_role_data[champion_name]) >= self.MIN_FLEX_ROLES
             return False
 
         current_roles, has_current = extract_current_role_viability(
@@ -306,6 +391,8 @@ class FlexResolver:
             champ_probs.append((champ, probs))
 
         # Greedy assignment: repeatedly assign the most confident (champion, role) pair
+        # Tie-breaking: prefer champion with fewer viable remaining roles (less flexible
+        # champions should get their sole role before flexible ones can adapt)
         remaining_champs = set(champions)
         remaining_roles = set(role_order)
 
@@ -313,15 +400,24 @@ class FlexResolver:
             best_score = -1.0
             best_champ = None
             best_role = None
+            best_alternatives = float("inf")
 
             for champ in remaining_champs:
                 probs = dict(champ_probs[champions.index(champ)][1])
                 for role in remaining_roles:
                     score = probs.get(role, 0.0)
-                    if score > best_score:
+                    champ_alternatives = sum(
+                        1 for r in remaining_roles if probs.get(r, 0.0) > 0
+                    )
+                    if score > best_score or (
+                        score == best_score
+                        and score >= 0
+                        and champ_alternatives < best_alternatives
+                    ):
                         best_score = score
                         best_champ = champ
                         best_role = role
+                        best_alternatives = champ_alternatives
 
             if best_champ and best_role:
                 assigned[best_role] = best_champ
