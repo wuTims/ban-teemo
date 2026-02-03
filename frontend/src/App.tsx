@@ -1,11 +1,12 @@
 // frontend/src/App.tsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ActionLog, DraftBoard, RecommendationPanel, ReplayControls } from "./components/replay";
 import { SimulatorSetupModal } from "./components/SimulatorSetupModal";
 import { SettingsModal } from "./components/SettingsModal";
 import { SimulatorView } from "./components/SimulatorView";
 import { DraftCompletePanel } from "./components/DraftCompletePanel";
 import { useReplaySession, useSimulatorSession, useSettings } from "./hooks";
+import { api } from "./api/client";
 import type { SimulatorConfig } from "./types";
 
 type AppMode = "replay" | "simulator";
@@ -28,6 +29,28 @@ export default function App() {
       localStorage.setItem("ban_teemo_ai_banner_dismissed", "true");
     } catch {}
   };
+
+  // Backend wake-up detection for Render free tier cold starts
+  const [backendWaking, setBackendWaking] = useState(false);
+  const backendReady = useRef(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!backendReady.current) setBackendWaking(true);
+    }, 2000);
+
+    api.healthCheck()
+      .then(() => {
+        backendReady.current = true;
+        setBackendWaking(false);
+      })
+      .catch(() => {
+        backendReady.current = true;
+        setBackendWaking(false);
+      });
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const replay = useReplaySession();
   const simulator = useSimulatorSession();
@@ -132,6 +155,17 @@ export default function App() {
           </button>
         </div>
       </header>
+
+      {/* Backend wake-up banner */}
+      {backendWaking && (
+        <div className="bg-lol-dark border-b border-gold-dim/30 px-3 sm:px-6 py-2.5 flex items-center gap-3">
+          <div className="w-4 h-4 border-2 border-gold-bright border-t-transparent rounded-full animate-spin shrink-0" />
+          <p className="text-sm text-text-secondary">
+            <span className="text-gold-bright font-medium">Waking up the server</span>
+            {" "}&mdash; free tier services sleep after inactivity. This only happens on the first visit.
+          </p>
+        </div>
+      )}
 
       {/* AI Insights Banner */}
       {showAiBanner && (

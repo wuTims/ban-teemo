@@ -267,7 +267,6 @@ export interface SimulatorBanRecommendation {
 }
 
 export interface ScoreComponents {
-  meta?: number;
   tournament_priority?: number;
   tournament_performance?: number;
   proficiency?: number;
@@ -277,7 +276,6 @@ export interface ScoreComponents {
   archetype?: number;
   synergy?: number;
   role_flex?: number;
-  blind_safety?: number;
   presence_bonus?: number;
   [key: string]: number | undefined; // Allow additional dynamic components
 }

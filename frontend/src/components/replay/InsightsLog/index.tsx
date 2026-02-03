@@ -127,16 +127,10 @@ function CompactRecommendationCard({
           <div className="space-y-0 border-t border-gold-dim/20 pt-1">
             {isPick ? (
               <>
-                {/* Tournament components (simulator mode) or meta (replay mode) */}
+                {/* Tournament components */}
                 {/* All pick components now use weighted display (same scale as bans) */}
-                {components.tournament_priority !== undefined ? (
-                  <>
-                    <ScoreCell label={PICK_COMPONENT_LABELS.tournament_priority} value={components.tournament_priority} isWeighted />
-                    <ScoreCell label={PICK_COMPONENT_LABELS.tournament_performance} value={components.tournament_performance} isWeighted />
-                  </>
-                ) : (
-                  <ScoreCell label={PICK_COMPONENT_LABELS.meta} value={components.meta} isWeighted />
-                )}
+                <ScoreCell label={PICK_COMPONENT_LABELS.tournament_priority} value={components.tournament_priority} isWeighted />
+                <ScoreCell label={PICK_COMPONENT_LABELS.tournament_performance} value={components.tournament_performance} isWeighted />
                 <ScoreCell label={PICK_COMPONENT_LABELS.proficiency} value={components.proficiency} isWeighted />
                 <ScoreCell label={PICK_COMPONENT_LABELS.matchup} value={components.matchup} isWeighted />
                 <ScoreCell label={PICK_COMPONENT_LABELS.counter} value={components.counter} isWeighted />

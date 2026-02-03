@@ -18,7 +18,6 @@ export const PICK_COMPONENT_LABELS: Record<string, string> = {
   archetype: "Archetype Fit",
   synergy: "Team Synergy",
   proficiency: "Player Proficiency",
-  meta: "Meta Strength",
 };
 
 // Ban recommendation component labels (full names)
@@ -27,8 +26,6 @@ export const BAN_COMPONENT_LABELS: Record<string, string> = {
   tournament_priority: "Tournament Priority",
 
   // Phase 1 components
-  meta: "Meta Strength",
-  presence: "Pro Presence",
   flex: "Flex Value",
   proficiency: "Player Proficiency",
   tier_bonus: "Tier Bonus",
@@ -48,8 +45,6 @@ export const BAN_COMPONENT_LABELS: Record<string, string> = {
 // Order for displaying ban components (most important first)
 export const BAN_COMPONENT_ORDER = [
   "tournament_priority",
-  "meta",
-  "presence",
   "flex",
   "proficiency",
   "tier_bonus",
@@ -70,7 +65,6 @@ export const COMPONENT_EXPLANATIONS: Record<string, string> = {
 
   // Pick components
   archetype: "How well this champion fits your team's strategic identity (engage, poke, protect, etc.)",
-  meta: "Champion's current strength in pro meta based on win rate and pick/ban rate",
   matchup_counter: "Combined lane matchup and team-wide counter advantage",
   matchup: "Lane matchup advantage against your opponent",
   counter: "Team-wide counter potential against enemy composition",
@@ -78,7 +72,6 @@ export const COMPONENT_EXPLANATIONS: Record<string, string> = {
   synergy: "How well this champion synergizes with teammates",
 
   // Ban components
-  presence: "How contested this champion is (pick rate + ban rate)",
   flex: "Role versatility - harder to plan against",
   comfort: "Player familiarity based on games played",
   confidence: "Data quality - HIGH/MEDIUM/LOW based on sample size",

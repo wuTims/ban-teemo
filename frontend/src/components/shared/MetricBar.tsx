@@ -6,13 +6,13 @@ interface MetricBarProps {
 }
 
 function getBarColor(value: number): string {
-  if (value >= 0.7) return "bg-success";
-  if (value >= 0.5) return "bg-warning";
+  if (value >= 70) return "bg-success";
+  if (value >= 50) return "bg-warning";
   return "bg-danger";
 }
 
 export function MetricBar({ label, value, explanation, className = "" }: MetricBarProps) {
-  const percentage = Math.round(value * 100);
+  const percentage = Math.ceil(value * 100);
 
   return (
     <div className={`space-y-1 ${className}`}>
@@ -22,7 +22,7 @@ export function MetricBar({ label, value, explanation, className = "" }: MetricB
       </div>
       <div className="h-2 bg-lol-dark rounded-full overflow-hidden">
         <div
-          className={`h-full ${getBarColor(value)} transition-all duration-300`}
+          className={`h-full ${getBarColor(percentage)} transition-all duration-300`}
           style={{ width: `${percentage}%` }}
         />
       </div>
