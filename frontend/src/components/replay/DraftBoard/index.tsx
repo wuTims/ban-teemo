@@ -32,9 +32,9 @@ export function DraftBoard({ blueTeam, redTeam, draftState, blueCompWithRoles, r
   const redPicks = draftState?.red_picks ?? [];
 
   return (
-    <div className="bg-lol-dark rounded-lg p-3 sm:p-4 lg:p-6">
+    <div className="bg-lol-dark rounded-lg p-3 sm:p-4 xl:p-6">
       {/* Phase Indicator - Top Center */}
-      <div className="flex justify-center mb-3 sm:mb-4 lg:mb-6">
+      <div className="flex justify-center mb-3 sm:mb-4 xl:mb-6">
         <PhaseIndicator
           currentPhase={phase}
           nextTeam={nextTeam}
@@ -43,7 +43,7 @@ export function DraftBoard({ blueTeam, redTeam, draftState, blueCompWithRoles, r
       </div>
 
       {/* Main Draft Layout - Vertical on mobile, 3-column grid on desktop */}
-      <div className="flex flex-col gap-3 sm:gap-4 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:gap-6 lg:items-start">
+      <div className="flex flex-col gap-3 sm:gap-4 xl:grid xl:grid-cols-[1fr_auto_1fr] xl:gap-6 xl:items-start">
         {/* Blue Team Panel */}
         <TeamPanel
           team={blueTeam}
@@ -56,7 +56,7 @@ export function DraftBoard({ blueTeam, redTeam, draftState, blueCompWithRoles, r
         />
 
         {/* Center: Ban Track + Action Counter */}
-        <div className="flex flex-col items-center lg:pt-8">
+        <div className="flex flex-col items-center xl:pt-8">
           <ReplayBanTrack
             blueBans={blueBans}
             redBans={redBans}
@@ -69,7 +69,7 @@ export function DraftBoard({ blueTeam, redTeam, draftState, blueCompWithRoles, r
           />
 
           {/* Action Counter */}
-          <div className="mt-3 sm:mt-4 lg:mt-6 text-center">
+          <div className="mt-3 sm:mt-4 xl:mt-6 text-center">
             <div className="text-2xl sm:text-3xl font-bold text-gold-bright">
               {draftState?.action_count ?? 0}
             </div>

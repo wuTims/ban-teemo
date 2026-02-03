@@ -33,7 +33,7 @@ export function ReplayBanTrack({
         championName={ban}
         state={ban ? "banned" : isCurrent ? "picking" : "empty"}
         team={team}
-        className="w-11 h-11 lg:w-[88px] lg:h-[88px] 2xl:w-[104px] 2xl:h-[104px] shrink-0"
+        className="w-11 h-11 xl:w-[88px] xl:h-[88px] 2xl:w-[104px] 2xl:h-[104px] shrink-0"
         placeholderChampion={draftStarted ? undefined : "Teemo"}
       />
     );

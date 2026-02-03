@@ -106,10 +106,14 @@ function getPickScoreBreakdown(weightedComponents?: Record<string, number | unde
   return items;
 }
 
+// Components to hide from the ban score display (still used in scoring, just not surfaced)
+const HIDDEN_BAN_COMPONENTS = new Set(["confidence"]);
+
 function getBanScoreBreakdown(components?: Record<string, number | undefined>): ScoreBreakdownItem[] {
   if (!components) return [];
   const items: ScoreBreakdownItem[] = [];
   BAN_COMPONENT_ORDER.forEach((key) => {
+    if (HIDDEN_BAN_COMPONENTS.has(key)) return;
     const value = components[key];
     if (typeof value === "number") {
       items.push({
@@ -217,16 +221,16 @@ function RecommendationCard({
 
   return (
     <div
+      onClick={() => onClick(championName)}
       className={`
         bg-lol-light rounded-lg border ${cardBorder}
         transition-all duration-200
         hover:border-magic hover:shadow-[0_0_20px_rgba(10,200,185,0.4)]
-        text-left w-full
+        text-left w-full cursor-pointer
       `}
     >
-      {/* Compact Header - always visible, clickable to select */}
-      <button
-        onClick={() => onClick(championName)}
+      {/* Compact Header - always visible */}
+      <div
         className="w-full p-2 lg:p-3 text-left"
       >
         <div className="flex items-center gap-2 lg:gap-3">
@@ -251,7 +255,7 @@ function RecommendationCard({
             )}
           </div>
         </div>
-      </button>
+      </div>
 
       {/* Expandable Details - toggle is inline, no separate button background */}
       <div className="px-2 lg:px-3 pb-1.5 lg:pb-2">
@@ -332,15 +336,15 @@ export function SimulatorView({
   llmLoading = false,
   llmInsight,
 }: SimulatorViewProps) {
-  // Track which recommendation cards are expanded
-  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+  // Track which recommendation cards are collapsed (all expanded by default)
+  const [collapsedCards, setCollapsedCards] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    setExpandedCards(new Set());
+    setCollapsedCards(new Set());
   }, [draftState.action_count]);
 
   const toggleCardExpand = useCallback((championName: string) => {
-    setExpandedCards(prev => {
+    setCollapsedCards(prev => {
       const next = new Set(prev);
       if (next.has(championName)) {
         next.delete(championName);
@@ -405,10 +409,10 @@ export function SimulatorView({
       </div>
 
       {/* Main Layout - Stacked on mobile, 3-column on desktop */}
-      <div className="flex flex-col gap-2 sm:gap-3 lg:gap-4 lg:grid lg:grid-cols-[180px_1fr_180px] xl:grid-cols-[220px_1fr_220px] lg:items-start">
+      <div className="flex flex-col gap-2 sm:gap-3 lg:gap-4 xl:grid xl:grid-cols-[220px_1fr_220px] xl:items-start">
         {/* Blue Team - does not expand with center */}
         <div
-          className={`flex flex-col lg:self-start ${
+          className={`flex flex-col xl:self-start ${
             coachingSide === "blue" ? "ring-2 ring-magic rounded-lg" : ""
           }`}
         >
@@ -438,7 +442,7 @@ export function SimulatorView({
 
         {/* Red Team - does not expand with center */}
         <div
-          className={`flex flex-col lg:self-start ${
+          className={`flex flex-col xl:self-start ${
             coachingSide === "red" ? "ring-2 ring-magic rounded-lg" : ""
           }`}
         >
@@ -489,7 +493,7 @@ export function SimulatorView({
                     isTopPick={i === 0}
                     onClick={onChampionSelect}
                     ourTeam={coachingSide === "blue" ? blueTeam : redTeam}
-                    isExpanded={expandedCards.has(rec.champion_name)}
+                    isExpanded={!collapsedCards.has(rec.champion_name)}
                     onToggleExpand={() => toggleCardExpand(rec.champion_name)}
                   />
                 ))}

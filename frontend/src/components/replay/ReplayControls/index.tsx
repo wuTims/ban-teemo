@@ -1,5 +1,5 @@
 // frontend/src/components/replay/ReplayControls/index.tsx
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import type { SeriesInfo, GameInfo, GamePreview } from "../../../types";
 import { getTeamLogoUrl, getTeamInitials } from "../../../utils/teamLogos";
 
@@ -71,6 +71,8 @@ export function ReplayControls({
   const [gamePreview, setGamePreview] = useState<GamePreview | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [useLlm, setUseLlm] = useState<boolean>(globalLlmEnabled && hasApiKey);
+  const [isPreviewCollapsed, setIsPreviewCollapsed] = useState(false);
+  const prevIsActive = useRef(false);
 
   // Get the currently selected series object
   const currentSeries = seriesList.find(s => s.id === selectedSeries);
@@ -183,6 +185,16 @@ export function ReplayControls({
   const isPlaying = status === "playing";
   const isPaused = status === "paused";
   const isActive = isPlaying || isPaused || isConnecting; // Any state with an active session
+
+  // Auto-collapse preview when replay starts, auto-expand when it stops
+  useEffect(() => {
+    if (isActive && !prevIsActive.current) {
+      setIsPreviewCollapsed(true);
+    } else if (!isActive && prevIsActive.current) {
+      setIsPreviewCollapsed(false);
+    }
+    prevIsActive.current = isActive;
+  }, [isActive]);
 
   return (
     <div className="bg-lol-dark rounded-lg p-4 space-y-4">
@@ -377,93 +389,166 @@ export function ReplayControls({
         )}
       </div>
 
-      {/* Game Preview Panel - Shows when a game is selected but not active */}
-      {!isActive && currentSeries && (
-        <div className="border-t border-gold-dim/30 pt-4">
-          {loadingPreview ? (
-            <div className="text-center text-text-tertiary text-sm py-4">
-              Loading game info...
-            </div>
-          ) : gamePreview ? (
-            <div className="flex items-center justify-between gap-8">
-              {/* Blue Team */}
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-3">
-                  <TeamLogo teamId={gamePreview.blue_team.id} teamName={gamePreview.blue_team.name} size="md" />
-                  <div>
-                    <h3 className="font-semibold text-blue-team">{gamePreview.blue_team.name}</h3>
-                    <span className="text-xs text-text-tertiary uppercase">Blue Side</span>
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  {gamePreview.blue_team.players.map(p => (
-                    <div key={p.id} className="flex items-center gap-2 text-sm">
-                      <span className="w-8 text-xs text-text-tertiary">{p.role}</span>
-                      <span className="text-gold-bright">{p.name}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* VS Divider */}
-              <div className="flex flex-col items-center gap-2">
-                <span className="text-2xl font-bold text-gold-dim">VS</span>
-                {seriesScorePreview && (
-                  <div className="text-center">
-                    <div className="text-[10px] text-text-tertiary uppercase">Series Score</div>
-                    <div className="text-sm font-semibold text-gold-bright">
-                      {seriesScorePreview.blue} - {seriesScorePreview.red}
-                    </div>
-                  </div>
-                )}
-                {gamePreview.patch && (
-                  <span className="text-xs text-text-tertiary">Patch {gamePreview.patch}</span>
-                )}
-              </div>
-
-              {/* Red Team */}
-              <div className="flex-1 text-right">
-                <div className="flex items-center justify-end gap-3 mb-3">
-                  <div>
-                    <h3 className="font-semibold text-red-team">{gamePreview.red_team.name}</h3>
-                    <span className="text-xs text-text-tertiary uppercase">Red Side</span>
-                  </div>
-                  <TeamLogo teamId={gamePreview.red_team.id} teamName={gamePreview.red_team.name} size="md" />
-                </div>
-                <div className="space-y-1">
-                  {gamePreview.red_team.players.map(p => (
-                    <div key={p.id} className="flex items-center justify-end gap-2 text-sm">
-                      <span className="text-gold-bright">{p.name}</span>
-                      <span className="w-8 text-xs text-text-tertiary text-right">{p.role}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : (
-            /* Fallback: Show series info with team logos when preview not available */
-            <div className="flex items-center justify-center gap-6">
+      {/* Game Preview Panel - Collapsible, auto-collapses during replay */}
+      {currentSeries && (
+        <div className="border-t border-gold-dim/30">
+          {/* Collapsed summary bar / toggle */}
+          <button
+            type="button"
+            onClick={() => setIsPreviewCollapsed((v) => !v)}
+            className="w-full flex items-center justify-center gap-3 py-3 cursor-pointer rounded"
+          >
+            {/* Blue team */}
+            {gamePreview ? (
               <div className="flex items-center gap-2">
-                <TeamLogo teamId={currentSeries.blue_team_id} teamName={currentSeries.blue_team_name} size="md" />
-                <span className="font-semibold text-blue-team">{currentSeries.blue_team_name}</span>
+                <TeamLogo teamId={gamePreview.blue_team.id} teamName={gamePreview.blue_team.name} size="sm" />
+                <span className="font-semibold text-sm text-blue-team">{gamePreview.blue_team.name}</span>
               </div>
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-xl font-bold text-gold-dim">VS</span>
-                {seriesScoreFallback && (
-                  <div className="text-center">
-                    <div className="text-[10px] text-text-tertiary uppercase">Series Score</div>
-                    <div className="text-sm font-semibold text-gold-bright">
-                      {seriesScoreFallback.blue} - {seriesScoreFallback.red}
+            ) : (
+              <div className="flex items-center gap-2">
+                <TeamLogo teamId={currentSeries.blue_team_id} teamName={currentSeries.blue_team_name} size="sm" />
+                <span className="font-semibold text-sm text-blue-team">{currentSeries.blue_team_name}</span>
+              </div>
+            )}
+
+            {/* Score */}
+            <div className="flex items-center gap-2 text-sm">
+              {(seriesScorePreview || seriesScoreFallback) && (
+                <span className="font-bold text-gold-bright">
+                  {(seriesScorePreview || seriesScoreFallback)!.blue}
+                </span>
+              )}
+              <span className="text-text-tertiary font-medium">vs</span>
+              {(seriesScorePreview || seriesScoreFallback) && (
+                <span className="font-bold text-gold-bright">
+                  {(seriesScorePreview || seriesScoreFallback)!.red}
+                </span>
+              )}
+            </div>
+
+            {/* Red team */}
+            {gamePreview ? (
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-sm text-red-team">{gamePreview.red_team.name}</span>
+                <TeamLogo teamId={gamePreview.red_team.id} teamName={gamePreview.red_team.name} size="sm" />
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-sm text-red-team">{currentSeries.red_team_name}</span>
+                <TeamLogo teamId={currentSeries.red_team_id} teamName={currentSeries.red_team_name} size="sm" />
+              </div>
+            )}
+
+            {/* Chevron */}
+            <svg
+              className={`w-4 h-4 text-text-tertiary transition-transform duration-300 ${isPreviewCollapsed ? "" : "rotate-180"}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          {/* Expandable detail section - grid-rows trick for smooth height transition */}
+          <div
+            className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${
+              isPreviewCollapsed ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"
+            }`}
+          >
+            <div
+              className="overflow-hidden min-h-0 cursor-pointer"
+              onClick={() => setIsPreviewCollapsed(true)}
+            >
+              <div className="pt-2 pb-1">
+                {loadingPreview ? (
+                  <div className="text-center text-text-tertiary text-sm py-4">
+                    Loading game info...
+                  </div>
+                ) : gamePreview ? (
+                  <div className="flex items-center justify-between gap-8">
+                    {/* Blue Team */}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-3">
+                        <TeamLogo teamId={gamePreview.blue_team.id} teamName={gamePreview.blue_team.name} size="md" />
+                        <div>
+                          <h3 className="font-semibold text-blue-team">{gamePreview.blue_team.name}</h3>
+                          <span className="text-xs text-text-tertiary uppercase">Blue Side</span>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        {gamePreview.blue_team.players.map(p => (
+                          <div key={p.id} className="flex items-center gap-2 text-sm">
+                            <span className="w-14 text-xs text-text-tertiary">{p.role}</span>
+                            <span className="text-gold-bright">{p.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* VS Divider */}
+                    <div className="flex flex-col items-center gap-2">
+                      <span className="text-2xl font-bold text-gold-dim">VS</span>
+                      {seriesScorePreview && (
+                        <div className="text-center">
+                          <div className="text-[10px] text-text-tertiary uppercase">Series Score</div>
+                          <div className="text-sm font-semibold text-gold-bright">
+                            {seriesScorePreview.blue} - {seriesScorePreview.red}
+                          </div>
+                        </div>
+                      )}
+                      {gamePreview.patch && (
+                        <span className="text-xs text-text-tertiary">Patch {gamePreview.patch}</span>
+                      )}
+                    </div>
+
+                    {/* Red Team */}
+                    <div className="flex-1 text-right">
+                      <div className="flex items-center justify-end gap-3 mb-3">
+                        <div>
+                          <h3 className="font-semibold text-red-team">{gamePreview.red_team.name}</h3>
+                          <span className="text-xs text-text-tertiary uppercase">Red Side</span>
+                        </div>
+                        <TeamLogo teamId={gamePreview.red_team.id} teamName={gamePreview.red_team.name} size="md" />
+                      </div>
+                      <div className="space-y-1">
+                        {gamePreview.red_team.players.map(p => (
+                          <div key={p.id} className="flex items-center justify-end gap-2 text-sm">
+                            <span className="text-gold-bright">{p.name}</span>
+                            <span className="w-14 text-xs text-text-tertiary text-right">{p.role}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* Fallback: Show series info with team logos when preview not available */
+                  <div className="flex items-center justify-center gap-6">
+                    <div className="flex items-center gap-2">
+                      <TeamLogo teamId={currentSeries.blue_team_id} teamName={currentSeries.blue_team_name} size="md" />
+                      <span className="font-semibold text-blue-team">{currentSeries.blue_team_name}</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="text-xl font-bold text-gold-dim">VS</span>
+                      {seriesScoreFallback && (
+                        <div className="text-center">
+                          <div className="text-[10px] text-text-tertiary uppercase">Series Score</div>
+                          <div className="text-sm font-semibold text-gold-bright">
+                            {seriesScoreFallback.blue} - {seriesScoreFallback.red}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-red-team">{currentSeries.red_team_name}</span>
+                      <TeamLogo teamId={currentSeries.red_team_id} teamName={currentSeries.red_team_name} size="md" />
                     </div>
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-red-team">{currentSeries.red_team_name}</span>
-                <TeamLogo teamId={currentSeries.red_team_id} teamName={currentSeries.red_team_name} size="md" />
-              </div>
             </div>
-          )}
+          </div>
         </div>
       )}
     </div>
