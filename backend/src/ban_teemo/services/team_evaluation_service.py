@@ -8,26 +8,13 @@ from ban_teemo.services.scorers.tournament_scorer import TournamentScorer
 from ban_teemo.services.synergy_service import SynergyService
 
 
-def _priority_to_tier(priority: float) -> str:
-    """Map tournament priority to display tier."""
-    if priority >= 0.70:
-        return "S"
-    if priority >= 0.45:
-        return "A"
-    if priority >= 0.25:
-        return "B"
-    if priority >= 0.10:
-        return "C"
-    return "D"
-
-
 class TeamEvaluationService:
     """Evaluates team compositions for strengths and weaknesses."""
 
-    def __init__(self, knowledge_dir: Optional[Path] = None):
+    def __init__(self, knowledge_dir: Optional[Path] = None, tournament_data_file: Optional[str] = None):
         self.archetype_service = ArchetypeService(knowledge_dir)
         self.synergy_service = SynergyService(knowledge_dir)
-        self.tournament_scorer = TournamentScorer(knowledge_dir)
+        self.tournament_scorer = TournamentScorer(knowledge_dir, data_file=tournament_data_file)
 
     def evaluate_team_draft(self, picks: list[str]) -> dict:
         """Evaluate a team's draft composition."""
@@ -85,7 +72,7 @@ class TeamEvaluationService:
             champion_meta.append({
                 "champion": champ,
                 "priority": round(priority, 3),
-                "tier": _priority_to_tier(priority),
+                "tier": TournamentScorer.priority_to_tier(priority),
             })
         meta_strength = round(mean(p["priority"] for p in champion_meta), 3)
 

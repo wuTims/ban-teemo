@@ -143,6 +143,19 @@ class TournamentScorer:
                 return data.get("metadata", {})
         return {}
 
+    @staticmethod
+    def priority_to_tier(priority: float) -> str:
+        """Map tournament priority to display tier (S/A/B/C/D)."""
+        if priority >= 0.70:
+            return "S"
+        if priority >= 0.45:
+            return "A"
+        if priority >= 0.25:
+            return "B"
+        if priority >= 0.10:
+            return "C"
+        return "D"
+
     def get_top_priority_champions(self, limit: int = 15) -> list[str]:
         """Get champions with highest tournament priority.
 
