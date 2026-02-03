@@ -1,0 +1,1633 @@
+{
+  "metadata": {
+    "series_id": "2689909",
+    "tournament_id": "774890",
+    "tournament_name": "LCS - Summer 2024 (Regular Season: Regular Season)",
+    "series_date": "2024-08-04T20:00:00+00:00",
+    "window_start": "2024-03-31T20:00:00+00:00",
+    "window_end": "2024-08-04T20:00:00+00:00",
+    "games_analyzed": 651,
+    "champion_count": 127
+  },
+  "champions": {
+    "Corki": {
+      "priority": 0.765,
+      "roles": {
+        "mid": {
+          "winrate": 0.474,
+          "picks": 323,
+          "adjusted_performance": 0.474
+        },
+        "bot": {
+          "winrate": 0.5,
+          "picks": 8,
+          "adjusted_performance": 0.5
+        },
+        "top": {
+          "winrate": 0.0,
+          "picks": 1,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Rumble": {
+      "priority": 0.888,
+      "roles": {
+        "top": {
+          "winrate": 0.522,
+          "picks": 92,
+          "adjusted_performance": 0.522
+        },
+        "support": {
+          "winrate": 0.3,
+          "picks": 10,
+          "adjusted_performance": 0.3
+        },
+        "jungle": {
+          "winrate": 0.667,
+          "picks": 3,
+          "adjusted_performance": 0.55
+        }
+      }
+    },
+    "Sejuani": {
+      "priority": 0.596,
+      "roles": {
+        "jungle": {
+          "winrate": 0.515,
+          "picks": 198,
+          "adjusted_performance": 0.515
+        },
+        "top": {
+          "winrate": 0.5,
+          "picks": 2,
+          "adjusted_performance": 0.5
+        },
+        "support": {
+          "winrate": 0.75,
+          "picks": 4,
+          "adjusted_performance": 0.6
+        }
+      }
+    },
+    "Renekton": {
+      "priority": 0.587,
+      "roles": {
+        "top": {
+          "winrate": 0.482,
+          "picks": 170,
+          "adjusted_performance": 0.482
+        },
+        "mid": {
+          "winrate": 0.5,
+          "picks": 2,
+          "adjusted_performance": 0.5
+        }
+      }
+    },
+    "Yone": {
+      "priority": 0.306,
+      "roles": {
+        "mid": {
+          "winrate": 0.465,
+          "picks": 114,
+          "adjusted_performance": 0.465
+        },
+        "top": {
+          "winrate": 1.0,
+          "picks": 1,
+          "adjusted_performance": 0.55
+        }
+      }
+    },
+    "Leona": {
+      "priority": 0.699,
+      "roles": {
+        "support": {
+          "winrate": 0.449,
+          "picks": 254,
+          "adjusted_performance": 0.449
+        },
+        "coach": {
+          "winrate": 0.0,
+          "picks": 1,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Ashe": {
+      "priority": 0.748,
+      "roles": {
+        "bot": {
+          "winrate": 0.563,
+          "picks": 119,
+          "adjusted_performance": 0.563
+        },
+        "support": {
+          "winrate": 0.6,
+          "picks": 15,
+          "adjusted_performance": 0.6
+        }
+      }
+    },
+    "Shyvana": {
+      "priority": 0.043,
+      "roles": {
+        "jungle": {
+          "winrate": 0.286,
+          "picks": 14,
+          "adjusted_performance": 0.286
+        },
+        "top": {
+          "winrate": 0.0,
+          "picks": 2,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Lucian": {
+      "priority": 0.396,
+      "roles": {
+        "mid": {
+          "winrate": 0.534,
+          "picks": 116,
+          "adjusted_performance": 0.534
+        },
+        "bot": {
+          "winrate": 0.68,
+          "picks": 25,
+          "adjusted_performance": 0.68
+        }
+      }
+    },
+    "Nidalee": {
+      "priority": 0.424,
+      "roles": {
+        "jungle": {
+          "winrate": 0.545,
+          "picks": 110,
+          "adjusted_performance": 0.545
+        }
+      }
+    },
+    "Tristana": {
+      "priority": 0.776,
+      "roles": {
+        "mid": {
+          "winrate": 0.515,
+          "picks": 194,
+          "adjusted_performance": 0.515
+        },
+        "bot": {
+          "winrate": 0.0,
+          "picks": 2,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Miss Fortune": {
+      "priority": 0.209,
+      "roles": {
+        "bot": {
+          "winrate": 0.548,
+          "picks": 62,
+          "adjusted_performance": 0.548
+        },
+        "unknown": {
+          "winrate": 1.0,
+          "picks": 1,
+          "adjusted_performance": 0.55
+        }
+      }
+    },
+    "Braum": {
+      "priority": 0.338,
+      "roles": {
+        "support": {
+          "winrate": 0.489,
+          "picks": 92,
+          "adjusted_performance": 0.489
+        },
+        "unknown": {
+          "winrate": 0.0,
+          "picks": 1,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Rell": {
+      "priority": 0.479,
+      "roles": {
+        "support": {
+          "winrate": 0.492,
+          "picks": 199,
+          "adjusted_performance": 0.492
+        },
+        "unknown": {
+          "winrate": 1.0,
+          "picks": 1,
+          "adjusted_performance": 0.55
+        },
+        "jungle": {
+          "winrate": 0.7,
+          "picks": 10,
+          "adjusted_performance": 0.7
+        },
+        "mid": {
+          "winrate": 0.0,
+          "picks": 1,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "K'Sante": {
+      "priority": 0.588,
+      "roles": {
+        "top": {
+          "winrate": 0.472,
+          "picks": 282,
+          "adjusted_performance": 0.472
+        }
+      }
+    },
+    "Nautilus": {
+      "priority": 0.558,
+      "roles": {
+        "support": {
+          "winrate": 0.497,
+          "picks": 187,
+          "adjusted_performance": 0.497
+        },
+        "mid": {
+          "winrate": 0.0,
+          "picks": 1,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Gnar": {
+      "priority": 0.276,
+      "roles": {
+        "top": {
+          "winrate": 0.474,
+          "picks": 114,
+          "adjusted_performance": 0.474
+        }
+      }
+    },
+    "Alistar": {
+      "priority": 0.37,
+      "roles": {
+        "support": {
+          "winrate": 0.572,
+          "picks": 145,
+          "adjusted_performance": 0.572
+        },
+        "mid": {
+          "winrate": 0.5,
+          "picks": 2,
+          "adjusted_performance": 0.5
+        }
+      }
+    },
+    "Jayce": {
+      "priority": 0.175,
+      "roles": {
+        "top": {
+          "winrate": 0.417,
+          "picks": 24,
+          "adjusted_performance": 0.417
+        },
+        "mid": {
+          "winrate": 0.286,
+          "picks": 21,
+          "adjusted_performance": 0.286
+        }
+      }
+    },
+    "Rakan": {
+      "priority": 0.306,
+      "roles": {
+        "support": {
+          "winrate": 0.471,
+          "picks": 121,
+          "adjusted_performance": 0.471
+        },
+        "coach": {
+          "winrate": 0.0,
+          "picks": 1,
+          "adjusted_performance": 0.0
+        },
+        "mid": {
+          "winrate": 0.0,
+          "picks": 1,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Ezreal": {
+      "priority": 0.573,
+      "roles": {
+        "bot": {
+          "winrate": 0.51,
+          "picks": 206,
+          "adjusted_performance": 0.51
+        },
+        "mid": {
+          "winrate": 0.25,
+          "picks": 12,
+          "adjusted_performance": 0.25
+        },
+        "unknown": {
+          "winrate": 0.0,
+          "picks": 1,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Maokai": {
+      "priority": 0.412,
+      "roles": {
+        "jungle": {
+          "winrate": 0.528,
+          "picks": 106,
+          "adjusted_performance": 0.528
+        },
+        "support": {
+          "winrate": 0.562,
+          "picks": 16,
+          "adjusted_performance": 0.562
+        },
+        "unknown": {
+          "winrate": 1.0,
+          "picks": 1,
+          "adjusted_performance": 0.55
+        }
+      }
+    },
+    "Senna": {
+      "priority": 0.441,
+      "roles": {
+        "bot": {
+          "winrate": 0.595,
+          "picks": 79,
+          "adjusted_performance": 0.595
+        },
+        "support": {
+          "winrate": 0.0,
+          "picks": 1,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Kalista": {
+      "priority": 0.492,
+      "roles": {
+        "bot": {
+          "winrate": 0.468,
+          "picks": 77,
+          "adjusted_performance": 0.468
+        },
+        "top": {
+          "winrate": 1.0,
+          "picks": 1,
+          "adjusted_performance": 0.55
+        }
+      }
+    },
+    "Zeri": {
+      "priority": 0.472,
+      "roles": {
+        "bot": {
+          "winrate": 0.494,
+          "picks": 170,
+          "adjusted_performance": 0.494
+        },
+        "mid": {
+          "winrate": 0.564,
+          "picks": 39,
+          "adjusted_performance": 0.564
+        }
+      }
+    },
+    "Kai'Sa": {
+      "priority": 0.398,
+      "roles": {
+        "bot": {
+          "winrate": 0.487,
+          "picks": 156,
+          "adjusted_performance": 0.487
+        },
+        "mid": {
+          "winrate": 1.0,
+          "picks": 2,
+          "adjusted_performance": 0.6
+        }
+      }
+    },
+    "LeBlanc": {
+      "priority": 0.292,
+      "roles": {
+        "mid": {
+          "winrate": 0.614,
+          "picks": 44,
+          "adjusted_performance": 0.614
+        }
+      }
+    },
+    "Skarner": {
+      "priority": 0.396,
+      "roles": {
+        "top": {
+          "winrate": 0.582,
+          "picks": 122,
+          "adjusted_performance": 0.582
+        },
+        "jungle": {
+          "winrate": 0.0,
+          "picks": 1,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Vi": {
+      "priority": 0.395,
+      "roles": {
+        "jungle": {
+          "winrate": 0.506,
+          "picks": 83,
+          "adjusted_performance": 0.506
+        }
+      }
+    },
+    "Hwei": {
+      "priority": 0.109,
+      "roles": {
+        "mid": {
+          "winrate": 0.489,
+          "picks": 45,
+          "adjusted_performance": 0.489
+        },
+        "support": {
+          "winrate": 1.0,
+          "picks": 1,
+          "adjusted_performance": 0.55
+        }
+      }
+    },
+    "Varus": {
+      "priority": 0.298,
+      "roles": {
+        "bot": {
+          "winrate": 0.44,
+          "picks": 100,
+          "adjusted_performance": 0.44
+        },
+        "top": {
+          "winrate": 0.5,
+          "picks": 4,
+          "adjusted_performance": 0.5
+        },
+        "mid": {
+          "winrate": 0.0,
+          "picks": 5,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Twisted Fate": {
+      "priority": 0.372,
+      "roles": {
+        "top": {
+          "winrate": 0.526,
+          "picks": 57,
+          "adjusted_performance": 0.526
+        },
+        "unknown": {
+          "winrate": 0.0,
+          "picks": 1,
+          "adjusted_performance": 0.0
+        },
+        "mid": {
+          "winrate": 0.5,
+          "picks": 10,
+          "adjusted_performance": 0.5
+        }
+      }
+    },
+    "Ivern": {
+      "priority": 0.187,
+      "roles": {
+        "jungle": {
+          "winrate": 0.511,
+          "picks": 47,
+          "adjusted_performance": 0.511
+        }
+      }
+    },
+    "Xin Zhao": {
+      "priority": 0.118,
+      "roles": {
+        "jungle": {
+          "winrate": 0.529,
+          "picks": 51,
+          "adjusted_performance": 0.529
+        }
+      }
+    },
+    "Draven": {
+      "priority": 0.124,
+      "roles": {
+        "bot": {
+          "winrate": 0.381,
+          "picks": 21,
+          "adjusted_performance": 0.381
+        },
+        "mid": {
+          "winrate": 0.667,
+          "picks": 3,
+          "adjusted_performance": 0.55
+        }
+      }
+    },
+    "Taliyah": {
+      "priority": 0.347,
+      "roles": {
+        "jungle": {
+          "winrate": 0.405,
+          "picks": 37,
+          "adjusted_performance": 0.405
+        },
+        "mid": {
+          "winrate": 0.51,
+          "picks": 100,
+          "adjusted_performance": 0.51
+        },
+        "bot": {
+          "winrate": 0.0,
+          "picks": 1,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Jinx": {
+      "priority": 0.104,
+      "roles": {
+        "bot": {
+          "winrate": 0.522,
+          "picks": 46,
+          "adjusted_performance": 0.522
+        }
+      }
+    },
+    "Camille": {
+      "priority": 0.143,
+      "roles": {
+        "support": {
+          "winrate": 0.333,
+          "picks": 3,
+          "adjusted_performance": 0.333
+        },
+        "top": {
+          "winrate": 0.641,
+          "picks": 39,
+          "adjusted_performance": 0.641
+        }
+      }
+    },
+    "Zac": {
+      "priority": 0.041,
+      "roles": {
+        "top": {
+          "winrate": 0.625,
+          "picks": 16,
+          "adjusted_performance": 0.625
+        },
+        "mid": {
+          "winrate": 1.0,
+          "picks": 2,
+          "adjusted_performance": 0.6
+        },
+        "jungle": {
+          "winrate": 0.0,
+          "picks": 2,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Renata Glasc": {
+      "priority": 0.144,
+      "roles": {
+        "support": {
+          "winrate": 0.548,
+          "picks": 42,
+          "adjusted_performance": 0.548
+        }
+      }
+    },
+    "Gragas": {
+      "priority": 0.046,
+      "roles": {
+        "top": {
+          "winrate": 0.619,
+          "picks": 21,
+          "adjusted_performance": 0.619
+        }
+      }
+    },
+    "Kennen": {
+      "priority": 0.189,
+      "roles": {
+        "top": {
+          "winrate": 0.609,
+          "picks": 64,
+          "adjusted_performance": 0.609
+        },
+        "unknown": {
+          "winrate": 1.0,
+          "picks": 1,
+          "adjusted_performance": 0.55
+        },
+        "mid": {
+          "winrate": 1.0,
+          "picks": 1,
+          "adjusted_performance": 0.55
+        }
+      }
+    },
+    "Zyra": {
+      "priority": 0.341,
+      "roles": {
+        "jungle": {
+          "winrate": 0.476,
+          "picks": 124,
+          "adjusted_performance": 0.476
+        }
+      }
+    },
+    "Jax": {
+      "priority": 0.247,
+      "roles": {
+        "top": {
+          "winrate": 0.481,
+          "picks": 52,
+          "adjusted_performance": 0.481
+        },
+        "jungle": {
+          "winrate": 0.4,
+          "picks": 10,
+          "adjusted_performance": 0.4
+        }
+      }
+    },
+    "Ahri": {
+      "priority": 0.063,
+      "roles": {
+        "mid": {
+          "winrate": 0.633,
+          "picks": 30,
+          "adjusted_performance": 0.633
+        },
+        "top": {
+          "winrate": 0.0,
+          "picks": 2,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Jhin": {
+      "priority": 0.126,
+      "roles": {
+        "bot": {
+          "winrate": 0.431,
+          "picks": 65,
+          "adjusted_performance": 0.431
+        },
+        "mid": {
+          "winrate": 1.0,
+          "picks": 1,
+          "adjusted_performance": 0.55
+        }
+      }
+    },
+    "Xayah": {
+      "priority": 0.071,
+      "roles": {
+        "bot": {
+          "winrate": 0.323,
+          "picks": 31,
+          "adjusted_performance": 0.323
+        }
+      }
+    },
+    "Ziggs": {
+      "priority": 0.29,
+      "roles": {
+        "bot": {
+          "winrate": 0.435,
+          "picks": 62,
+          "adjusted_performance": 0.435
+        },
+        "mid": {
+          "winrate": 0.625,
+          "picks": 8,
+          "adjusted_performance": 0.6
+        }
+      }
+    },
+    "Lillia": {
+      "priority": 0.244,
+      "roles": {
+        "jungle": {
+          "winrate": 0.476,
+          "picks": 84,
+          "adjusted_performance": 0.476
+        }
+      }
+    },
+    "Viego": {
+      "priority": 0.183,
+      "roles": {
+        "jungle": {
+          "winrate": 0.493,
+          "picks": 67,
+          "adjusted_performance": 0.493
+        }
+      }
+    },
+    "Poppy": {
+      "priority": 0.174,
+      "roles": {
+        "jungle": {
+          "winrate": 0.444,
+          "picks": 18,
+          "adjusted_performance": 0.444
+        },
+        "top": {
+          "winrate": 0.333,
+          "picks": 33,
+          "adjusted_performance": 0.333
+        },
+        "support": {
+          "winrate": 0.6,
+          "picks": 15,
+          "adjusted_performance": 0.6
+        }
+      }
+    },
+    "Diana": {
+      "priority": 0.02,
+      "roles": {
+        "jungle": {
+          "winrate": 0.444,
+          "picks": 9,
+          "adjusted_performance": 0.444
+        },
+        "mid": {
+          "winrate": 0.0,
+          "picks": 2,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Brand": {
+      "priority": 0.31,
+      "roles": {
+        "jungle": {
+          "winrate": 0.47,
+          "picks": 115,
+          "adjusted_performance": 0.47
+        },
+        "unknown": {
+          "winrate": 0.0,
+          "picks": 1,
+          "adjusted_performance": 0.0
+        },
+        "support": {
+          "winrate": 0.0,
+          "picks": 1,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Rek'Sai": {
+      "priority": 0.084,
+      "roles": {
+        "top": {
+          "winrate": 0.5,
+          "picks": 18,
+          "adjusted_performance": 0.5
+        },
+        "jungle": {
+          "winrate": 0.538,
+          "picks": 13,
+          "adjusted_performance": 0.538
+        }
+      }
+    },
+    "Lee Sin": {
+      "priority": 0.135,
+      "roles": {
+        "jungle": {
+          "winrate": 0.462,
+          "picks": 39,
+          "adjusted_performance": 0.462
+        },
+        "top": {
+          "winrate": 0.5,
+          "picks": 2,
+          "adjusted_performance": 0.5
+        }
+      }
+    },
+    "Neeko": {
+      "priority": 0.049,
+      "roles": {
+        "support": {
+          "winrate": 0.444,
+          "picks": 9,
+          "adjusted_performance": 0.444
+        },
+        "top": {
+          "winrate": 0.0,
+          "picks": 1,
+          "adjusted_performance": 0.0
+        },
+        "mid": {
+          "winrate": 0.0,
+          "picks": 1,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Orianna": {
+      "priority": 0.074,
+      "roles": {
+        "mid": {
+          "winrate": 0.417,
+          "picks": 12,
+          "adjusted_performance": 0.417
+        }
+      }
+    },
+    "Azir": {
+      "priority": 0.307,
+      "roles": {
+        "mid": {
+          "winrate": 0.529,
+          "picks": 140,
+          "adjusted_performance": 0.529
+        }
+      }
+    },
+    "Nocturne": {
+      "priority": 0.009,
+      "roles": {
+        "jungle": {
+          "winrate": 0.0,
+          "picks": 3,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Tahm Kench": {
+      "priority": 0.028,
+      "roles": {
+        "support": {
+          "winrate": 0.417,
+          "picks": 12,
+          "adjusted_performance": 0.417
+        }
+      }
+    },
+    "Aatrox": {
+      "priority": 0.069,
+      "roles": {
+        "top": {
+          "winrate": 0.306,
+          "picks": 36,
+          "adjusted_performance": 0.306
+        }
+      }
+    },
+    "Veigar": {
+      "priority": 0.008,
+      "roles": {
+        "mid": {
+          "winrate": 0.0,
+          "picks": 3,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Vayne": {
+      "priority": 0.018,
+      "roles": {
+        "top": {
+          "winrate": 0.4,
+          "picks": 5,
+          "adjusted_performance": 0.4
+        },
+        "bot": {
+          "winrate": 0.0,
+          "picks": 1,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Caitlyn": {
+      "priority": 0.043,
+      "roles": {
+        "bot": {
+          "winrate": 0.5,
+          "picks": 12,
+          "adjusted_performance": 0.5
+        }
+      }
+    },
+    "Graves": {
+      "priority": 0.035,
+      "roles": {
+        "jungle": {
+          "winrate": 0.4,
+          "picks": 15,
+          "adjusted_performance": 0.4
+        }
+      }
+    },
+    "Malzahar": {
+      "priority": 0.006,
+      "roles": {
+        "mid": {
+          "winrate": 0.75,
+          "picks": 4,
+          "adjusted_performance": 0.6
+        }
+      }
+    },
+    "Karthus": {
+      "priority": 0.152,
+      "roles": {
+        "jungle": {
+          "winrate": 0.527,
+          "picks": 55,
+          "adjusted_performance": 0.527
+        }
+      }
+    },
+    "Aphelios": {
+      "priority": 0.046,
+      "roles": {
+        "bot": {
+          "winrate": 0.588,
+          "picks": 17,
+          "adjusted_performance": 0.588
+        }
+      }
+    },
+    "Sivir": {
+      "priority": 0.011,
+      "roles": {
+        "bot": {
+          "winrate": 0.8,
+          "picks": 5,
+          "adjusted_performance": 0.65
+        }
+      }
+    },
+    "Ornn": {
+      "priority": 0.117,
+      "roles": {
+        "support": {
+          "winrate": 0.605,
+          "picks": 38,
+          "adjusted_performance": 0.605
+        },
+        "top": {
+          "winrate": 0.52,
+          "picks": 25,
+          "adjusted_performance": 0.52
+        }
+      }
+    },
+    "Jarvan IV": {
+      "priority": 0.014,
+      "roles": {
+        "jungle": {
+          "winrate": 0.4,
+          "picks": 5,
+          "adjusted_performance": 0.4
+        }
+      }
+    },
+    "Udyr": {
+      "priority": 0.018,
+      "roles": {
+        "top": {
+          "winrate": 0.364,
+          "picks": 11,
+          "adjusted_performance": 0.364
+        }
+      }
+    },
+    "Thresh": {
+      "priority": 0.015,
+      "roles": {
+        "support": {
+          "winrate": 0.5,
+          "picks": 6,
+          "adjusted_performance": 0.5
+        }
+      }
+    },
+    "Aurelion Sol": {
+      "priority": 0.049,
+      "roles": {
+        "mid": {
+          "winrate": 0.478,
+          "picks": 23,
+          "adjusted_performance": 0.478
+        }
+      }
+    },
+    "Darius": {
+      "priority": 0.018,
+      "roles": {
+        "top": {
+          "winrate": 0.6,
+          "picks": 5,
+          "adjusted_performance": 0.55
+        }
+      }
+    },
+    "Fiora": {
+      "priority": 0.005,
+      "roles": {
+        "top": {
+          "winrate": 1.0,
+          "picks": 1,
+          "adjusted_performance": 0.55
+        }
+      }
+    },
+    "Irelia": {
+      "priority": 0.002,
+      "roles": {
+        "mid": {
+          "winrate": 1.0,
+          "picks": 1,
+          "adjusted_performance": 0.55
+        }
+      }
+    },
+    "Mordekaiser": {
+      "priority": 0.063,
+      "roles": {
+        "top": {
+          "winrate": 0.643,
+          "picks": 28,
+          "adjusted_performance": 0.643
+        }
+      }
+    },
+    "Nami": {
+      "priority": 0.041,
+      "roles": {
+        "support": {
+          "winrate": 0.68,
+          "picks": 25,
+          "adjusted_performance": 0.68
+        }
+      }
+    },
+    "Kled": {
+      "priority": 0.002,
+      "roles": {
+        "top": {
+          "winrate": 0.0,
+          "picks": 1,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Kindred": {
+      "priority": 0.049,
+      "roles": {
+        "jungle": {
+          "winrate": 0.529,
+          "picks": 17,
+          "adjusted_performance": 0.529
+        }
+      }
+    },
+    "Twitch": {
+      "priority": 0.003,
+      "roles": {
+        "bot": {
+          "winrate": 0.5,
+          "picks": 2,
+          "adjusted_performance": 0.5
+        }
+      }
+    },
+    "Rengar": {
+      "priority": 0.026,
+      "roles": {
+        "jungle": {
+          "winrate": 0.667,
+          "picks": 3,
+          "adjusted_performance": 0.55
+        }
+      }
+    },
+    "Seraphine": {
+      "priority": 0.018,
+      "roles": {
+        "support": {
+          "winrate": 0.286,
+          "picks": 7,
+          "adjusted_performance": 0.286
+        },
+        "bot": {
+          "winrate": 1.0,
+          "picks": 1,
+          "adjusted_performance": 0.55
+        }
+      }
+    },
+    "Sion": {
+      "priority": 0.023,
+      "roles": {
+        "bot": {
+          "winrate": 0.0,
+          "picks": 1,
+          "adjusted_performance": 0.0
+        },
+        "top": {
+          "winrate": 0.5,
+          "picks": 8,
+          "adjusted_performance": 0.5
+        },
+        "support": {
+          "winrate": 0.0,
+          "picks": 2,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Karma": {
+      "priority": 0.031,
+      "roles": {
+        "mid": {
+          "winrate": 0.0,
+          "picks": 1,
+          "adjusted_performance": 0.0
+        },
+        "support": {
+          "winrate": 0.625,
+          "picks": 8,
+          "adjusted_performance": 0.6
+        }
+      }
+    },
+    "Cassiopeia": {
+      "priority": 0.012,
+      "roles": {
+        "mid": {
+          "winrate": 1.0,
+          "picks": 2,
+          "adjusted_performance": 0.6
+        }
+      }
+    },
+    "Olaf": {
+      "priority": 0.032,
+      "roles": {
+        "top": {
+          "winrate": 0.5,
+          "picks": 6,
+          "adjusted_performance": 0.5
+        },
+        "jungle": {
+          "winrate": 0.0,
+          "picks": 1,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Samira": {
+      "priority": 0.003,
+      "roles": {
+        "bot": {
+          "winrate": 0.0,
+          "picks": 1,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Bard": {
+      "priority": 0.031,
+      "roles": {
+        "support": {
+          "winrate": 0.667,
+          "picks": 15,
+          "adjusted_performance": 0.667
+        }
+      }
+    },
+    "Yasuo": {
+      "priority": 0.02,
+      "roles": {
+        "mid": {
+          "winrate": 0.333,
+          "picks": 3,
+          "adjusted_performance": 0.333
+        },
+        "top": {
+          "winrate": 1.0,
+          "picks": 1,
+          "adjusted_performance": 0.55
+        }
+      }
+    },
+    "Malphite": {
+      "priority": 0.02,
+      "roles": {
+        "top": {
+          "winrate": 0.444,
+          "picks": 9,
+          "adjusted_performance": 0.444
+        }
+      }
+    },
+    "Soraka": {
+      "priority": 0.002,
+      "roles": {
+        "support": {
+          "winrate": 1.0,
+          "picks": 1,
+          "adjusted_performance": 0.55
+        }
+      }
+    },
+    "Pantheon": {
+      "priority": 0.002,
+      "roles": {
+        "top": {
+          "winrate": 1.0,
+          "picks": 1,
+          "adjusted_performance": 0.55
+        }
+      }
+    },
+    "Smolder": {
+      "priority": 0.028,
+      "roles": {
+        "bot": {
+          "winrate": 0.583,
+          "picks": 12,
+          "adjusted_performance": 0.583
+        }
+      }
+    },
+    "Volibear": {
+      "priority": 0.034,
+      "roles": {
+        "jungle": {
+          "winrate": 0.5,
+          "picks": 12,
+          "adjusted_performance": 0.5
+        },
+        "top": {
+          "winrate": 1.0,
+          "picks": 1,
+          "adjusted_performance": 0.55
+        }
+      }
+    },
+    "Urgot": {
+      "priority": 0.009,
+      "roles": {
+        "top": {
+          "winrate": 0.2,
+          "picks": 5,
+          "adjusted_performance": 0.2
+        }
+      }
+    },
+    "Annie": {
+      "priority": 0.02,
+      "roles": {
+        "mid": {
+          "winrate": 0.333,
+          "picks": 9,
+          "adjusted_performance": 0.333
+        },
+        "support": {
+          "winrate": 0.5,
+          "picks": 2,
+          "adjusted_performance": 0.5
+        }
+      }
+    },
+    "Gangplank": {
+      "priority": 0.012,
+      "roles": {
+        "top": {
+          "winrate": 0.6,
+          "picks": 5,
+          "adjusted_performance": 0.55
+        }
+      }
+    },
+    "Yuumi": {
+      "priority": 0.003,
+      "roles": {
+        "support": {
+          "winrate": 0.0,
+          "picks": 2,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Blitzcrank": {
+      "priority": 0.037,
+      "roles": {
+        "support": {
+          "winrate": 0.667,
+          "picks": 12,
+          "adjusted_performance": 0.667
+        }
+      }
+    },
+    "Lulu": {
+      "priority": 0.061,
+      "roles": {
+        "support": {
+          "winrate": 0.286,
+          "picks": 21,
+          "adjusted_performance": 0.286
+        }
+      }
+    },
+    "Amumu": {
+      "priority": 0.006,
+      "roles": {
+        "jungle": {
+          "winrate": 0.5,
+          "picks": 2,
+          "adjusted_performance": 0.5
+        }
+      }
+    },
+    "Morgana": {
+      "priority": 0.012,
+      "roles": {
+        "jungle": {
+          "winrate": 0.833,
+          "picks": 6,
+          "adjusted_performance": 0.7
+        }
+      }
+    },
+    "Kha'Zix": {
+      "priority": 0.015,
+      "roles": {
+        "jungle": {
+          "winrate": 0.556,
+          "picks": 9,
+          "adjusted_performance": 0.55
+        }
+      }
+    },
+    "Dr. Mundo": {
+      "priority": 0.006,
+      "roles": {
+        "top": {
+          "winrate": 0.5,
+          "picks": 4,
+          "adjusted_performance": 0.5
+        }
+      }
+    },
+    "Milio": {
+      "priority": 0.006,
+      "roles": {
+        "support": {
+          "winrate": 0.667,
+          "picks": 3,
+          "adjusted_performance": 0.55
+        }
+      }
+    },
+    "Akali": {
+      "priority": 0.014,
+      "roles": {
+        "mid": {
+          "winrate": 0.333,
+          "picks": 6,
+          "adjusted_performance": 0.333
+        },
+        "top": {
+          "winrate": 0.0,
+          "picks": 1,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Wukong": {
+      "priority": 0.025,
+      "roles": {
+        "jungle": {
+          "winrate": 0.583,
+          "picks": 12,
+          "adjusted_performance": 0.583
+        }
+      }
+    },
+    "Sylas": {
+      "priority": 0.012,
+      "roles": {
+        "mid": {
+          "winrate": 0.5,
+          "picks": 4,
+          "adjusted_performance": 0.5
+        }
+      }
+    },
+    "Lux": {
+      "priority": 0.003,
+      "roles": {
+        "support": {
+          "winrate": 1.0,
+          "picks": 1,
+          "adjusted_performance": 0.55
+        }
+      }
+    },
+    "Gwen": {
+      "priority": 0.008,
+      "roles": {
+        "top": {
+          "winrate": 0.4,
+          "picks": 5,
+          "adjusted_performance": 0.4
+        }
+      }
+    },
+    "Ryze": {
+      "priority": 0.005,
+      "roles": {
+        "top": {
+          "winrate": 0.667,
+          "picks": 3,
+          "adjusted_performance": 0.55
+        }
+      }
+    },
+    "Shen": {
+      "priority": 0.002,
+      "roles": {
+        "support": {
+          "winrate": 0.0,
+          "picks": 1,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Sett": {
+      "priority": 0.002,
+      "roles": {
+        "top": {
+          "winrate": 0.0,
+          "picks": 1,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Taric": {
+      "priority": 0.003,
+      "roles": {
+        "support": {
+          "winrate": 1.0,
+          "picks": 2,
+          "adjusted_performance": 0.6
+        }
+      }
+    },
+    "Janna": {
+      "priority": 0.002,
+      "roles": {
+        "support": {
+          "winrate": 1.0,
+          "picks": 1,
+          "adjusted_performance": 0.55
+        }
+      }
+    },
+    "Kog'Maw": {
+      "priority": 0.003,
+      "roles": {
+        "bot": {
+          "winrate": 0.0,
+          "picks": 1,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Tryndamere": {
+      "priority": 0.002,
+      "roles": {
+        "mid": {
+          "winrate": 1.0,
+          "picks": 1,
+          "adjusted_performance": 0.55
+        }
+      }
+    },
+    "Pyke": {
+      "priority": 0.015,
+      "roles": {
+        "support": {
+          "winrate": 0.5,
+          "picks": 4,
+          "adjusted_performance": 0.5
+        }
+      }
+    },
+    "Nasus": {
+      "priority": 0.003,
+      "roles": {
+        "top": {
+          "winrate": 0.0,
+          "picks": 2,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Nilah": {
+      "priority": 0.002,
+      "roles": {
+        "bot": {
+          "winrate": 0.0,
+          "picks": 1,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Syndra": {
+      "priority": 0.002,
+      "roles": {
+        "mid": {
+          "winrate": 0.0,
+          "picks": 1,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Zilean": {
+      "priority": 0.002,
+      "roles": {
+        "mid": {
+          "winrate": 0.0,
+          "picks": 1,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Galio": {
+      "priority": 0.008,
+      "roles": {
+        "mid": {
+          "winrate": 0.667,
+          "picks": 3,
+          "adjusted_performance": 0.55
+        }
+      }
+    },
+    "Quinn": {
+      "priority": 0.002,
+      "roles": {
+        "top": {
+          "winrate": 0.0,
+          "picks": 1,
+          "adjusted_performance": 0.0
+        }
+      }
+    },
+    "Fiddlesticks": {
+      "priority": 0.002,
+      "roles": {
+        "jungle": {
+          "winrate": 1.0,
+          "picks": 1,
+          "adjusted_performance": 0.55
+        }
+      }
+    }
+  },
+  "defaults": {
+    "missing_champion_priority": 0.05,
+    "missing_champion_performance": 0.35
+  }
+}

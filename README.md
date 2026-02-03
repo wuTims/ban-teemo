@@ -54,7 +54,8 @@ Ban Teemo analyzes 68,000+ draft actions from professional League of Legends mat
 - Riot Data Dragon for champion assets
 
 **Data:**
-- GRID Open Access API (pro match data)
+- [gol.gg](https://gol.gg) Winter 2026 tournament statistics (simulator mode meta)
+- [GRID Open Access API](https://grid.gg/data) pro match data with 18-week rolling window (replay mode meta context)
 - Pre-computed analytics in JSON knowledge files
 
 ## Quick Start
@@ -198,9 +199,20 @@ ban-teemo/
     └─────────────────────────┘         └─────────────────────────────────┘
 ```
 
-### Source: GRID Open Access API
+### Data Sources
 
-Match data was fetched using the GRID LoL Data Skill (see `.claude/skills/grid-lol-data-skill/`).
+The project uses two distinct data sources, each serving a different mode:
+
+**Simulator mode — [gol.gg](https://gol.gg) Winter 2026 tournaments**
+- Current patch meta (Patch 26.1) with pick/ban rates, win rates, and priority scores across all major regions
+- Stored in `knowledge/tournament_meta.json`, built from `data/input/2026_winter_tournaments.csv`
+- Provides the "what's strong right now" signal for draft recommendations
+
+**Replay mode — [GRID Open Access API](https://grid.gg/data)**
+- 68K+ draft actions from LCK, LEC, LCS, LPL, and international events (Jan 2024 – Sep 2025)
+- Fetched using the GRID LoL Data Skill (see `.claude/skills/grid-lol-data-skill/`)
+- For each replayed series, meta context is computed from an **18-week rolling window** of games played *before* that series date, ensuring historically accurate recommendations
+- Per-series meta files stored in `knowledge/replay_meta/`
 
 ### Data Coverage
 
