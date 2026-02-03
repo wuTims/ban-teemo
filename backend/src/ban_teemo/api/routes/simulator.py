@@ -438,6 +438,9 @@ async def next_game(request: Request, session_id: str):
 
         session.current_game += 1
 
+        # Determine first team: odd games → blue, even games → red
+        first_team = "blue" if session.current_game % 2 == 1 else "red"
+
         # Reset draft state
         session.draft_state = DraftState(
             game_id=f"{session.session_id}_g{session.current_game}",
@@ -449,7 +452,7 @@ async def next_game(request: Request, session_id: str):
             red_team=session.red_team,
             actions=[],
             current_phase=DraftPhase.BAN_PHASE_1,
-            next_team="blue",
+            next_team=first_team,
             next_action="ban",
         )
 
@@ -925,22 +928,27 @@ def _apply_action(session: SimulatorSession, action: DraftAction):
         else:
             draft_state.current_phase = DraftPhase.PICK_PHASE_2
 
-        # Standard draft order
-        draft_order = _get_draft_order()
+        # Standard draft order (swaps sides for even games)
+        draft_order = _get_draft_order(draft_state.game_number)
         if action_count < len(draft_order):
             next_team, next_action = draft_order[action_count]
             draft_state.next_team = next_team
             draft_state.next_action = next_action
 
 
-def _get_draft_order() -> list[tuple[str, str]]:
-    """Return standard LoL draft order."""
-    return [
+def _get_draft_order(game_number: int = 1) -> list[tuple[str, str]]:
+    """Return standard LoL draft order, swapping sides for even games."""
+    blue_first = [
         ("blue", "ban"), ("red", "ban"), ("blue", "ban"), ("red", "ban"), ("blue", "ban"), ("red", "ban"),
         ("blue", "pick"), ("red", "pick"), ("red", "pick"), ("blue", "pick"), ("blue", "pick"), ("red", "pick"),
         ("red", "ban"), ("blue", "ban"), ("red", "ban"), ("blue", "ban"),
         ("red", "pick"), ("blue", "pick"), ("blue", "pick"), ("red", "pick"),
     ]
+    # Even games: red bans first (swap blue <-> red)
+    if game_number % 2 == 0:
+        swap = {"blue": "red", "red": "blue"}
+        return [(swap[team], action) for team, action in blue_first]
+    return blue_first
 
 
 def _build_response(
